@@ -76,7 +76,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		Light pointLight2 = THREE.DirectionalLight(0xffffff,1);//for fix back side dark problem
 		pointLight2.setPosition(0, 10, -300);
-		scene.add(pointLight2);
+		//scene.add(pointLight2);
 		
 		root=THREE.Object3D();
 		scene.add(root);
@@ -226,8 +226,11 @@ HorizontalPanel h1=new HorizontalPanel();
 				doPose(frameRange.getValue());
 			}
 		});
+		
+		updateMaterial();
 	}
 	
+	private Material bodyMaterial;
 	protected void updateMaterial() {
 		
 		Material material=null;
@@ -241,9 +244,12 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 		}else{
 			material=THREE.MeshLambertMaterial().map(ImageUtils.loadTexture("men3smart_texture.png")).transparent(transparent).opacity(opacity).build();
-			
 		}
+		bodyMaterial=material;
+		
+		if(bodyMesh!=null){
 		bodyMesh.setMaterial(material);
+		}
 	}
 
 	private void loadBVH(String path){
@@ -422,7 +428,10 @@ public void onError(Request request, Throwable exception) {
 		if(bodyMesh==null){//initial
 			bodyIndices = (JsArray<Vector4>) JsArray.createArray();
 			bodyWeight = (JsArray<Vector4>) JsArray.createArray();
-			WeightBuilder.autoWeight(baseGeometry, bones, 1, bodyIndices, bodyWeight);
+			WeightBuilder.autoWeight(baseGeometry, bones, 2, bodyIndices, bodyWeight);
+			
+			
+			
 			}else{
 				root.remove(bodyMesh);
 			}
@@ -438,7 +447,7 @@ public void onError(Request request, Throwable exception) {
 		root.add(bone3D);
 		
 		List<Matrix4> moveMatrix=new ArrayList<Matrix4>(); 
-		List<Vector3> parentPos=new ArrayList<Vector3>();
+		List<Vector3> bonePositions=new ArrayList<Vector3>();
 		for(int i=0;i<bones.length();i++){
 			MatrixAndVector3 mv=boneMatrix.get(i);
 			Mesh mesh=THREE.Mesh(THREE.CubeGeometry(.2, .2, .2),THREE.MeshLambertMaterial().color(0xff0000).build());
@@ -461,7 +470,7 @@ public void onError(Request request, Throwable exception) {
 			
 			
 			if(bones.get(i).getParent()!=-1){
-			Vector3 ppos=parentPos.get(bones.get(i).getParent());	
+			Vector3 ppos=bonePositions.get(bones.get(i).getParent());	
 			//pos.addSelf(ppos);
 			
 			Mesh line=GWTGeometryUtils.createLineMesh(pos, ppos, 0xffffff);
@@ -472,7 +481,7 @@ public void onError(Request request, Throwable exception) {
 				mx.multiplyVector3(pos);
 			}
 			mesh.setPosition(pos);
-			parentPos.add(pos);
+			bonePositions.add(pos);
 		}
 		
 		//Geometry geo=GeometryUtils.clone(baseGeometry);
@@ -480,6 +489,7 @@ public void onError(Request request, Throwable exception) {
 
 		
 		
+		//Geometry geo=bodyMesh.getGeometry();
 		Geometry geo=GeometryUtils.clone(baseGeometry);
 		
 		
@@ -493,22 +503,48 @@ public void onError(Request request, Throwable exception) {
 			Vector3 bonePos=boneMatrix.get(boneIndex1).getAbsolutePosition();
 			Vector3 relatePos=bonePos.clone();
 			relatePos.sub(baseVertex.getPosition(),bonePos);
+			double length=relatePos.length();
+			
 			moveMatrix.get(boneIndex1).multiplyVector3(relatePos);
 			//relatePos.addSelf(bonePos);
 			if(boneIndex2!=boneIndex1){
 				Vector3 bonePos2=boneMatrix.get(boneIndex2).getAbsolutePosition();
 				Vector3 relatePos2=bonePos2.clone();
 				relatePos2.sub(baseVertex.getPosition(),bonePos2);
+				double length2=relatePos2.length();
 				moveMatrix.get(boneIndex2).multiplyVector3(relatePos2);
 				
 				
 				//scalar weight
 				
 				relatePos.multiplyScalar(bodyWeight.get(i).getX());
+			
 				relatePos2.multiplyScalar(bodyWeight.get(i).getY());
 				relatePos.addSelf(relatePos2);
 				
 				
+				//keep distance1 faild
+				
+				/*
+				if(length<1){	//length2
+					
+					Vector3 abpos=THREE.Vector3();
+					abpos.sub(relatePos, bonePositions.get(boneIndex1));
+					double scar=abpos.length()/length;
+					abpos.multiplyScalar(scar);
+					abpos.addSelf(bonePositions.get(boneIndex1));
+					relatePos.set(abpos.getX(), abpos.getY(), abpos.getZ());
+				}*/
+				
+				if(length2<1){
+				Vector3 abpos=THREE.Vector3();
+				abpos.sub(relatePos, bonePositions.get(boneIndex2));
+				double scar=abpos.length()/length2;
+				abpos.multiplyScalar(scar);
+				abpos.addSelf(bonePositions.get(boneIndex2));
+				relatePos.set(abpos.getX(), abpos.getY(), abpos.getZ());
+				
+				}
 				/*
 				Vector3 diff=THREE.Vector3();
 				diff.sub(relatePos2, relatePos);
@@ -517,17 +553,30 @@ public void onError(Request request, Throwable exception) {
 				*/
 			}
 			
+			
 			targetVertex.getPosition().set(relatePos.getX(), relatePos.getY(), relatePos.getZ());
 		}
-		//geo.setDynamic(true);
-		//geo.setDirtyVertices(true);
+		
 		geo.computeFaceNormals();
 		geo.computeVertexNormals();
-		//geo.computeTangents();
-		Material material=THREE.MeshLambertMaterial().map(ImageUtils.loadTexture("men3smart_texture.png")).build();
-		bodyMesh=THREE.Mesh(geo, material);
-		updateMaterial();
+		
+		//Material material=THREE.MeshLambertMaterial().map(ImageUtils.loadTexture("men3smart_texture.png")).build();
+		
+		bodyMesh=THREE.Mesh(geo, bodyMaterial);
 		root.add(bodyMesh);
+		
+		/*
+		geo.setDynamic(true);
+		geo.setDirtyVertices(true);
+		geo.computeBoundingSphere();
+		*/
+		
+		//
+		//bodyMesh.setGeometry(geo);
+		
+		//bodyMesh.gwtBoundingSphere();
+		//geo.computeTangents();
+		
 		
 		/*
 		geo.setDynamic(true);
