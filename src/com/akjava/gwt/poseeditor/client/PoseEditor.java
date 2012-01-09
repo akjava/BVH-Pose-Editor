@@ -32,6 +32,7 @@ import com.akjava.gwt.three.client.gwt.animation.AnimationBonesData;
 import com.akjava.gwt.three.client.gwt.animation.AnimationData;
 import com.akjava.gwt.three.client.gwt.animation.AnimationHierarchyItem;
 import com.akjava.gwt.three.client.gwt.animation.AnimationKey;
+import com.akjava.gwt.three.client.gwt.animation.NameAndVector3;
 import com.akjava.gwt.three.client.gwt.animation.WeightBuilder;
 import com.akjava.gwt.three.client.gwt.animation.ik.CDDIK;
 import com.akjava.gwt.three.client.lights.Light;
@@ -47,6 +48,7 @@ import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseMoveEvent;
 import com.google.gwt.event.dom.client.MouseOutEvent;
 import com.google.gwt.event.dom.client.MouseUpEvent;
+import com.google.gwt.event.dom.client.MouseWheelEvent;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
@@ -142,6 +144,29 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		doPoseIkk(0);
 		}
 	}
+	
+	@Override
+	public void onMouseWheel(MouseWheelEvent event) {
+		if(event.isShiftKeyDown()){//swapped
+			//TODO make class
+			long t=System.currentTimeMillis();
+			if(mouseLast+100>t){
+				tmpZoom*=2;
+			}else{
+				tmpZoom=defaultZoom;
+			}
+			//GWT.log("wheel:"+event.getDeltaY());
+			int tmp=cameraZ+event.getDeltaY()*tmpZoom;
+			tmp=Math.max(minCamera, tmp);
+			tmp=Math.min(4000, tmp);
+			cameraZ=tmp;
+			mouseLast=t;
+			
+		}else{
+			onMouseWheelWithShiftKey(event.getDeltaY());
+		}
+	}
+	
 	
 	public  void onMouseWheelWithShiftKey(int deltaY){
 		double dy=deltaY*0.2;
@@ -394,9 +419,9 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		Vector3 pos=GWTThreeUtils.toPositionVec(ab.getBoneMatrix(index));
 		//log("pos:"+ThreeLog.get(pos));
-		Matrix4 posMx=GWTThreeUtils.positionToMatrix4(pos);
+		Matrix4 posMx=GWTThreeUtils.translateToMatrix4(pos);
 		
-		Matrix4 rotMx=GWTThreeUtils.rotationToMatrix4(angles,"ZYX");
+		Matrix4 rotMx=GWTThreeUtils.rotationToMatrix4(angles);
 		rotMx.multiply(posMx,rotMx);
 		
 		//log("bone-pos:"+ThreeLog.get(bones.get(index).getPos()));
@@ -412,9 +437,10 @@ HorizontalPanel h1=new HorizontalPanel();
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
 		int boneIndex=ab.getBoneIndex(name);
 		Quaternion q=GWTThreeUtils.jsArrayToQuaternion(bones.get(boneIndex).getRotq());
-		log("bone:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(q))));
+		//log("bone:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(q))));
 				
 		Vector3 angles=GWTThreeUtils.toDegreeAngle(ab.getBoneMatrix(name));
+		log("update-bone:"+ThreeLog.get(angles));
 		int x=(int) angles.getX();
 		if(x==180|| x==-180){
 			x=0;
@@ -661,6 +687,22 @@ public void onError(Request request, Throwable exception) {
 AnimationBonesData ab;
 List<Matrix4> baseMatrixs;		
 
+
+
+
+private void applyMatrix(List<Matrix4> matrix,List<NameAndVector3> samples){
+for(NameAndVector3 nv:samples){
+	int boneIndex=ab.getBoneIndex(nv.getName());
+	Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(ab.getBoneMatrix(boneIndex)));
+	Matrix4 newMatrix=GWTThreeUtils.rotationToMatrix4(nv.getVector3());
+	newMatrix.multiply(translates,newMatrix);
+	log("apply-matrix");
+	matrix.set(boneIndex, newMatrix);
+	}
+}
+
+
+List<List<Matrix4>> nearMatrix;
 private void doPoseIkk(int index){
 		
 		
@@ -687,7 +729,33 @@ private void doPoseIkk(int index){
 		baseMatrixs=AnimationBonesData.boneToMatrix(bones, animationData, index);	
 		ab=new AnimationBonesData(bones,AnimationBonesData.cloneMatrix(baseMatrixs) );
 		}
-		ab.setBonesMatrixs(AnimationBonesData.cloneMatrix(baseMatrixs));//
+		
+		//TODO make automatic
+		//this is find base matrix ,because sometime cdd-ik faild from some position
+		nearMatrix=new ArrayList<List<Matrix4>>();
+		nearMatrix.add(AnimationBonesData.cloneMatrix(baseMatrixs));
+		
+		
+		List<NameAndVector3> sample=new ArrayList<NameAndVector3>();
+		sample.add(new NameAndVector3("RightLeg", GWTThreeUtils.degreeToRagiant(THREE.Vector3(90, 0, 0)), 0));
+		sample.add(new NameAndVector3("RightUpLeg", GWTThreeUtils.degreeToRagiant(THREE.Vector3(-90, 0, 0)), 0));
+		List<Matrix4> bm=AnimationBonesData.cloneMatrix(baseMatrixs);
+		applyMatrix(bm, sample);
+		nearMatrix.add(bm);
+		
+		
+		List<NameAndVector3> sample1=new ArrayList<NameAndVector3>();
+		sample1.add(new NameAndVector3("RightLeg", GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, 0)), 0));
+		sample1.add(new NameAndVector3("RightUpLeg", GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, 45)), 0));
+		List<Matrix4> bm1=AnimationBonesData.cloneMatrix(baseMatrixs);
+		applyMatrix(bm1, sample);
+		
+		
+		
+		
+		ab.setBonesMatrixs(findStartMatrix("RightFoot",targetPos));//
+		//ab.setBonesMatrixs(null);
+		
 		
 		//doCDDIk();
 		Vector3 tmp1=null,tmp2=null;
@@ -706,6 +774,63 @@ private void doPoseIkk(int index){
 		Matrix4 jointRot=ab.getBoneMatrix(targetName);
 		
 		Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, targetPos);
+		
+		//limit angles
+		Vector3 angles=GWTThreeUtils.rotationToVector3(newMatrix);
+		Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(newMatrix));
+		if(targetName.equals("RightLeg")){
+			//z only accept
+			double zMin=Math.toRadians(0);
+			double zMax=Math.toRadians(20);
+			if(angles.getZ()<zMin){
+				angles.setZ(zMin);
+			}
+			if(angles.getZ()>zMax){
+				angles.setZ(zMax);
+			}
+			angles.setY(0);
+			
+			double xMin=Math.toRadians(0);
+			if(angles.getX()<xMin){
+				angles.setX(xMin);
+			}
+			
+		}
+		else if(targetName.equals("RightUpLeg")){
+			//z only accept
+			double zMin=Math.toRadians(-80);
+			double zMax=Math.toRadians(40);
+			if(angles.getZ()<zMin){
+				angles.setZ(zMin);
+			}
+			if(angles.getZ()>zMax){
+				angles.setZ(zMax);
+			}
+			
+			double yMin=Math.toRadians(-35);
+			double yMax=Math.toRadians(35);
+			
+			if(angles.getY()<yMin){
+				angles.setY(yMin);
+			}
+			if(angles.getY()>yMax){
+				angles.setY(yMax);
+			}
+			
+			double xMin=Math.toRadians(-85);
+			double xMax=Math.toRadians(90);
+			
+			if(angles.getX()<xMin){
+				angles.setX(xMin);
+			}
+			if(angles.getX()>xMax){
+				angles.setX(xMax);
+			}
+			
+		}
+		newMatrix=GWTThreeUtils.rotationToMatrix4(angles);
+		newMatrix.multiply(translates,newMatrix);
+		
 		ab.setBoneMatrix(boneIndex, newMatrix);
 		
 		//log(targetName+":"+ThreeLog.getAngle(jointRot)+",new"+ThreeLog.getAngle(newMatrix));
@@ -719,7 +844,7 @@ private void doPoseIkk(int index){
 		}
 		
 		doPoseByMatrix(ab);
-		
+		updateBoneRanges();
 		//bone3D.add(GWTUtils.createSimpleBox(tmp1, 1, 0x0000ff));
 		//bone3D.add(GWTUtils.createSimpleBox(tmp2, 1, 0x000088));
 		
@@ -732,6 +857,24 @@ private void doPoseIkk(int index){
 			bone3D.add(tmp);
 		}*/
 	}
+private List<Matrix4> findStartMatrix(String boneName,Vector3 targetPos) {
+	List<Matrix4> retMatrix=nearMatrix.get(0);
+	ab.setBonesMatrixs(retMatrix);
+	Vector3 tpos=ab.getPosition(boneName);
+	double minlength=targetPos.clone().subSelf(tpos).length();
+	for(int i=1;i<nearMatrix.size();i++){
+		List<Matrix4> mxs=nearMatrix.get(i);
+		ab.setBonesMatrixs(mxs);//TODO change
+		Vector3 tmpPos=ab.getPosition(boneName);
+		double tmpLength=targetPos.clone().subSelf(tmpPos).length();
+		if(tmpLength<minlength){
+			minlength=tmpLength;
+			retMatrix=mxs;
+		}
+	}
+	return retMatrix;
+}
+
 private void doCDDIk(){
 	
 		String targetName=ikTestNames[ikIndex];
@@ -854,6 +997,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			String name=animationBonesData.getBoneName(boneIndex1);
 			Matrix4 tmpMatrix=GWTThreeUtils.rotationToMatrix4(GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, 20)));
 			if(name.equals("RightLeg")){
+				//TODO rotata parent base
 				//tmpMatrix.multiplyVector3(relatePos);
 			}
 			
@@ -935,7 +1079,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		bodyMesh=THREE.Mesh(geo, bodyMaterial);
 		root.add(bodyMesh);
 		
-		updateBoneRanges();
+		
 		
 		/*
 		geo.setDynamic(true);
