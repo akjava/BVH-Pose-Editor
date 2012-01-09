@@ -35,6 +35,7 @@ import com.akjava.gwt.three.client.gwt.animation.AnimationKey;
 import com.akjava.gwt.three.client.gwt.animation.NameAndVector3;
 import com.akjava.gwt.three.client.gwt.animation.WeightBuilder;
 import com.akjava.gwt.three.client.gwt.animation.ik.CDDIK;
+import com.akjava.gwt.three.client.gwt.animation.ik.IKData;
 import com.akjava.gwt.three.client.lights.Light;
 import com.akjava.gwt.three.client.materials.Material;
 import com.akjava.gwt.three.client.objects.Mesh;
@@ -96,7 +97,27 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		scene.add(root);
 		
 		loadBVH("14_01.bvh");
+		
+		IKData ikdata=new IKData();
+		ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
+		ikdata.setLastBoneName("RightFoot");
+		ikdata.setBones(new String[]{"RightLeg","RightUpLeg"});
+		ikdatas.add(ikdata);
+		
+		//updateIkLabels();
 	}
+	
+	private void updateIkLabels(){
+		log(""+boneNamesBox);
+		boneNamesBox.clear();
+		for(int i=0;i<getCurrentIkData().getBones().size();i++){
+			boneNamesBox.addItem(getCurrentIkData().getBones().get(i));
+		}
+		boneNamesBox.setSelectedIndex(0);
+	}
+	
+	int ikdataIndex=0;
+	List<IKData> ikdatas=new ArrayList<IKData>();
 
 	private boolean clicked=true;
 	@Override
@@ -139,10 +160,13 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		diffX*=0.1;
 		diffY*=-0.1;
-		targetPos.incrementX(diffX);
-		targetPos.incrementY(diffY);
+		getCurrentIkData().getTargetPos().incrementX(diffX);
+		getCurrentIkData().getTargetPos().incrementY(diffY);
 		doPoseIkk(0);
 		}
+	}
+	private IKData getCurrentIkData(){
+		return ikdatas.get(ikdataIndex);
 	}
 	
 	@Override
@@ -170,7 +194,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 	
 	public  void onMouseWheelWithShiftKey(int deltaY){
 		double dy=deltaY*0.2;
-		targetPos.incrementZ(dy);
+		getCurrentIkData().getTargetPos().incrementZ(dy);
 		doPoseIkk(0);
 	}
 
@@ -317,10 +341,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		parent.add(new Label("Bone"));
 		
 		boneNamesBox = new ListBox();
-		for(int i=0;i<ikTestNames.length;i++){
-			boneNamesBox.addItem(ikTestNames[i]);
-		}
-		boneNamesBox.setSelectedIndex(0);
+		
 		boneNamesBox.addChangeHandler(new ChangeHandler() {
 			
 			@Override
@@ -403,6 +424,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		updateMaterial();
 		positionYRange.setValue(-14);//for test
 		
+		updateIkLabels();
 		showControl();
 		
 	}
@@ -753,15 +775,15 @@ private void doPoseIkk(int index){
 		
 		
 		
-		ab.setBonesMatrixs(findStartMatrix("RightFoot",targetPos));//
+		ab.setBonesMatrixs(findStartMatrix("RightFoot",getCurrentIkData().getTargetPos()));//
 		//ab.setBonesMatrixs(null);
 		
 		
 		//doCDDIk();
 		Vector3 tmp1=null,tmp2=null;
-		ikIndex=0;
+		currentIkIndex=0;
 		for(int i=0;i<11;i++){
-		String targetName=ikTestNames[ikIndex];
+		String targetName=getCurrentIkData().getBones().get(currentIkIndex);
 		int boneIndex=ab.getBoneIndex(targetName);
 		Vector3 lastJointPos=ab.getPosition("RightFoot");
 		
@@ -773,7 +795,7 @@ private void doPoseIkk(int index){
 		
 		Matrix4 jointRot=ab.getBoneMatrix(targetName);
 		
-		Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, targetPos);
+		Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, getCurrentIkData().getTargetPos());
 		
 		//limit angles
 		Vector3 angles=GWTThreeUtils.rotationToVector3(newMatrix);
@@ -835,9 +857,9 @@ private void doPoseIkk(int index){
 		
 		//log(targetName+":"+ThreeLog.getAngle(jointRot)+",new"+ThreeLog.getAngle(newMatrix));
 		//log("parentPos,"+ThreeLog.get(jointPos)+",lastPos,"+ThreeLog.get(lastJointPos));
-		ikIndex++;
-		if(ikIndex>=ikTestNames.length){
-			ikIndex=0;
+		currentIkIndex++;
+		if(currentIkIndex>=getCurrentIkData().getBones().size()){
+			currentIkIndex=0;
 		}
 		tmp1=lastJointPos;
 		tmp2=jointPos;
@@ -877,29 +899,29 @@ private List<Matrix4> findStartMatrix(String boneName,Vector3 targetPos) {
 
 private void doCDDIk(){
 	
-		String targetName=ikTestNames[ikIndex];
+		String targetName=getCurrentIkData().getBones().get(currentIkIndex);
 		int boneIndex=ab.getBoneIndex(targetName);
 		Vector3 lastJointPos=ab.getPosition("RightFoot");
 		Vector3 jointPos=ab.getParentPosition(targetName);
 		Matrix4 jointRot=ab.getBoneMatrix(targetName);
 		
-		Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, targetPos);
+		Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, getCurrentIkData().getTargetPos());
 		ab.setBoneMatrix(boneIndex, newMatrix);
 		
 		//log(targetName+":"+ThreeLog.getAngle(jointRot)+",new"+ThreeLog.getAngle(newMatrix));
 		//log("parentPos,"+ThreeLog.get(jointPos)+",lastPos,"+ThreeLog.get(lastJointPos));
-		ikIndex++;
-		if(ikIndex>=ikTestNames.length){
-			ikIndex=0;
+		currentIkIndex++;
+		if(currentIkIndex>=getCurrentIkData().getBones().size()){
+			currentIkIndex=0;
 		}
 		
 		doPoseByMatrix(ab);
 }
 CDDIK cddIk=new CDDIK();
-	int ikIndex=0;
-	private String[] ikTestNames={"RightLeg","RightUpLeg"};
+	int currentIkIndex=0;
+	//private String[] ikTestNames={"RightLeg","RightUpLeg"};
 	
-	Vector3 targetPos=THREE.Vector3(-10, -3, 0);
+	//Vector3 targetPos=THREE.Vector3(-10, -3, 0);
 	private ListBox boneNamesBox;
 	
 private void doPoseByMatrix(AnimationBonesData animationBonesData){
@@ -916,7 +938,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
 		//test ikk
 		Mesh cddIk0=THREE.Mesh(THREE.CubeGeometry(.5, .5, .5),THREE.MeshLambertMaterial().color(0x00ff00).build());
-		cddIk0.setPosition(targetPos);
+		cddIk0.setPosition(getCurrentIkData().getTargetPos());
 		bone3D.add(cddIk0);
 		
 		
@@ -1115,7 +1137,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
 		//test ikk
 		Mesh cddIk0=THREE.Mesh(THREE.CubeGeometry(.5, .5, .5),THREE.MeshLambertMaterial().color(0x00ff00).build());
-		cddIk0.setPosition(targetPos);
+		cddIk0.setPosition(getCurrentIkData().getTargetPos());
 		bone3D.add(cddIk0);
 		
 		
