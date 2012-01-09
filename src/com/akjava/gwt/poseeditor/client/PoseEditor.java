@@ -23,20 +23,29 @@ import com.akjava.gwt.three.client.extras.ImageUtils;
 import com.akjava.gwt.three.client.extras.loaders.JSONLoader;
 import com.akjava.gwt.three.client.extras.loaders.JSONLoader.LoadHandler;
 import com.akjava.gwt.three.client.gwt.GWTGeometryUtils;
+import com.akjava.gwt.three.client.gwt.GWTThreeUtils;
 import com.akjava.gwt.three.client.gwt.SimpleDemoEntryPoint;
+import com.akjava.gwt.three.client.gwt.ThreeLog;
 import com.akjava.gwt.three.client.gwt.animation.AnimationBone;
+import com.akjava.gwt.three.client.gwt.animation.AnimationBonesData;
 import com.akjava.gwt.three.client.gwt.animation.AnimationData;
 import com.akjava.gwt.three.client.gwt.animation.AnimationHierarchyItem;
 import com.akjava.gwt.three.client.gwt.animation.AnimationKey;
 import com.akjava.gwt.three.client.gwt.animation.WeightBuilder;
+import com.akjava.gwt.three.client.gwt.animation.ik.CDDIK;
 import com.akjava.gwt.three.client.lights.Light;
 import com.akjava.gwt.three.client.materials.Material;
 import com.akjava.gwt.three.client.objects.Mesh;
 import com.akjava.gwt.three.client.renderers.WebGLRenderer;
 import com.google.gwt.core.client.JsArray;
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseMoveEvent;
+import com.google.gwt.event.dom.client.MouseOutEvent;
+import com.google.gwt.event.dom.client.MouseUpEvent;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
@@ -47,6 +56,8 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.Panel;
 
 
@@ -84,17 +95,59 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		loadBVH("14_01.bvh");
 	}
 
+	private boolean clicked=true;
 	@Override
 	public void onMouseClick(ClickEvent event) {
-		// TODO Auto-generated method stub
 		
+		//not work correctly on zoom
+		//Vector3 pos=GWTUtils.toWebGLXY(event.getX(), event.getY(), camera, screenWidth, screenHeight);
+		
+	//	targetPos.setX(pos.getX());
+		//targetPos.setY(pos.getY());
+		
+		//doCDDIk();
+		//doPoseIkk(0);
 	}
 
 	@Override
-	public void onMouseMove(MouseMoveEvent event) {
-		// TODO Auto-generated method stub
-		
+	public void onMouseDown(MouseDownEvent event) {
+		mouseDown=true;
+		mouseDownX=event.getX();
+		mouseDownY=event.getY();
 	}
+
+	@Override
+	public void onMouseUp(MouseUpEvent event) {
+		mouseDown=false;
+	}
+	
+	@Override
+	public void onMouseOut(MouseOutEvent event) {
+		mouseDown=false;
+	}
+	
+	@Override
+	public void onMouseMove(MouseMoveEvent event) {
+		if(mouseDown){
+		double diffX=event.getX()-mouseDownX;
+		double diffY=event.getY()-mouseDownY;
+		mouseDownX=event.getX();
+		mouseDownY=event.getY();
+		
+		diffX*=0.1;
+		diffY*=-0.1;
+		targetPos.incrementX(diffX);
+		targetPos.incrementY(diffY);
+		doPoseIkk(0);
+		}
+	}
+	
+	public  void onMouseWheelWithShiftKey(int deltaY){
+		double dy=deltaY*0.2;
+		targetPos.incrementZ(dy);
+		doPoseIkk(0);
+	}
+
 	private HTML5InputRange positionXRange;
 	private HTML5InputRange positionYRange;
 	private HTML5InputRange positionZRange;
@@ -103,6 +156,9 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 	private HTML5InputRange rotationRange;
 	private HTML5InputRange rotationYRange;
 	private HTML5InputRange rotationZRange;
+	private HTML5InputRange rotationBoneRange;
+	private HTML5InputRange rotationBoneYRange;
+	private HTML5InputRange rotationBoneZRange;
 	@Override
 	public void createControl(Panel parent) {
 HorizontalPanel h1=new HorizontalPanel();
@@ -202,6 +258,9 @@ HorizontalPanel h1=new HorizontalPanel();
 				updateMaterial();
 			}
 		});
+		
+		transparentCheck.setValue(true);
+		
 		basicMaterialCheck = new CheckBox();
 		parent.add(basicMaterialCheck);
 		basicMaterialCheck.setText("BasicMaterial");
@@ -227,7 +286,145 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
+	
+		
+		parent.add(new Label("Bone"));
+		
+		boneNamesBox = new ListBox();
+		for(int i=0;i<ikTestNames.length;i++){
+			boneNamesBox.addItem(ikTestNames[i]);
+		}
+		boneNamesBox.setSelectedIndex(0);
+		boneNamesBox.addChangeHandler(new ChangeHandler() {
+			
+			@Override
+			public void onChange(ChangeEvent event) {
+				updateBoneRanges();
+			}
+		});
+		parent.add(boneNamesBox);
+		
+		
+		HorizontalPanel h1b=new HorizontalPanel();
+		rotationBoneRange = new HTML5InputRange(-180,180,0);
+		parent.add(HTML5Builder.createRangeLabel("X-Rotate:", rotationBoneRange));
+		parent.add(h1b);
+		h1b.add(rotationBoneRange);
+		Button resetB1=new Button("Reset");
+		resetB1.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				rotationBoneRange.setValue(0);
+				rangeToBone();
+			}
+		});
+		h1b.add(resetB1);
+		rotationBoneRange.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				rangeToBone();
+			}
+		});
+		
+		HorizontalPanel h2b=new HorizontalPanel();
+		
+		rotationBoneYRange = new HTML5InputRange(-180,180,0);
+		parent.add(HTML5Builder.createRangeLabel("Y-Rotate:", rotationBoneYRange));
+		parent.add(h2b);
+		h2b.add(rotationBoneYRange);
+		Button reset2b=new Button("Reset");
+		reset2b.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				rotationBoneYRange.setValue(0);
+				rangeToBone();
+			}
+		});
+		h2b.add(reset2b);
+		rotationBoneYRange.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				rangeToBone();
+			}
+		});
+		
+		
+		HorizontalPanel h3b=new HorizontalPanel();
+		rotationBoneZRange = new HTML5InputRange(-180,180,0);
+		parent.add(HTML5Builder.createRangeLabel("Z-Rotate:", rotationBoneZRange));
+		parent.add(h3b);
+		h3b.add(rotationBoneZRange);
+		Button reset3b=new Button("Reset");
+		reset3b.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				rotationBoneZRange.setValue(0);
+				rangeToBone();
+			}
+		});
+		h3b.add(reset3b);
+		rotationBoneZRange.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				rangeToBone();
+			}
+		});
+		
+		
 		updateMaterial();
+		positionYRange.setValue(-14);//for test
+		
+		showControl();
+		
+	}
+	private void rangeToBone(){
+		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
+		int index=ab.getBoneIndex(name);
+		//Matrix4 mx=ab.getBoneMatrix(name);
+		Vector3 angles=THREE.Vector3(Math.toRadians(rotationBoneRange.getValue()),
+				Math.toRadians(rotationBoneYRange.getValue())
+				, Math.toRadians(rotationBoneZRange.getValue()));
+		log("set-angle:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
+		//mx.setRotationFromEuler(angles, "XYZ");
+		
+		
+		Vector3 pos=GWTThreeUtils.toPositionVec(ab.getBoneMatrix(index));
+		log("pos:"+ThreeLog.get(pos));
+		Matrix4 posMx=GWTThreeUtils.positionToMatrix4(pos);
+		
+		Matrix4 rotMx=GWTThreeUtils.rotationToMatrix4(angles);
+		rotMx.multiply(posMx,rotMx);
+		
+		log("bone-pos:"+ThreeLog.get(bones.get(index).getPos()));
+		
+		Vector3 changed=GWTThreeUtils.toDegreeAngle(rotMx);
+		log("seted-angle:"+ThreeLog.get(changed));
+		ab.setBoneMatrix(index, rotMx);
+		doPoseByMatrix(ab);
+	}
+	
+	private void updateBoneRanges(){
+		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
+		Vector3 angles=GWTThreeUtils.toDegreeAngle(ab.getBoneMatrix(name));
+		int x=(int) angles.getX();
+		if(x==180|| x==-180){
+			x=0;
+		}
+		rotationBoneRange.setValue(x);
+		int y=(int) angles.getY();
+		if(y==180|| y==-180){
+			y=0;
+		}
+		rotationBoneYRange.setValue(y);
+	
+		int z=(int) angles.getZ();
+		if(z==180|| z==-180){
+			z=0;
+		}
+		rotationBoneZRange.setValue(z);
 	}
 	
 	private Material bodyMaterial;
@@ -308,7 +505,7 @@ public void onError(Request request, Throwable exception) {
 					@Override
 					public void loaded(Geometry geometry) {
 						baseGeometry=geometry;
-						doPose(3651);
+						doPose(0);
 					}
 				});
 			}
@@ -369,12 +566,12 @@ public void onError(Request request, Throwable exception) {
 			mx2.setRotationFromQuaternion(motion.getRot());
 			mx.multiplySelf(mx2);
 			
-			
+			/*
 			Vector3 tmpRot=THREE.Vector3();
 			tmpRot.setRotationFromMatrix(mx);
 			Vector3 tmpPos=THREE.Vector3();
 			tmpPos.setPositionFromMatrix(mx);
-			
+			*/
 			//LogUtils.log(tmpPos.getX()+","+tmpPos.getY()+","+tmpPos.getZ());
 			//LogUtils.log(Math.toDegrees(tmpRot.))
 			
@@ -437,14 +634,324 @@ public void onError(Request request, Throwable exception) {
 			}
 		
 		
-		bonePath=boneToPath(bones);
-		boneMatrix=boneToBoneMatrix(bones,animationData,index);
 		
+		boneMatrix=boneToBoneMatrix(bones,animationData,index);
+		doPose(boneMatrix);
+		
+		
+		
+		//test amtrix
+		/*
+		for(int i=0;i<ab.getLength();i++){
+			Vector3 pos=ab.getPosition(i);
+			Mesh tmp=THREE.Mesh(THREE.CubeGeometry(1, 1, 1), THREE.MeshBasicMaterial().build());
+			tmp.setPosition(pos);
+			bone3D.add(tmp);
+		}*/
+	}
+	
+	
+	
+AnimationBonesData ab;
+List<Matrix4> baseMatrixs;		
+
+private void doPoseIkk(int index){
+		
+		
+		if(bodyMesh==null){//initial
+			bodyIndices = (JsArray<Vector4>) JsArray.createArray();
+			bodyWeight = (JsArray<Vector4>) JsArray.createArray();
+			WeightBuilder.autoWeight(baseGeometry, bones, 2, bodyIndices, bodyWeight);
+			
+			
+			
+			}else{
+				root.remove(bodyMesh);
+			}
+		
+		
+		
+	//	boneMatrix=boneToBoneMatrix(bones,animationData,index);
+		
+		
+		
+		
+		
+		if(ab==null){
+		baseMatrixs=AnimationBonesData.boneToMatrix(bones, animationData, index);	
+		ab=new AnimationBonesData(bones,AnimationBonesData.cloneMatrix(baseMatrixs) );
+		}
+		ab.setBonesMatrixs(AnimationBonesData.cloneMatrix(baseMatrixs));//
+		
+		//doCDDIk();
+		Vector3 tmp1=null,tmp2=null;
+		ikIndex=0;
+		for(int i=0;i<11;i++){
+		String targetName=ikTestNames[ikIndex];
+		int boneIndex=ab.getBoneIndex(targetName);
+		Vector3 lastJointPos=ab.getPosition("RightFoot");
+		
+		
+		
+		//Vector3 jointPos=ab.getParentPosition(targetName);
+		Vector3 jointPos=ab.getPosition(targetName);
+		
+		
+		Matrix4 jointRot=ab.getBoneMatrix(targetName);
+		
+		Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, targetPos);
+		ab.setBoneMatrix(boneIndex, newMatrix);
+		
+		//log(targetName+":"+ThreeLog.getAngle(jointRot)+",new"+ThreeLog.getAngle(newMatrix));
+		//log("parentPos,"+ThreeLog.get(jointPos)+",lastPos,"+ThreeLog.get(lastJointPos));
+		ikIndex++;
+		if(ikIndex>=ikTestNames.length){
+			ikIndex=0;
+		}
+		tmp1=lastJointPos;
+		tmp2=jointPos;
+		}
+		
+		doPoseByMatrix(ab);
+		
+		//bone3D.add(GWTUtils.createSimpleBox(tmp1, 1, 0x0000ff));
+		//bone3D.add(GWTUtils.createSimpleBox(tmp2, 1, 0x000088));
+		
+		//test amtrix
+		/*
+		for(int i=0;i<ab.getLength();i++){
+			Vector3 pos=ab.getPosition(i);
+			Mesh tmp=THREE.Mesh(THREE.CubeGeometry(1, 1, 1), THREE.MeshBasicMaterial().build());
+			tmp.setPosition(pos);
+			bone3D.add(tmp);
+		}*/
+	}
+private void doCDDIk(){
+	
+		String targetName=ikTestNames[ikIndex];
+		int boneIndex=ab.getBoneIndex(targetName);
+		Vector3 lastJointPos=ab.getPosition("RightFoot");
+		Vector3 jointPos=ab.getParentPosition(targetName);
+		Matrix4 jointRot=ab.getBoneMatrix(targetName);
+		
+		Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, targetPos);
+		ab.setBoneMatrix(boneIndex, newMatrix);
+		
+		//log(targetName+":"+ThreeLog.getAngle(jointRot)+",new"+ThreeLog.getAngle(newMatrix));
+		//log("parentPos,"+ThreeLog.get(jointPos)+",lastPos,"+ThreeLog.get(lastJointPos));
+		ikIndex++;
+		if(ikIndex>=ikTestNames.length){
+			ikIndex=0;
+		}
+		
+		doPoseByMatrix(ab);
+}
+CDDIK cddIk=new CDDIK();
+	int ikIndex=0;
+	private String[] ikTestNames={"RightLeg","RightUpLeg"};
+	
+	Vector3 targetPos=THREE.Vector3(-10, -3, 0);
+	private ListBox boneNamesBox;
+	
+private void doPoseByMatrix(AnimationBonesData animationBonesData){
+		
+		
+	List<Matrix4> boneMatrix=animationBonesData.getBonesMatrixs();
+		
+		bonePath=boneToPath(bones);
 		if(bone3D!=null){
 			root.remove(bone3D);
 		}
 		bone3D=THREE.Object3D();
 		root.add(bone3D);
+		
+		//test ikk
+		Mesh cddIk0=THREE.Mesh(THREE.CubeGeometry(.5, .5, .5),THREE.MeshLambertMaterial().color(0x00ff00).build());
+		cddIk0.setPosition(targetPos);
+		bone3D.add(cddIk0);
+		
+		
+		
+		List<Matrix4> moveMatrix=new ArrayList<Matrix4>(); 
+		List<Vector3> bonePositions=new ArrayList<Vector3>();
+		for(int i=0;i<bones.length();i++){
+			Matrix4 mv=boneMatrix.get(i);
+			Mesh mesh=THREE.Mesh(THREE.CubeGeometry(.4, .4, .4),THREE.MeshLambertMaterial().color(0xff0000).build());
+			bone3D.add(mesh);
+			
+			Vector3 pos=THREE.Vector3();
+			pos.setPositionFromMatrix(boneMatrix.get(i));
+			
+			Vector3 rot=GWTThreeUtils.rotationToVector3(GWTThreeUtils.jsArrayToQuaternion(bones.get(i).getRotq()));
+			
+			List<Integer> path=bonePath.get(i);
+			String boneName=bones.get(i).getName();
+			//log(boneName);
+			
+			
+			
+			Matrix4 matrix=THREE.Matrix4();
+			for(int j=0;j<path.size()-1;j++){//last is boneself
+			//	log(""+path.get(j));
+				Matrix4 mx=boneMatrix.get(path.get(j));
+				matrix.multiply(matrix, mx);
+			}
+			matrix.multiplyVector3(pos);
+			matrix.multiply(matrix, boneMatrix.get(path.get(path.size()-1)));//last one
+			moveMatrix.add(matrix);
+			
+			
+			
+			if(bones.get(i).getParent()!=-1){
+			Vector3 ppos=bonePositions.get(bones.get(i).getParent());	
+			//pos.addSelf(ppos);
+			
+			Mesh line=GWTGeometryUtils.createLineMesh(pos, ppos, 0xffffff);
+			bone3D.add(line);
+			
+			//test cdd-ik for choose control
+			if(boneName.equals("RightFoot")){
+				Vector3 ikpos=pos.clone().subSelf(ppos).multiplyScalar(1.5).addSelf(ppos);
+				Mesh cddIk=THREE.Mesh(THREE.CubeGeometry(.5, .5, .5),THREE.MeshLambertMaterial().color(0x00ff00).build());
+				cddIk.setPosition(ikpos);
+				//bone3D.add(cddIk);
+				Mesh ikline=GWTGeometryUtils.createLineMesh(pos, ikpos, 0xffffff);
+				//bone3D.add(ikline);
+			}
+			}
+			mesh.setRotation(rot);
+			mesh.setPosition(pos);
+			bonePositions.add(pos);
+		}
+		
+		//Geometry geo=GeometryUtils.clone(baseGeometry);
+		
+
+		
+		
+		//Geometry geo=bodyMesh.getGeometry();
+		Geometry geo=GeometryUtils.clone(baseGeometry);
+		
+		
+		for(int i=0;i<baseGeometry.vertices().length();i++){
+			Vertex baseVertex=baseGeometry.vertices().get(i);
+			Vertex targetVertex=geo.vertices().get(i);
+			
+			int boneIndex1=(int) bodyIndices.get(i).getX();
+			int boneIndex2=(int) bodyIndices.get(i).getY();
+			
+			Vector3 bonePos=animationBonesData.getBasePosition(boneIndex1);
+			Vector3 relatePos=bonePos.clone();
+			relatePos.sub(baseVertex.getPosition(),bonePos);
+			double length=relatePos.length();
+			
+			moveMatrix.get(boneIndex1).multiplyVector3(relatePos);
+			//relatePos.addSelf(bonePos);
+			if(boneIndex2!=boneIndex1){
+				Vector3 bonePos2=animationBonesData.getBasePosition(boneIndex2);
+				Vector3 relatePos2=bonePos2.clone();
+				relatePos2.sub(baseVertex.getPosition(),bonePos2);
+				double length2=relatePos2.length();
+				moveMatrix.get(boneIndex2).multiplyVector3(relatePos2);
+				
+				
+				//scalar weight
+				
+				relatePos.multiplyScalar(bodyWeight.get(i).getX());
+			
+				relatePos2.multiplyScalar(bodyWeight.get(i).getY());
+				relatePos.addSelf(relatePos2);
+				
+				
+				//keep distance1 faild
+				
+				/*
+				if(length<1){	//length2
+					
+					Vector3 abpos=THREE.Vector3();
+					abpos.sub(relatePos, bonePositions.get(boneIndex1));
+					double scar=abpos.length()/length;
+					abpos.multiplyScalar(scar);
+					abpos.addSelf(bonePositions.get(boneIndex1));
+					relatePos.set(abpos.getX(), abpos.getY(), abpos.getZ());
+				}*/
+				
+				if(length2<1){
+				Vector3 abpos=THREE.Vector3();
+				abpos.sub(relatePos, bonePositions.get(boneIndex2));
+				double scar=abpos.length()/length2;
+				abpos.multiplyScalar(scar);
+				abpos.addSelf(bonePositions.get(boneIndex2));
+				relatePos.set(abpos.getX(), abpos.getY(), abpos.getZ());
+				
+				}
+				/*
+				Vector3 diff=THREE.Vector3();
+				diff.sub(relatePos2, relatePos);
+				diff.multiplyScalar(bodyWeight.get(i).getY());
+				relatePos.addSelf(diff);
+				*/
+			}
+			
+			
+			targetVertex.getPosition().set(relatePos.getX(), relatePos.getY(), relatePos.getZ());
+		}
+		
+		geo.computeFaceNormals();
+		geo.computeVertexNormals();
+		
+		//Material material=THREE.MeshLambertMaterial().map(ImageUtils.loadTexture("men3smart_texture.png")).build();
+		
+		if(bodyMesh==null){//initial
+			bodyIndices = (JsArray<Vector4>) JsArray.createArray();
+			bodyWeight = (JsArray<Vector4>) JsArray.createArray();
+			WeightBuilder.autoWeight(baseGeometry, bones, 2, bodyIndices, bodyWeight);	
+			}else{
+				root.remove(bodyMesh);
+			}
+		
+		bodyMesh=THREE.Mesh(geo, bodyMaterial);
+		root.add(bodyMesh);
+		
+		updateBoneRanges();
+		
+		/*
+		geo.setDynamic(true);
+		geo.setDirtyVertices(true);
+		geo.computeBoundingSphere();
+		*/
+		
+		//
+		//bodyMesh.setGeometry(geo);
+		
+		//bodyMesh.gwtBoundingSphere();
+		//geo.computeTangents();
+		
+		
+		/*
+		geo.setDynamic(true);
+		geo.setDirtyVertices(true);
+		geo.computeFaceNormals();
+		geo.computeVertexNormals();
+		geo.computeTangents();
+		*/
+		}	
+	private void doPose(List<MatrixAndVector3> boneMatrix){
+		
+		
+		
+		bonePath=boneToPath(bones);
+		if(bone3D!=null){
+			root.remove(bone3D);
+		}
+		bone3D=THREE.Object3D();
+		root.add(bone3D);
+		
+		//test ikk
+		Mesh cddIk0=THREE.Mesh(THREE.CubeGeometry(.5, .5, .5),THREE.MeshLambertMaterial().color(0x00ff00).build());
+		cddIk0.setPosition(targetPos);
+		bone3D.add(cddIk0);
+		
 		
 		List<Matrix4> moveMatrix=new ArrayList<Matrix4>(); 
 		List<Vector3> bonePositions=new ArrayList<Vector3>();
@@ -455,7 +962,13 @@ public void onError(Request request, Throwable exception) {
 			
 			Vector3 pos=mv.getPosition().clone();
 			List<Integer> path=bonePath.get(i);
-			//log(bones.get(i).getName());
+			String boneName=bones.get(i).getName();
+			//log(boneName);
+			
+			Matrix4 tmpmx=boneMatrix.get(path.get(path.size()-1)).getMatrix();
+			Vector3 tmpp=THREE.Vector3();
+			tmpp.setPositionFromMatrix(tmpmx);
+			//log(pos.getX()+","+pos.getY()+","+pos.getZ()+":"+tmpp.getX()+","+tmpp.getY()+","+tmpp.getZ());
 			
 			Matrix4 matrix=THREE.Matrix4();
 			for(int j=0;j<path.size()-1;j++){//last is boneself
@@ -475,6 +988,16 @@ public void onError(Request request, Throwable exception) {
 			
 			Mesh line=GWTGeometryUtils.createLineMesh(pos, ppos, 0xffffff);
 			bone3D.add(line);
+			
+			//test cdd-ik
+			if(boneName.equals("RightFoot")){
+				Vector3 ikpos=pos.clone().subSelf(ppos).multiplyScalar(1.5).addSelf(ppos);
+				Mesh cddIk=THREE.Mesh(THREE.CubeGeometry(.5, .5, .5),THREE.MeshLambertMaterial().color(0x00ff00).build());
+				cddIk.setPosition(ikpos);
+				bone3D.add(cddIk);
+				Mesh ikline=GWTGeometryUtils.createLineMesh(pos, ikpos, 0xffffff);
+				bone3D.add(ikline);
+			}
 			}else{
 				//root action
 				Matrix4 mx=boneMatrix.get(0).getMatrix();
@@ -564,6 +1087,8 @@ public void onError(Request request, Throwable exception) {
 		
 		bodyMesh=THREE.Mesh(geo, bodyMaterial);
 		root.add(bodyMesh);
+		
+		
 		
 		/*
 		geo.setDynamic(true);
