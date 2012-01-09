@@ -15,6 +15,7 @@ import com.akjava.gwt.three.client.THREE;
 import com.akjava.gwt.three.client.core.Geometry;
 import com.akjava.gwt.three.client.core.Matrix4;
 import com.akjava.gwt.three.client.core.Object3D;
+import com.akjava.gwt.three.client.core.Quaternion;
 import com.akjava.gwt.three.client.core.Vector3;
 import com.akjava.gwt.three.client.core.Vector4;
 import com.akjava.gwt.three.client.core.Vertex;
@@ -387,27 +388,32 @@ HorizontalPanel h1=new HorizontalPanel();
 		Vector3 angles=THREE.Vector3(Math.toRadians(rotationBoneRange.getValue()),
 				Math.toRadians(rotationBoneYRange.getValue())
 				, Math.toRadians(rotationBoneZRange.getValue()));
-		log("set-angle:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
+		//log("set-angle:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
 		//mx.setRotationFromEuler(angles, "XYZ");
 		
 		
 		Vector3 pos=GWTThreeUtils.toPositionVec(ab.getBoneMatrix(index));
-		log("pos:"+ThreeLog.get(pos));
+		//log("pos:"+ThreeLog.get(pos));
 		Matrix4 posMx=GWTThreeUtils.positionToMatrix4(pos);
 		
-		Matrix4 rotMx=GWTThreeUtils.rotationToMatrix4(angles);
+		Matrix4 rotMx=GWTThreeUtils.rotationToMatrix4(angles,"ZYX");
 		rotMx.multiply(posMx,rotMx);
 		
-		log("bone-pos:"+ThreeLog.get(bones.get(index).getPos()));
+		//log("bone-pos:"+ThreeLog.get(bones.get(index).getPos()));
 		
 		Vector3 changed=GWTThreeUtils.toDegreeAngle(rotMx);
-		log("seted-angle:"+ThreeLog.get(changed));
+		//log("seted-angle:"+ThreeLog.get(changed));
 		ab.setBoneMatrix(index, rotMx);
 		doPoseByMatrix(ab);
 	}
 	
 	private void updateBoneRanges(){
+		
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
+		int boneIndex=ab.getBoneIndex(name);
+		Quaternion q=GWTThreeUtils.jsArrayToQuaternion(bones.get(boneIndex).getRotq());
+		log("bone:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(q))));
+				
 		Vector3 angles=GWTThreeUtils.toDegreeAngle(ab.getBoneMatrix(name));
 		int x=(int) angles.getX();
 		if(x==180|| x==-180){
@@ -497,7 +503,7 @@ public void onError(Request request, Throwable exception) {
 				
 				AnimationDataConverter dataConverter=new AnimationDataConverter();
 				dataConverter.setSkipFirst(false);
-				animationData = dataConverter.convertJsonAnimation(bvh);
+				animationData = dataConverter.convertJsonAnimation(bones,bvh);
 				frameRange.setMax(animationData.getHierarchy().get(0).getKeys().length());
 				
 				JSONLoader loader=THREE.JSONLoader();
@@ -845,6 +851,12 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			relatePos.sub(baseVertex.getPosition(),bonePos);
 			double length=relatePos.length();
 			
+			String name=animationBonesData.getBoneName(boneIndex1);
+			Matrix4 tmpMatrix=GWTThreeUtils.rotationToMatrix4(GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, 20)));
+			if(name.equals("RightLeg")){
+				//tmpMatrix.multiplyVector3(relatePos);
+			}
+			
 			moveMatrix.get(boneIndex1).multiplyVector3(relatePos);
 			//relatePos.addSelf(bonePos);
 			if(boneIndex2!=boneIndex1){
@@ -854,6 +866,11 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 				double length2=relatePos2.length();
 				moveMatrix.get(boneIndex2).multiplyVector3(relatePos2);
 				
+				
+				if(name.equals("RightLeg")){
+					//Matrix4 tmpMatrix2=GWTThreeUtils.rotationToMatrix4(GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, -20)));
+					//tmpMatrix2.multiplyVector3(relatePos);
+				}
 				
 				//scalar weight
 				
@@ -891,6 +908,11 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 				diff.multiplyScalar(bodyWeight.get(i).getY());
 				relatePos.addSelf(diff);
 				*/
+			}else{
+				if(name.equals("RightLeg")){
+				//	Matrix4 tmpMatrix2=GWTThreeUtils.rotationToMatrix4(GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, -20)));
+				//	tmpMatrix2.multiplyVector3(relatePos);
+				}
 			}
 			
 			
