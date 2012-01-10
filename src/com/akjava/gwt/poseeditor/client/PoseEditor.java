@@ -933,8 +933,8 @@ private void initializeAnimationData(int index,boolean resetMatrix){
 	
 	//ab.setBonesMatrixs(findStartMatrix("RightFoot",getCurrentIkData().getTargetPos()));//
 	*/
-	if(currentMatrixs!=null && resetMatrix){
-		if(nearMatrix!=null && getCurrentIkData().getLastBoneName().equals("RightFoot")){
+	if(currentMatrixs!=null){
+		if(nearMatrix!=null && getCurrentIkData().getLastBoneName().equals("RightFoot") && resetMatrix){
 			//need bone limit
 			ab.setBonesMatrixs(findStartMatrix(getCurrentIkData().getLastBoneName(),getCurrentIkData().getTargetPos()));//)
 		}else{
