@@ -1,7 +1,9 @@
 package com.akjava.gwt.poseeditor.client;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.akjava.bvh.client.AnimationBoneConverter;
 import com.akjava.bvh.client.AnimationDataConverter;
@@ -13,8 +15,10 @@ import com.akjava.gwt.html5.client.HTML5InputRange.HTML5InputRangeListener;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
 import com.akjava.gwt.three.client.THREE;
 import com.akjava.gwt.three.client.core.Geometry;
+import com.akjava.gwt.three.client.core.Intersect;
 import com.akjava.gwt.three.client.core.Matrix4;
 import com.akjava.gwt.three.client.core.Object3D;
+import com.akjava.gwt.three.client.core.Projector;
 import com.akjava.gwt.three.client.core.Quaternion;
 import com.akjava.gwt.three.client.core.Vector3;
 import com.akjava.gwt.three.client.core.Vector4;
@@ -32,12 +36,14 @@ import com.akjava.gwt.three.client.gwt.animation.AnimationBonesData;
 import com.akjava.gwt.three.client.gwt.animation.AnimationData;
 import com.akjava.gwt.three.client.gwt.animation.AnimationHierarchyItem;
 import com.akjava.gwt.three.client.gwt.animation.AnimationKey;
+import com.akjava.gwt.three.client.gwt.animation.BoneLimit;
 import com.akjava.gwt.three.client.gwt.animation.NameAndVector3;
 import com.akjava.gwt.three.client.gwt.animation.WeightBuilder;
 import com.akjava.gwt.three.client.gwt.animation.ik.CDDIK;
 import com.akjava.gwt.three.client.gwt.animation.ik.IKData;
 import com.akjava.gwt.three.client.lights.Light;
 import com.akjava.gwt.three.client.materials.Material;
+import com.akjava.gwt.three.client.materials.MeshBasicMaterialBuilder;
 import com.akjava.gwt.three.client.objects.Mesh;
 import com.akjava.gwt.three.client.renderers.WebGLRenderer;
 import com.google.gwt.core.client.JsArray;
@@ -98,14 +104,58 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		loadBVH("14_01.bvh");
 		
+		
+		IKData ikdata1=new IKData();
+		//ikdata1.setTargetPos(THREE.Vector3(0, 20, 0));
+		ikdata1.setLastBoneName("Head");
+		ikdata1.setBones(new String[]{"Neck1","Neck","Spine1","Spine","LowerBack"});
+		ikdata1.setIteration(11);
+		ikdatas.add(ikdata1);
+		
+		
+		
+		IKData ikdata0=new IKData();
+		//ikdata0.setTargetPos(THREE.Vector3(-10, 5, 0));
+		ikdata0.setLastBoneName("RightHand");
+		ikdata0.setBones(new String[]{"RightForeArm","RightArm","RightShoulder"});
+		ikdata0.setIteration(7);
+		ikdatas.add(ikdata0);
+		
+		
+		//
 		IKData ikdata=new IKData();
-		ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
+		//ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
 		ikdata.setLastBoneName("RightFoot");
 		ikdata.setBones(new String[]{"RightLeg","RightUpLeg"});
+		ikdata.setIteration(5);
 		ikdatas.add(ikdata);
 		
+		
+		IKData ikdata2=new IKData();
+		//ikdata0.setTargetPos(THREE.Vector3(-10, 5, 0));
+		ikdata2.setLastBoneName("LeftHand");
+		ikdata2.setBones(new String[]{"LeftForeArm","LeftArm","LeftShoulder"});
+		ikdata2.setIteration(7);
+		ikdatas.add(ikdata2);
+		
+		
+		//
+		IKData ikdata3=new IKData();
+		//ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
+		ikdata3.setLastBoneName("LeftFoot");
+		ikdata3.setBones(new String[]{"LeftLeg","LeftUpLeg"});
+		ikdata3.setIteration(5);
+		ikdatas.add(ikdata3);
+		
 		//updateIkLabels();
+		
+		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
+		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-85, 90, -35, 35, -80, 40));
+		 
+		
 	}
+	
+	Map<String,BoneLimit> boneLimits=new HashMap<String,BoneLimit>();
 	
 	private void updateIkLabels(){
 		log(""+boneNamesBox);
@@ -116,13 +166,34 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		boneNamesBox.setSelectedIndex(0);
 	}
 	
-	int ikdataIndex=0;
+	int ikdataIndex=1;
 	List<IKData> ikdatas=new ArrayList<IKData>();
 
-	private boolean clicked=true;
+	
+	Mesh selectionMesh;
+	final Projector projector=THREE.Projector();
 	@Override
 	public void onMouseClick(ClickEvent event) {
+JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.getY(), screenWidth, screenHeight, camera,scene);
 		
+		for(int i=0;i<intersects.length();i++){
+			Intersect sect=intersects.get(i);
+			
+			Object3D target=sect.getObject();
+			if(!target.getName().isEmpty()){
+				if(target.getName().startsWith("ik:")){
+					String bname=target.getName().substring(3);
+					for(int j=0;j<ikdatas.size();j++){
+						if(ikdatas.get(j).getLastBoneName().equals(bname)){
+							ikdataIndex=j;
+							selectionMesh.setPosition(target.getPosition());
+							break;
+						}
+					}
+				}
+				break;
+			}
+		}
 		//not work correctly on zoom
 		//Vector3 pos=GWTUtils.toWebGLXY(event.getX(), event.getY(), camera, screenWidth, screenHeight);
 		
@@ -462,7 +533,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		//log("bone:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(q))));
 				
 		Vector3 angles=GWTThreeUtils.toDegreeAngle(ab.getBoneMatrix(name));
-		log("update-bone:"+ThreeLog.get(angles));
+		//log("update-bone:"+ThreeLog.get(angles));
 		int x=(int) angles.getX();
 		if(x==180|| x==-180){
 			x=0;
@@ -491,10 +562,10 @@ HorizontalPanel h1=new HorizontalPanel();
 			opacity=0.75;
 		}
 		if(basicMaterialCheck.getValue()){
-			material=THREE.MeshBasicMaterial().map(ImageUtils.loadTexture("men3smart_texture.png")).transparent(transparent).opacity(opacity).build();
+			material=THREE.MeshBasicMaterial().map(ImageUtils.loadTexture("men3smart_texture2.png")).transparent(transparent).opacity(opacity).build();
 			
 		}else{
-			material=THREE.MeshLambertMaterial().map(ImageUtils.loadTexture("men3smart_texture.png")).transparent(transparent).opacity(opacity).build();
+			material=THREE.MeshLambertMaterial().map(ImageUtils.loadTexture("men3smart_texture2.png")).transparent(transparent).opacity(opacity).build();
 		}
 		bodyMaterial=material;
 		
@@ -673,35 +744,21 @@ public void onError(Request request, Throwable exception) {
 	Object3D bone3D;
 	private CheckBox transparentCheck;
 	private CheckBox basicMaterialCheck;
+
 	private void doPose(int index){
 		
 		
-		if(bodyMesh==null){//initial
-			bodyIndices = (JsArray<Vector4>) JsArray.createArray();
-			bodyWeight = (JsArray<Vector4>) JsArray.createArray();
-			WeightBuilder.autoWeight(baseGeometry, bones, 2, bodyIndices, bodyWeight);
-			
-			
-			
-			}else{
-				root.remove(bodyMesh);
-			}
+		for(int i=0;i<bones.length();i++){
+			log(bones.get(i).getName());
+		}
 		
 		
-		
-		boneMatrix=boneToBoneMatrix(bones,animationData,index);
-		doPose(boneMatrix);
-		
-		
-		
-		//test amtrix
-		/*
-		for(int i=0;i<ab.getLength();i++){
-			Vector3 pos=ab.getPosition(i);
-			Mesh tmp=THREE.Mesh(THREE.CubeGeometry(1, 1, 1), THREE.MeshBasicMaterial().build());
-			tmp.setPosition(pos);
-			bone3D.add(tmp);
-		}*/
+	initializeBodyMesh();
+	initializeAnimationData(index);
+	//stepCDDIk();	
+	doPoseByMatrix(ab);
+	updateBoneRanges();
+
 	}
 	
 	
@@ -718,166 +775,120 @@ for(NameAndVector3 nv:samples){
 	Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(ab.getBoneMatrix(boneIndex)));
 	Matrix4 newMatrix=GWTThreeUtils.rotationToMatrix4(nv.getVector3());
 	newMatrix.multiply(translates,newMatrix);
-	log("apply-matrix");
+	//log("apply-matrix");
 	matrix.set(boneIndex, newMatrix);
 	}
 }
 
 
 List<List<Matrix4>> nearMatrix;
+
+private void initializeBodyMesh(){
+	//initializeBodyMesh
+			if(bodyMesh==null){//initial
+				bodyIndices = (JsArray<Vector4>) JsArray.createArray();
+				bodyWeight = (JsArray<Vector4>) JsArray.createArray();
+				WeightBuilder.autoWeight(baseGeometry, bones, 2, bodyIndices, bodyWeight);
+				
+				
+				
+				}else{
+					root.remove(bodyMesh);
+				}
+}
+private void initializeAnimationData(int index){
+
+	//initialize AnimationBone
+	if(ab==null){
+	baseMatrixs=AnimationBonesData.boneToMatrix(bones, animationData, index);	
+	ab=new AnimationBonesData(bones,AnimationBonesData.cloneMatrix(baseMatrixs) );
+	}
+	
+	//TODO make automatic
+	//this is find base matrix ,because sometime cdd-ik faild from some position
+	nearMatrix=new ArrayList<List<Matrix4>>();
+	nearMatrix.add(AnimationBonesData.cloneMatrix(baseMatrixs));
+	
+	/*
+	 * for foot
+	List<NameAndVector3> sample=new ArrayList<NameAndVector3>();
+	sample.add(new NameAndVector3("RightLeg", GWTThreeUtils.degreeToRagiant(THREE.Vector3(90, 0, 0)), 0));
+	sample.add(new NameAndVector3("RightUpLeg", GWTThreeUtils.degreeToRagiant(THREE.Vector3(-90, 0, 0)), 0));
+	List<Matrix4> bm=AnimationBonesData.cloneMatrix(baseMatrixs);
+	applyMatrix(bm, sample);
+	nearMatrix.add(bm);
+	
+	
+	List<NameAndVector3> sample1=new ArrayList<NameAndVector3>();
+	sample1.add(new NameAndVector3("RightLeg", GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, 0)), 0));
+	sample1.add(new NameAndVector3("RightUpLeg", GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, 45)), 0));
+	List<Matrix4> bm1=AnimationBonesData.cloneMatrix(baseMatrixs);
+	applyMatrix(bm1, sample);
+	
+	//ab.setBonesMatrixs(findStartMatrix("RightFoot",getCurrentIkData().getTargetPos()));//
+	*/
+	ab.setBonesMatrixs(AnimationBonesData.cloneMatrix(baseMatrixs));
+	
+}
+private void stepCDDIk(){
+
+	//do CDDIK
+	//doCDDIk();
+	Vector3 tmp1=null,tmp2=null;
+	currentIkJointIndex=0;
+	for(int i=0;i<getCurrentIkData().getIteration();i++){
+	String targetBoneName=getCurrentIkData().getBones().get(currentIkJointIndex);
+	int boneIndex=ab.getBoneIndex(targetBoneName);
+	Vector3 lastJointPos=ab.getPosition(getCurrentIkData().getLastBoneName());
+	
+	
+	
+	//Vector3 jointPos=ab.getParentPosition(targetName);
+	Vector3 jointPos=ab.getPosition(targetBoneName);
+	
+	
+	Matrix4 jointRot=ab.getBoneMatrix(targetBoneName);
+	
+	Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, getCurrentIkData().getTargetPos());
+	if(newMatrix==null){
+		continue;
+	}
+	//limit angles
+	Vector3 angles=GWTThreeUtils.rotationToVector3(newMatrix);
+	Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(newMatrix));
+	
+	BoneLimit blimit=boneLimits.get(targetBoneName);
+	log(targetBoneName);
+	log("before-limit:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
+	if(blimit!=null){
+		blimit.apply(angles);
+	}
+	
+	log("after-limit:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
+	newMatrix=GWTThreeUtils.rotationToMatrix4(angles);
+	newMatrix.multiply(translates,newMatrix);
+	
+	ab.setBoneMatrix(boneIndex, newMatrix);
+	
+	//log(targetName+":"+ThreeLog.getAngle(jointRot)+",new"+ThreeLog.getAngle(newMatrix));
+	//log("parentPos,"+ThreeLog.get(jointPos)+",lastPos,"+ThreeLog.get(lastJointPos));
+	currentIkJointIndex++;
+	if(currentIkJointIndex>=getCurrentIkData().getBones().size()){
+		currentIkJointIndex=0;
+	}
+	tmp1=lastJointPos;
+	tmp2=jointPos;
+	}
+}
+
 private void doPoseIkk(int index){
 		
-		
-		if(bodyMesh==null){//initial
-			bodyIndices = (JsArray<Vector4>) JsArray.createArray();
-			bodyWeight = (JsArray<Vector4>) JsArray.createArray();
-			WeightBuilder.autoWeight(baseGeometry, bones, 2, bodyIndices, bodyWeight);
-			
-			
-			
-			}else{
-				root.remove(bodyMesh);
-			}
-		
-		
-		
-	//	boneMatrix=boneToBoneMatrix(bones,animationData,index);
-		
-		
-		
-		
-		
-		if(ab==null){
-		baseMatrixs=AnimationBonesData.boneToMatrix(bones, animationData, index);	
-		ab=new AnimationBonesData(bones,AnimationBonesData.cloneMatrix(baseMatrixs) );
-		}
-		
-		//TODO make automatic
-		//this is find base matrix ,because sometime cdd-ik faild from some position
-		nearMatrix=new ArrayList<List<Matrix4>>();
-		nearMatrix.add(AnimationBonesData.cloneMatrix(baseMatrixs));
-		
-		
-		List<NameAndVector3> sample=new ArrayList<NameAndVector3>();
-		sample.add(new NameAndVector3("RightLeg", GWTThreeUtils.degreeToRagiant(THREE.Vector3(90, 0, 0)), 0));
-		sample.add(new NameAndVector3("RightUpLeg", GWTThreeUtils.degreeToRagiant(THREE.Vector3(-90, 0, 0)), 0));
-		List<Matrix4> bm=AnimationBonesData.cloneMatrix(baseMatrixs);
-		applyMatrix(bm, sample);
-		nearMatrix.add(bm);
-		
-		
-		List<NameAndVector3> sample1=new ArrayList<NameAndVector3>();
-		sample1.add(new NameAndVector3("RightLeg", GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, 0)), 0));
-		sample1.add(new NameAndVector3("RightUpLeg", GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, 45)), 0));
-		List<Matrix4> bm1=AnimationBonesData.cloneMatrix(baseMatrixs);
-		applyMatrix(bm1, sample);
-		
-		
-		
-		
-		ab.setBonesMatrixs(findStartMatrix("RightFoot",getCurrentIkData().getTargetPos()));//
-		//ab.setBonesMatrixs(null);
-		
-		
-		//doCDDIk();
-		Vector3 tmp1=null,tmp2=null;
-		currentIkIndex=0;
-		for(int i=0;i<11;i++){
-		String targetName=getCurrentIkData().getBones().get(currentIkIndex);
-		int boneIndex=ab.getBoneIndex(targetName);
-		Vector3 lastJointPos=ab.getPosition("RightFoot");
-		
-		
-		
-		//Vector3 jointPos=ab.getParentPosition(targetName);
-		Vector3 jointPos=ab.getPosition(targetName);
-		
-		
-		Matrix4 jointRot=ab.getBoneMatrix(targetName);
-		
-		Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, getCurrentIkData().getTargetPos());
-		
-		//limit angles
-		Vector3 angles=GWTThreeUtils.rotationToVector3(newMatrix);
-		Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(newMatrix));
-		if(targetName.equals("RightLeg")){
-			//z only accept
-			double zMin=Math.toRadians(0);
-			double zMax=Math.toRadians(20);
-			if(angles.getZ()<zMin){
-				angles.setZ(zMin);
-			}
-			if(angles.getZ()>zMax){
-				angles.setZ(zMax);
-			}
-			angles.setY(0);
-			
-			double xMin=Math.toRadians(0);
-			if(angles.getX()<xMin){
-				angles.setX(xMin);
-			}
-			
-		}
-		else if(targetName.equals("RightUpLeg")){
-			//z only accept
-			double zMin=Math.toRadians(-80);
-			double zMax=Math.toRadians(40);
-			if(angles.getZ()<zMin){
-				angles.setZ(zMin);
-			}
-			if(angles.getZ()>zMax){
-				angles.setZ(zMax);
-			}
-			
-			double yMin=Math.toRadians(-35);
-			double yMax=Math.toRadians(35);
-			
-			if(angles.getY()<yMin){
-				angles.setY(yMin);
-			}
-			if(angles.getY()>yMax){
-				angles.setY(yMax);
-			}
-			
-			double xMin=Math.toRadians(-85);
-			double xMax=Math.toRadians(90);
-			
-			if(angles.getX()<xMin){
-				angles.setX(xMin);
-			}
-			if(angles.getX()>xMax){
-				angles.setX(xMax);
-			}
-			
-		}
-		newMatrix=GWTThreeUtils.rotationToMatrix4(angles);
-		newMatrix.multiply(translates,newMatrix);
-		
-		ab.setBoneMatrix(boneIndex, newMatrix);
-		
-		//log(targetName+":"+ThreeLog.getAngle(jointRot)+",new"+ThreeLog.getAngle(newMatrix));
-		//log("parentPos,"+ThreeLog.get(jointPos)+",lastPos,"+ThreeLog.get(lastJointPos));
-		currentIkIndex++;
-		if(currentIkIndex>=getCurrentIkData().getBones().size()){
-			currentIkIndex=0;
-		}
-		tmp1=lastJointPos;
-		tmp2=jointPos;
-		}
-		
-		doPoseByMatrix(ab);
-		updateBoneRanges();
-		//bone3D.add(GWTUtils.createSimpleBox(tmp1, 1, 0x0000ff));
-		//bone3D.add(GWTUtils.createSimpleBox(tmp2, 1, 0x000088));
-		
-		//test amtrix
-		/*
-		for(int i=0;i<ab.getLength();i++){
-			Vector3 pos=ab.getPosition(i);
-			Mesh tmp=THREE.Mesh(THREE.CubeGeometry(1, 1, 1), THREE.MeshBasicMaterial().build());
-			tmp.setPosition(pos);
-			bone3D.add(tmp);
-		}*/
+	initializeBodyMesh();
+	initializeAnimationData(index);
+	stepCDDIk();	
+	doPoseByMatrix(ab);
+	updateBoneRanges();
+	
 	}
 private List<Matrix4> findStartMatrix(String boneName,Vector3 targetPos) {
 	List<Matrix4> retMatrix=nearMatrix.get(0);
@@ -899,7 +910,7 @@ private List<Matrix4> findStartMatrix(String boneName,Vector3 targetPos) {
 
 private void doCDDIk(){
 	
-		String targetName=getCurrentIkData().getBones().get(currentIkIndex);
+		String targetName=getCurrentIkData().getBones().get(currentIkJointIndex);
 		int boneIndex=ab.getBoneIndex(targetName);
 		Vector3 lastJointPos=ab.getPosition("RightFoot");
 		Vector3 jointPos=ab.getParentPosition(targetName);
@@ -910,15 +921,15 @@ private void doCDDIk(){
 		
 		//log(targetName+":"+ThreeLog.getAngle(jointRot)+",new"+ThreeLog.getAngle(newMatrix));
 		//log("parentPos,"+ThreeLog.get(jointPos)+",lastPos,"+ThreeLog.get(lastJointPos));
-		currentIkIndex++;
-		if(currentIkIndex>=getCurrentIkData().getBones().size()){
-			currentIkIndex=0;
+		currentIkJointIndex++;
+		if(currentIkJointIndex>=getCurrentIkData().getBones().size()){
+			currentIkJointIndex=0;
 		}
 		
 		doPoseByMatrix(ab);
 }
 CDDIK cddIk=new CDDIK();
-	int currentIkIndex=0;
+	int currentIkJointIndex=0;
 	//private String[] ikTestNames={"RightLeg","RightUpLeg"};
 	
 	//Vector3 targetPos=THREE.Vector3(-10, -3, 0);
@@ -935,6 +946,8 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		}
 		bone3D=THREE.Object3D();
 		root.add(bone3D);
+		
+		//selection
 		
 		//test ikk
 		Mesh cddIk0=THREE.Mesh(THREE.CubeGeometry(.5, .5, .5),THREE.MeshLambertMaterial().color(0x00ff00).build());
@@ -974,21 +987,42 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			
 			
 			if(bones.get(i).getParent()!=-1){
+				
 			Vector3 ppos=bonePositions.get(bones.get(i).getParent());	
 			//pos.addSelf(ppos);
 			
+			log(boneName+":"+ThreeLog.get(pos)+","+ThreeLog.get(ppos));	
 			Mesh line=GWTGeometryUtils.createLineMesh(pos, ppos, 0xffffff);
 			bone3D.add(line);
 			
-			//test cdd-ik for choose control
-			if(boneName.equals("RightFoot")){
-				Vector3 ikpos=pos.clone().subSelf(ppos).multiplyScalar(1.5).addSelf(ppos);
-				Mesh cddIk=THREE.Mesh(THREE.CubeGeometry(.5, .5, .5),THREE.MeshLambertMaterial().color(0x00ff00).build());
-				cddIk.setPosition(ikpos);
-				//bone3D.add(cddIk);
-				Mesh ikline=GWTGeometryUtils.createLineMesh(pos, ikpos, 0xffffff);
-				//bone3D.add(ikline);
+			
+			for(IKData ik:ikdatas){
+				if(ik.getLastBoneName().equals(boneName)){
+					Mesh ikMesh=targetMeshs.get(boneName);
+					
+					if(ikMesh==null){//at first call this from non-ik stepped.
+						//log("xxx");
+						//initial
+						Vector3 ikpos=pos.clone().subSelf(ppos).multiplyScalar(2).addSelf(ppos);
+						//ikpos=pos.clone();
+						ikMesh=THREE.Mesh(THREE.CubeGeometry(.5, .5, .5),THREE.MeshLambertMaterial().color(0x00ff00).build());
+						ikMesh.setPosition(ikpos);
+						ikMesh.setName("ik:"+boneName);
+					//	log(boneName+":"+ThreeLog.get(ikpos));
+						//log(ThreeLog.get(pos));
+						ik.getTargetPos().set(ikpos.getX(), ikpos.getY(), ikpos.getZ());
+						targetMeshs.put(boneName, ikMesh);
+						
+					}else{
+						ikMesh.getParent().remove(ikMesh);
+					}
+					bone3D.add(ikMesh);
+					ikMesh.setPosition(ik.getTargetPos());
+					Mesh ikline=GWTGeometryUtils.createLineMesh(pos, ik.getTargetPos(), 0xffffff);
+					bone3D.add(ikline);
+				}
 			}
+			
 			}
 			mesh.setRotation(rot);
 			mesh.setPosition(pos);
@@ -1102,6 +1136,10 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		root.add(bodyMesh);
 		
 		
+		//selection
+		selectionMesh=THREE.Mesh(THREE.CubeGeometry(1, 1, 1), THREE.MeshBasicMaterial().color(0x00ff00).wireFrame(true).build());
+		selectionMesh.setPosition(getCurrentIkData().getTargetPos());
+		bone3D.add(selectionMesh);
 		
 		/*
 		geo.setDynamic(true);
@@ -1123,7 +1161,14 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		geo.computeVertexNormals();
 		geo.computeTangents();
 		*/
-		}	
+		}
+
+
+private Map<String,Mesh> targetMeshs=new HashMap<String,Mesh>();
+
+/**
+ * @deprecated
+ */
 	private void doPose(List<MatrixAndVector3> boneMatrix){
 		
 		
@@ -1177,15 +1222,8 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			Mesh line=GWTGeometryUtils.createLineMesh(pos, ppos, 0xffffff);
 			bone3D.add(line);
 			
-			//test cdd-ik
-			if(boneName.equals("RightFoot")){
-				Vector3 ikpos=pos.clone().subSelf(ppos).multiplyScalar(1.5).addSelf(ppos);
-				Mesh cddIk=THREE.Mesh(THREE.CubeGeometry(.5, .5, .5),THREE.MeshLambertMaterial().color(0x00ff00).build());
-				cddIk.setPosition(ikpos);
-				bone3D.add(cddIk);
-				Mesh ikline=GWTGeometryUtils.createLineMesh(pos, ikpos, 0xffffff);
-				bone3D.add(ikline);
-			}
+			
+			
 			}else{
 				//root action
 				Matrix4 mx=boneMatrix.get(0).getMatrix();
