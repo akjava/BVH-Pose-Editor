@@ -262,12 +262,15 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	}
 	
 	public List<List<NameAndVector3>> createBases(IKData data){
-		
+		int angle=45;
+		if(data.getLastBoneName().equals("RightFoot")){
+			angle=40;
+		}
 		List<List<NameAndVector3>> all=new ArrayList();
 		List<List<NameAndVector3>> result=new ArrayList();
 		for(int i=0;i<data.getBones().size();i++){
 			String name=data.getBones().get(i);
-			List<NameAndVector3> patterns=createBases(name,45); //90 //60 is slow
+			List<NameAndVector3> patterns=createBases(name,angle); //90 //60 is slow
 			all.add(patterns);
 			log(name+"-size:"+patterns.size());
 		}
@@ -329,6 +332,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					}
 				}
 			}
+		}
+		if(patterns.size()==0){
+			patterns.add(new NameAndVector3(name,0,0,0));//empty not allowd
 		}
 		return patterns;
 	}
