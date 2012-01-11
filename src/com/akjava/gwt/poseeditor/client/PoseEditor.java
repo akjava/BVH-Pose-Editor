@@ -522,10 +522,11 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
+		//dont need now
 		HorizontalPanel frames=new HorizontalPanel();
 		frameRange = new HTML5InputRange(0,1,0);
 		parent.add(HTML5Builder.createRangeLabel("Frame:", frameRange));
-		parent.add(frames);
+		//parent.add(frames);
 		frames.add(frameRange);
 		
 		frameRange.addListener(new HTML5InputRangeListener() {
@@ -917,7 +918,7 @@ private void initializeBodyMesh(){
 			if(bodyMesh==null){//initial
 				bodyIndices = (JsArray<Vector4>) JsArray.createArray();
 				bodyWeight = (JsArray<Vector4>) JsArray.createArray();
-				WeightBuilder.autoWeight(baseGeometry, bones, 2, bodyIndices, bodyWeight);
+				WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_NearParentAndChildren, bodyIndices, bodyWeight);
 				
 				
 				
