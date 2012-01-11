@@ -1249,37 +1249,51 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
 		for(int i=0;i<baseGeometry.vertices().length();i++){
 			Vertex baseVertex=baseGeometry.vertices().get(i);
+			Vector3 vertexPosition=baseVertex.getPosition().clone();
+			
+			
 			Vertex targetVertex=geo.vertices().get(i);
 			
 			int boneIndex1=(int) bodyIndices.get(i).getX();
 			int boneIndex2=(int) bodyIndices.get(i).getY();
-			
-			Vector3 bonePos=animationBonesData.getBasePosition(boneIndex1);
-			Vector3 relatePos=bonePos.clone();
-			relatePos.sub(baseVertex.getPosition(),bonePos);
-			double length=relatePos.length();
-			
 			String name=animationBonesData.getBoneName(boneIndex1);
-			Matrix4 tmpMatrix=GWTThreeUtils.rotationToMatrix4(GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, 20)));
-			if(name.equals("RightLeg")){
-				//TODO rotata parent base
-				//tmpMatrix.multiplyVector3(relatePos);
+			if(name.equals("RightLeg")){//test parent base
+				Vector3 parentPos=animationBonesData.getBaseParentBonePosition(boneIndex1);
+				Matrix4 tmpMatrix=GWTThreeUtils.rotationToMatrix4(GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, 20)));
+				vertexPosition.subSelf(parentPos);
+				tmpMatrix.multiplyVector3(vertexPosition);
+				vertexPosition.addSelf(parentPos);
+				boneIndex2=boneIndex1;
 			}
 			
+			Vector3 bonePos=animationBonesData.getBaseBonePosition(boneIndex1);
+			Vector3 relatePos=bonePos.clone();
+			relatePos.sub(vertexPosition,bonePos);
+			//double length=relatePos.length();
+			
+			
+			
+			
+			
 			moveMatrix.get(boneIndex1).multiplyVector3(relatePos);
+			if(name.equals("RightLeg")){
+				Vector3 parentPos=animationBonesData.getParentPosition(boneIndex1);
+				relatePos.subSelf(parentPos);
+				Matrix4 tmpMatrix2=GWTThreeUtils.rotationToMatrix4(GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, -20)));
+				tmpMatrix2.multiplyVector3(relatePos);
+				relatePos.addSelf(parentPos);
+			}
+			
 			//relatePos.addSelf(bonePos);
 			if(boneIndex2!=boneIndex1){
-				Vector3 bonePos2=animationBonesData.getBasePosition(boneIndex2);
+				Vector3 bonePos2=animationBonesData.getBaseBonePosition(boneIndex2);
 				Vector3 relatePos2=bonePos2.clone();
 				relatePos2.sub(baseVertex.getPosition(),bonePos2);
 				double length2=relatePos2.length();
 				moveMatrix.get(boneIndex2).multiplyVector3(relatePos2);
 				
 				
-				if(name.equals("RightLeg")){
-					//Matrix4 tmpMatrix2=GWTThreeUtils.rotationToMatrix4(GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, -20)));
-					//tmpMatrix2.multiplyVector3(relatePos);
-				}
+				
 				
 				//scalar weight
 				
