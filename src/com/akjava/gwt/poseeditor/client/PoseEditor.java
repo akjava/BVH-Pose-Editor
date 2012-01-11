@@ -169,8 +169,8 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		boneLimits.put("LowerBack",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
 		boneLimits.put("Spine",BoneLimit.createBoneLimit(-30, 30, -40, 40, -40, 40));
 		//boneLimits.put("Spine1",BoneLimit.createBoneLimit(-30, 30, -30, 30, -30, 30));
-		boneLimits.put("Neck",BoneLimit.createBoneLimit(-30, 30, -30, 30, -30, 30));
-		boneLimits.put("Neck1",BoneLimit.createBoneLimit(-30, 30, -30, 30, -30, 30));
+		boneLimits.put("Neck",BoneLimit.createBoneLimit(-45, 45, -45, 45, -45, 45));
+		boneLimits.put("Neck1",BoneLimit.createBoneLimit(-15, 15, -15, 15, -15, 15));
 	}
 	
 	Map<String,BoneLimit> boneLimits=new HashMap<String,BoneLimit>();
@@ -267,7 +267,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 		List<List<NameAndVector3>> result=new ArrayList();
 		for(int i=0;i<data.getBones().size();i++){
 			String name=data.getBones().get(i);
-			List<NameAndVector3> patterns=createBases(name,60); //90 //60 is slow
+			List<NameAndVector3> patterns=createBases(name,45); //90 //60 is slow
 			all.add(patterns);
 			log(name+"-size:"+patterns.size());
 		}
@@ -889,6 +889,18 @@ public void onError(Request request, Throwable exception) {
 	doPoseByMatrix(ab);
 	updateBoneRanges();
 
+	
+	/*
+	 * trying to fix leg problem
+	Vector3 rootOffset=GWTThreeUtils.jsArrayToVector3(animationData.getHierarchy().get(0).getKeys().get(index).getPos());
+	//initial pose is base for motions
+	baseGeometry=GeometryUtils.clone(bodyMesh.getGeometry());
+	for(int i=0;i<baseGeometry.vertices().length();i++){
+		Vertex vertex=baseGeometry.vertices().get(i);
+		vertex.getPosition().subSelf(rootOffset);
+	}
+	*/
+	
 	}
 	
 	
