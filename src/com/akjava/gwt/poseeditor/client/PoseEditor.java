@@ -13,6 +13,7 @@ import com.akjava.bvh.client.BVHParser.ParserListener;
 import com.akjava.gwt.html5.client.HTML5InputRange;
 import com.akjava.gwt.html5.client.HTML5InputRange.HTML5InputRangeListener;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
+import com.akjava.gwt.lib.client.LogUtils;
 import com.akjava.gwt.three.client.THREE;
 import com.akjava.gwt.three.client.core.Geometry;
 import com.akjava.gwt.three.client.core.Intersect;
@@ -109,7 +110,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		ikdata1.setLastBoneName("Head");
 		ikdata1.setBones(new String[]{"Neck1","Neck","Spine","LowerBack"});
 		//ikdata1.setBones(new String[]{"Neck1","Neck","Spine1","Spine","LowerBack"});
-		ikdata1.setIteration(11);
+		ikdata1.setIteration(9);
 		ikdatas.add(ikdata1);
 		
 		
@@ -149,9 +150,21 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		//updateIkLabels();
 		
+		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 170, 0, 0));
+		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-60, 60, -40, 91, -50, 91));
+		boneLimits.put("RightShoulder",BoneLimit.createBoneLimit(-15, 25, -20, 20,-10, 10));
+		
+		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -170, 0, 0, 0));
+		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-60, 60, -91, 40, -91, 50));
+		boneLimits.put("LeftShoulder",BoneLimit.createBoneLimit(-15, 25, -20, 20,-10, 10));
+		
+		
 		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
 		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-85, 91, -35, 35, -80, 40));
-		 
+		
+		boneLimits.put("LeftLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, -20, 0));
+		boneLimits.put("LeftUpLeg",BoneLimit.createBoneLimit(-85, 91, -35, 35, -40, 80));
+		
 		
 		boneLimits.put("LowerBack",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
 		boneLimits.put("Spine",BoneLimit.createBoneLimit(-30, 30, -40, 40, -40, 40));
@@ -221,8 +234,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 		List<List<NameAndVector3>> result=createBases(getCurrentIkData());
 		log("switchd:"+result.size());
 		List<NameAndVector3> tmp=result.get(result.size()-1);
+		
 		for(NameAndVector3 value:tmp){
-			log(value.getName()+":"+ThreeLog.get(value.getVector3()));
+		//	log(value.getName()+":"+ThreeLog.get(value.getVector3()));
 		}
 		
 		if(nearMatrix!=null){
@@ -234,6 +248,13 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 		for(List<NameAndVector3> nv:result){
 			List<Matrix4> bm=AnimationBonesData.cloneMatrix(currentMatrixs);
 			applyMatrix(bm, nv);
+			
+			//deb
+			for(String bname:getCurrentIkData().getBones()){
+				Matrix4 mx=bm.get(ab.getBoneIndex(bname));
+				log(bname+":"+ThreeLog.get(GWTThreeUtils.toDegreeAngle(mx)));
+			}
+			
 			nearMatrix.add(bm);
 		}
 		
@@ -246,11 +267,11 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 		List<List<NameAndVector3>> result=new ArrayList();
 		for(int i=0;i<data.getBones().size();i++){
 			String name=data.getBones().get(i);
-			List<NameAndVector3> patterns=createBases(name,90);
+			List<NameAndVector3> patterns=createBases(name,60); //90 //60 is slow
 			all.add(patterns);
 			log(name+"-size:"+patterns.size());
 		}
-		log(data.getLastBoneName()+"-patterns:"+all.size());
+		log(data.getLastBoneName()+"-joint-size:"+all.size());
 		doAdd(all,result,data.getBones(),0,null,2);
 		return result;
 	}
@@ -285,13 +306,13 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				for(int z=-180;z<=180;z+=step){
 					boolean pass=true;
 					if(limit!=null){
-						if(limit.getMinX()>x || limit.getMaxX()<x){
+						if(limit.getMinXDegit()>x || limit.getMaxXDegit()<x){
 							pass=false;
 						}
-						if(limit.getMinY()>y || limit.getMaxY()<y){
+						if(limit.getMinYDegit()>y || limit.getMaxYDegit()<y){
 							pass=false;
 						}
-						if(limit.getMinZ()>z || limit.getMaxZ()<z){
+						if(limit.getMinZDegit()>z || limit.getMaxZDegit()<z){
 							pass=false;
 						}
 					}
@@ -300,8 +321,11 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					}
 					
 					if(pass){
+					//	log(name+" pass:"+x+","+y+","+z);
 					NameAndVector3 nvec=new NameAndVector3(name, Math.toRadians(x),Math.toRadians(y),Math.toRadians(z));
 					patterns.add(nvec);
+					}else{
+						
 					}
 				}
 			}
@@ -347,7 +371,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	
 	@Override
 	public void onMouseWheel(MouseWheelEvent event) {
-		if(event.isShiftKeyDown()){//swapped
+		if(event.isAltKeyDown()){//swapped
 			//TODO make class
 			long t=System.currentTimeMillis();
 			if(mouseLast+100>t){
@@ -363,15 +387,15 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			mouseLast=t;
 			
 		}else{
-			onMouseWheelWithShiftKey(event.getDeltaY());
+			onMouseWheelWithShiftKey(event.getDeltaY(),event.isShiftKeyDown());
 		}
 	}
 	
 	
-	public  void onMouseWheelWithShiftKey(int deltaY){
+	public  void onMouseWheelWithShiftKey(int deltaY,boolean shift){
 		double dy=deltaY*0.2;
 		getCurrentIkData().getTargetPos().incrementZ(dy);
-		doPoseIkk(0,true);
+		doPoseIkk(0,shift);
 	}
 
 	private HTML5InputRange positionXRange;
@@ -933,14 +957,15 @@ private void initializeAnimationData(int index,boolean resetMatrix){
 	
 	//ab.setBonesMatrixs(findStartMatrix("RightFoot",getCurrentIkData().getTargetPos()));//
 	*/
-	if(currentMatrixs!=null){
-		if(nearMatrix!=null && getCurrentIkData().getLastBoneName().equals("RightFoot") && resetMatrix){
+	if(currentMatrixs!=null && resetMatrix){
+		if(nearMatrix!=null){
 			//need bone limit
-			ab.setBonesMatrixs(findStartMatrix(getCurrentIkData().getLastBoneName(),getCurrentIkData().getTargetPos()));//)
+			ab.setBonesMatrixs(AnimationBonesData.cloneMatrix(findStartMatrix(getCurrentIkData().getLastBoneName(),getCurrentIkData().getTargetPos())));//)
 		}else{
 			ab.setBonesMatrixs(AnimationBonesData.cloneMatrix(currentMatrixs));	
 		}
 		//TODO only need
+	}else{
 		
 	}
 	
@@ -963,24 +988,65 @@ private void stepCDDIk(){
 	
 	
 	Matrix4 jointRot=ab.getBoneMatrix(targetBoneName);
-	
+	Vector3 beforeAngles=GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(jointRot));
+	String beforeAngleValue=ThreeLog.get(beforeAngles);
 	Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, getCurrentIkData().getTargetPos());
-	if(newMatrix==null){
+	if(newMatrix==null){//invalid value
 		continue;
 	}
-	//limit angles
-	Vector3 angles=GWTThreeUtils.rotationToVector3(newMatrix);
-	Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(newMatrix));
 	
+	//limit per angles
+	Vector3 angles=GWTThreeUtils.rotationToVector3(newMatrix);
+	
+	int perLimit=1;
+	Vector3 diffAngles=GWTThreeUtils.radiantToDegree(angles).subSelf(beforeAngles);
+	if(Math.abs(diffAngles.getX())>perLimit){
+		double diff=perLimit;
+		if(diffAngles.getX()<0){
+			diff*=-1;
+		}
+		diffAngles.setX(diff);
+	}
+	if(Math.abs(diffAngles.getY())>perLimit){
+		double diff=perLimit;
+		if(diffAngles.getY()<0){
+			diff*=-1;
+		}
+		diffAngles.setY(diff);
+	}
+	if(Math.abs(diffAngles.getZ())>perLimit){
+		double diff=perLimit;
+		if(diffAngles.getZ()<0){
+			diff*=-1;
+		}
+		diffAngles.setZ(diff);
+	}
+	beforeAngles.addSelf(diffAngles);
+	angles=GWTThreeUtils.degreeToRagiant(beforeAngles);
+	//log("before:"+beforeAngleValue+" after:"+ThreeLog.get(beforeAngles));
+	
+	Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(newMatrix));
+	//limit max
 	BoneLimit blimit=boneLimits.get(targetBoneName);
-	log(targetBoneName);
-	log("before-limit:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
+	//log(targetBoneName);
+	//log("before-limit:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
 	if(blimit!=null){
 		blimit.apply(angles);
 	}
+	//invalid ignore
+	if("NaN".equals(""+angles.getX())){
+		continue;
+	}
+	if("NaN".equals(""+angles.getY())){
+		continue;
+	}
+	if("NaN".equals(""+angles.getZ())){
+		continue;
+	}
 	
-	log("after-limit:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
+	//log("after-limit:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
 	newMatrix=GWTThreeUtils.rotationToMatrix4(angles);
+	
 	newMatrix.multiply(translates,newMatrix);
 	
 	ab.setBoneMatrix(boneIndex, newMatrix);
@@ -1020,6 +1086,13 @@ private List<Matrix4> findStartMatrix(String boneName,Vector3 targetPos) {
 			retMatrix=mxs;
 		}
 	}
+	
+	for(String name:getCurrentIkData().getBones()){
+		Matrix4 mx=retMatrix.get(ab.getBoneIndex(name));
+		log(name+":"+ThreeLog.get(GWTThreeUtils.rotationToVector3(mx)));
+		log(name+":"+ThreeLog.get(GWTThreeUtils.toDegreeAngle(mx)));
+	}
+	
 	return retMatrix;
 }
 
@@ -1108,7 +1181,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			Vector3 ppos=bonePositions.get(bones.get(i).getParent());	
 			//pos.addSelf(ppos);
 			
-			log(boneName+":"+ThreeLog.get(pos)+","+ThreeLog.get(ppos));	
+			//log(boneName+":"+ThreeLog.get(pos)+","+ThreeLog.get(ppos));	
 			Mesh line=GWTGeometryUtils.createLineMesh(pos, ppos, 0xffffff);
 			bone3D.add(line);
 			
