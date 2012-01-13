@@ -55,6 +55,7 @@ import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseMoveEvent;
 import com.google.gwt.event.dom.client.MouseOutEvent;
 import com.google.gwt.event.dom.client.MouseUpEvent;
+import com.google.gwt.event.dom.client.MouseUpHandler;
 import com.google.gwt.event.dom.client.MouseWheelEvent;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
@@ -69,6 +70,8 @@ import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.Panel;
+import com.google.gwt.user.client.ui.PopupPanel;
+import com.google.gwt.user.client.ui.VerticalPanel;
 
 
 /**
@@ -88,7 +91,16 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 	}
 
 	@Override
+	public void resized(int width, int height) {
+		super.resized(width, height);
+		leftBottom(bottomPanel);
+	}
+	
+	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
+		
+	
+		
 		scene.add(THREE.AmbientLight(0xffffff));
 		
 		Light pointLight = THREE.DirectionalLight(0xffffff,1);
@@ -159,11 +171,15 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		boneLimits.put("LeftShoulder",BoneLimit.createBoneLimit(-15, 25, -20, 20,-10, 10));
 		
 		
-		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
-		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-85, 91, -35, 35, -80, 40));
+		//straight only
+		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 12, 12));
+		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-85, 91, 0, 0, 20, 20));
 		
-		boneLimits.put("LeftLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, -20, 0));
-		boneLimits.put("LeftUpLeg",BoneLimit.createBoneLimit(-85, 91, -35, 35, -40, 80));
+		//boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 40));
+		//boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-85, 91, -35, 5, -80, 40));
+		
+		boneLimits.put("LeftLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, -40, 0));
+		boneLimits.put("LeftUpLeg",BoneLimit.createBoneLimit(-85, 91, -5, 35, -40, 80));
 		
 		
 		boneLimits.put("LowerBack",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
@@ -252,7 +268,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			//deb
 			for(String bname:getCurrentIkData().getBones()){
 				Matrix4 mx=bm.get(ab.getBoneIndex(bname));
-				log(bname+":"+ThreeLog.get(GWTThreeUtils.toDegreeAngle(mx)));
+				//log(bname+":"+ThreeLog.get(GWTThreeUtils.toDegreeAngle(mx)));
 			}
 			
 			nearMatrix.add(bm);
@@ -272,9 +288,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			String name=data.getBones().get(i);
 			List<NameAndVector3> patterns=createBases(name,angle); //90 //60 is slow
 			all.add(patterns);
-			log(name+"-size:"+patterns.size());
+			//log(name+"-size:"+patterns.size());
 		}
-		log(data.getLastBoneName()+"-joint-size:"+all.size());
+		//log(data.getLastBoneName()+"-joint-size:"+all.size());
 		doAdd(all,result,data.getBones(),0,null,2);
 		return result;
 	}
@@ -415,6 +431,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	private HTML5InputRange rotationBoneRange;
 	private HTML5InputRange rotationBoneYRange;
 	private HTML5InputRange rotationBoneZRange;
+	private PopupPanel bottomPanel;
+	private HTML5InputRange currentFrameRange;
+	private Label currentFrameLabel;
 	@Override
 	public void createControl(Panel parent) {
 HorizontalPanel h1=new HorizontalPanel();
@@ -632,9 +651,93 @@ HorizontalPanel h1=new HorizontalPanel();
 		positionYRange.setValue(-14);//for test
 		
 		updateIkLabels();
+		createBottomPanel();
 		showControl();
 		
 	}
+	private void createBottomPanel(){
+		bottomPanel = new PopupPanel();
+		bottomPanel.setVisible(true);
+		bottomPanel.setSize("650px", "40px");
+		VerticalPanel main=new VerticalPanel();
+		bottomPanel.add(main);
+		bottomPanel.show();
+		
+		
+		//upper
+		HorizontalPanel upperPanel=new HorizontalPanel();
+		upperPanel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
+		main.add(upperPanel);
+		
+		Button snap=new Button("Snap");
+		upperPanel.add(snap);
+		snap.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				List<Matrix4> matrixs=AnimationBonesData.cloneMatrix(ab.getBonesMatrixs());
+				List<Vector3> targets=new ArrayList<Vector3>();
+				for(IKData ikdata:ikdatas){
+					targets.add(ikdata.getTargetPos().clone());
+				}
+				PoseFrameData ps=new PoseFrameData(matrixs, targets);
+				poseFrameDatas.add(ps);
+				updatePoseIndex(poseFrameDatas.size()-1);
+			}
+		});
+		
+		HorizontalPanel pPanel=new HorizontalPanel();
+		main.add(pPanel);
+		pPanel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
+		
+		currentFrameRange = new HTML5InputRange(0,0,0);
+		currentFrameRange.setWidth("420px");
+		pPanel.add(currentFrameRange);
+		
+		currentFrameRange.addMouseUpHandler(new MouseUpHandler() {
+			
+			@Override
+			public void onMouseUp(MouseUpEvent event) {
+				
+				updatePoseIndex(currentFrameRange.getValue());
+			}
+		});
+		
+		currentFrameLabel = new Label();
+		pPanel.add(currentFrameLabel);
+		
+		super.leftBottom(bottomPanel);
+	}
+	
+	private int poseFrameDataIndex=0;
+	private List<PoseFrameData> poseFrameDatas=new ArrayList<PoseFrameData>();
+	
+	private void updatePoseIndex(int index){
+		//poseIndex=index;
+		currentFrameRange.setMax(poseFrameDatas.size()-1);
+		currentFrameRange.setValue(index);
+		currentFrameLabel.setText((index+1)+"/"+poseFrameDatas.size());
+		selectFrameData(index);
+	}
+	
+	private void selectFrameData(int index) {
+		log("update:"+index);
+		poseFrameDataIndex=index;
+		PoseFrameData ps=poseFrameDatas.get(index);
+		//update
+		for(int i=0;i<ikdatas.size();i++){
+			Vector3 vec=ps.getTargetPositions().get(i);
+			ikdatas.get(i).getTargetPos().set(vec.getX(), vec.getY(), vec.getZ());
+		}
+		currentMatrixs=AnimationBonesData.cloneMatrix(ps.getMatrixs());
+		ab.setBonesMatrixs(currentMatrixs);
+		switchSelection(getCurrentIkData().getLastBoneName());
+		
+		
+		doPoseByMatrix(ab);
+		updateBoneRanges();
+	}
+
 	private void rangeToBone(){
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
 		int index=ab.getBoneIndex(name);
@@ -1108,8 +1211,8 @@ private List<Matrix4> findStartMatrix(String boneName,Vector3 targetPos) {
 	
 	for(String name:getCurrentIkData().getBones()){
 		Matrix4 mx=retMatrix.get(ab.getBoneIndex(name));
-		log(name+":"+ThreeLog.get(GWTThreeUtils.rotationToVector3(mx)));
-		log(name+":"+ThreeLog.get(GWTThreeUtils.toDegreeAngle(mx)));
+	//	log(name+":"+ThreeLog.get(GWTThreeUtils.rotationToVector3(mx)));
+	//	log(name+":"+ThreeLog.get(GWTThreeUtils.toDegreeAngle(mx)));
 	}
 	
 	return retMatrix;
@@ -1259,6 +1362,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			String name=animationBonesData.getBoneName(boneIndex1);
 			
 			/*
+			 * 
 			if(name.equals("RightLeg")){//test parent base
 				Vector3 parentPos=animationBonesData.getBaseParentBonePosition(boneIndex1);
 				Matrix4 tmpMatrix=GWTThreeUtils.rotationToMatrix4(GWTThreeUtils.degreeToRagiant(THREE.Vector3(0, 0, 20)));
@@ -1275,9 +1379,9 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			
 			
 			
-			
-			/*
 			moveMatrix.get(boneIndex1).multiplyVector3(relatePos);
+			/*
+			
 			if(name.equals("RightLeg")){
 				Vector3 parentPos=animationBonesData.getParentPosition(boneIndex1);
 				relatePos.subSelf(parentPos);
