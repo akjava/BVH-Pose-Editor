@@ -8,12 +8,15 @@ import java.util.Map;
 import com.akjava.bvh.client.AnimationBoneConverter;
 import com.akjava.bvh.client.AnimationDataConverter;
 import com.akjava.bvh.client.BVH;
+import com.akjava.bvh.client.BVHConverter;
+import com.akjava.bvh.client.BVHNode;
 import com.akjava.bvh.client.BVHParser;
 import com.akjava.bvh.client.BVHParser.ParserListener;
+import com.akjava.bvh.client.BVHWriter;
+import com.akjava.bvh.client.BVHMotion;
 import com.akjava.gwt.html5.client.HTML5InputRange;
 import com.akjava.gwt.html5.client.HTML5InputRange.HTML5InputRangeListener;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
-import com.akjava.gwt.lib.client.LogUtils;
 import com.akjava.gwt.three.client.THREE;
 import com.akjava.gwt.three.client.core.Geometry;
 import com.akjava.gwt.three.client.core.Intersect;
@@ -163,20 +166,20 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		//updateIkLabels();
 		
 		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 170, 0, 0));
-		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-60, 60, -40, 91, -50, 91));
+		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -40, 91, -50, 120));
 		boneLimits.put("RightShoulder",BoneLimit.createBoneLimit(-15, 25, -20, 20,-10, 10));
 		
 		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -170, 0, 0, 0));
-		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-60, 60, -91, 40, -91, 50));
+		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-80, 60, -91, 40, -120, 50));
 		boneLimits.put("LeftShoulder",BoneLimit.createBoneLimit(-15, 25, -20, 20,-10, 10));
 		
 		
 		//straight only
-		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 12, 12));
-		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-85, 91, 0, 0, 20, 20));
+		//boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 8, 8));
+		//boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-85, 91, 0, 0, 20, 20));
 		
-		//boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 40));
-		//boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-85, 91, -35, 5, -80, 40));
+		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 40));
+		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-85, 91, -35, 5, -80, 40));
 		
 		boneLimits.put("LeftLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, -40, 0));
 		boneLimits.put("LeftUpLeg",BoneLimit.createBoneLimit(-85, 91, -5, 35, -40, 80));
@@ -192,7 +195,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 	Map<String,BoneLimit> boneLimits=new HashMap<String,BoneLimit>();
 	
 	private void updateIkLabels(){
-		log(""+boneNamesBox);
+		//log(""+boneNamesBox);
 		boneNamesBox.clear();
 		for(int i=0;i<getCurrentIkData().getBones().size();i++){
 			boneNamesBox.addItem(getCurrentIkData().getBones().get(i));
@@ -248,7 +251,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 		currentMatrixs=AnimationBonesData.cloneMatrix(ab.getBonesMatrixs());
 		
 		List<List<NameAndVector3>> result=createBases(getCurrentIkData());
-		log("switchd:"+result.size());
+		//log("switchd:"+result.size());
 		List<NameAndVector3> tmp=result.get(result.size()-1);
 		
 		for(NameAndVector3 value:tmp){
@@ -686,6 +689,16 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
+		Button export=new Button("Export");
+		upperPanel.add(export);
+		export.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				doExport();
+			}
+		});
+		
 		HorizontalPanel pPanel=new HorizontalPanel();
 		main.add(pPanel);
 		pPanel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
@@ -709,6 +722,41 @@ HorizontalPanel h1=new HorizontalPanel();
 		super.leftBottom(bottomPanel);
 	}
 	
+	protected void doExport() {
+		BVH exportBVH=new BVH();
+		
+		BVHConverter converter=new BVHConverter();
+		BVHNode node=converter.convertBVHNode(bones);
+		
+		exportBVH.setHiearchy(node);
+		
+		converter.setChannels(node,0,"XYZ");	//TODO support other order
+		
+		
+		BVHMotion motion=new BVHMotion();
+		motion.setFrameTime(1);
+		log("size:"+poseFrameDatas.size());
+		for(PoseFrameData pose:poseFrameDatas){
+			double[] values=converter.matrixsToMotion(pose.getMatrixs(),BVHConverter.ROOT_POSITION_ROTATE_ONLY,"XYZ");
+			motion.add(values);
+		}
+		motion.setFrames(motion.getMotions().size());//
+		
+		exportBVH.setMotion(motion);
+		//log("frames:"+exportBVH.getFrames());
+		BVHWriter writer=new BVHWriter();
+		
+		String bvhText=writer.writeToString(exportBVH);
+		
+		log(bvhText);
+		exportTextChrome(bvhText);
+	}
+	public native final void exportTextChrome(String text)/*-{
+	win = $wnd.open("", "win")
+	win.document.body.innerText =""+text+"";
+	}-*/;
+
+
 	private int poseFrameDataIndex=0;
 	private List<PoseFrameData> poseFrameDatas=new ArrayList<PoseFrameData>();
 	
@@ -721,7 +769,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	
 	private void selectFrameData(int index) {
-		log("update:"+index);
+		//log("update:"+index);
 		poseFrameDataIndex=index;
 		PoseFrameData ps=poseFrameDatas.get(index);
 		//update
