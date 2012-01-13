@@ -101,7 +101,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 	
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
-		
+		canvas.setClearColorHex(0x333333);
 	
 		
 		scene.add(THREE.AmbientLight(0xffffff));
@@ -689,6 +689,18 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
+		Button remove=new Button("Remove");
+		upperPanel.add(remove);
+		remove.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				
+				poseFrameDatas.remove(poseFrameDataIndex);
+				updatePoseIndex(poseFrameDataIndex-1);
+			}
+		});
+		
 		Button export=new Button("Export");
 		upperPanel.add(export);
 		export.addClickHandler(new ClickHandler() {
@@ -761,11 +773,17 @@ HorizontalPanel h1=new HorizontalPanel();
 	private List<PoseFrameData> poseFrameDatas=new ArrayList<PoseFrameData>();
 	
 	private void updatePoseIndex(int index){
+		if(index==-1){
+		currentFrameRange.setMax(0);
+		currentFrameRange.setValue(0);
+		currentFrameLabel.setText("");	
+		}else{
 		//poseIndex=index;
 		currentFrameRange.setMax(poseFrameDatas.size()-1);
 		currentFrameRange.setValue(index);
 		currentFrameLabel.setText((index+1)+"/"+poseFrameDatas.size());
 		selectFrameData(index);
+		}
 	}
 	
 	private void selectFrameData(int index) {
