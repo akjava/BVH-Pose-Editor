@@ -263,6 +263,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		}else if(selectedBone!=null){
 			boneNamesBox.addItem(selectedBone);
 			boneNamesBox.setSelectedIndex(0);
+			updateBoneRanges();
 		}
 	}
 	
@@ -443,6 +444,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					selectionMesh.setVisible(true);
 					selectionMesh.setPosition(target.getPosition());
 					switchSelection(null);
+					
 					return;
 				}
 				
