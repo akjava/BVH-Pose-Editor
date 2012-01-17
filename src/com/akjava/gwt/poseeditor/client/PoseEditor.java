@@ -123,10 +123,18 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		root.add(mesh);
 		
 		Mesh xline=GWTGeometryUtils.createLineMesh(THREE.Vector3(-50, 0, 0.001), THREE.Vector3(50, 0, 0.001), 0x880000,3);
-		root.add(xline);
+		//root.add(xline);
 		
 		Mesh zline=GWTGeometryUtils.createLineMesh(THREE.Vector3(0, 0, -50), THREE.Vector3(0, 0, 50), 0x008800,3);
-		root.add(zline);
+		//root.add(zline);
+		
+		
+		selectionMesh=THREE.Mesh(THREE.CubeGeometry(2, 2, 2), THREE.MeshBasicMaterial().color(0x00ff00).wireFrame(true).build());
+		
+		root.add(selectionMesh);
+		selectionMesh.setVisible(false);
+		
+		//line flicked think something
 		
 		loadBVH("14_01.bvh");
 		
@@ -239,10 +247,12 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 	private void updateIkLabels(){
 		//log(""+boneNamesBox);
 		boneNamesBox.clear();
+		if(currentSelectionName!=null){
 		for(int i=0;i<getCurrentIkData().getBones().size();i++){
 			boneNamesBox.addItem(getCurrentIkData().getBones().get(i));
 		}
 		boneNamesBox.setSelectedIndex(0);
+		}
 	}
 	
 	int ikdataIndex=1;
@@ -253,31 +263,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 	final Projector projector=THREE.Projector();
 	@Override
 	public void onMouseClick(ClickEvent event) {
-JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.getY(), screenWidth, screenHeight, camera,scene);
 		
-		for(int i=0;i<intersects.length();i++){
-			Intersect sect=intersects.get(i);
-			
-			Object3D target=sect.getObject();
-			if(!target.getName().isEmpty()){
-				if(target.getName().startsWith("ik:")){
-					String bname=target.getName().substring(3);
-					for(int j=0;j<ikdatas.size();j++){
-						if(ikdatas.get(j).getLastBoneName().equals(bname)){
-							ikdataIndex=j;
-							selectionMesh.setPosition(target.getPosition());
-							
-							if(!bname.equals(currentSelectionName)){
-								switchSelection(bname);
-							}
-							
-							break;
-						}
-					}
-				}
-				break;
-			}
-		}
 		//not work correctly on zoom
 		//Vector3 pos=GWTUtils.toWebGLXY(event.getX(), event.getY(), camera, screenWidth, screenHeight);
 		
@@ -288,10 +274,15 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 		//doPoseIkk(0);
 	}
 	
+	private boolean isSelected(){
+		return currentSelectionName!=null;
+	}
+	
 	private void switchSelection(String name){
 		currentSelectionName=name;
 		currentMatrixs=AnimationBonesData.cloneMatrix(ab.getBonesMatrixs());
 		
+		if(currentSelectionName!=null){
 		List<List<NameAndVector3>> result=createBases(getCurrentIkData());
 		//log("switchd:"+result.size());
 		List<NameAndVector3> tmp=result.get(result.size()-1);
@@ -317,6 +308,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			}
 			
 			nearMatrix.add(bm);
+		}
+		}else{
+			log("null selected");
 		}
 		
 		updateIkLabels();
@@ -405,6 +399,41 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 		mouseDown=true;
 		mouseDownX=event.getX();
 		mouseDownY=event.getY();
+		
+		
+
+		log("mouse-click:"+event.getX()+"x"+event.getY());
+JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.getY(), screenWidth, screenHeight, camera,scene);
+		log("intersects-length:"+intersects.length());
+		for(int i=0;i<intersects.length();i++){
+			Intersect sect=intersects.get(i);
+			
+			Object3D target=sect.getObject();
+			if(!target.getName().isEmpty()){
+				if(target.getName().startsWith("ik:")){
+					String bname=target.getName().substring(3);
+					for(int j=0;j<ikdatas.size();j++){
+						if(ikdatas.get(j).getLastBoneName().equals(bname)){
+							ikdataIndex=j;
+							selectionMesh.setVisible(true);
+							selectionMesh.setPosition(target.getPosition());
+							
+							if(!bname.equals(currentSelectionName)){
+								switchSelection(bname);
+							}
+							
+							return;//ik selected
+						}
+					}
+				}else{
+					//maybe bone or root
+				}
+				
+			}
+		}
+		
+		selectionMesh.setVisible(false);
+		switchSelection(null);
 	}
 
 	@Override
@@ -419,17 +448,31 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	
 	@Override
 	public void onMouseMove(MouseMoveEvent event) {
-		if(mouseDown){
-		double diffX=event.getX()-mouseDownX;
-		double diffY=event.getY()-mouseDownY;
-		mouseDownX=event.getX();
-		mouseDownY=event.getY();
 		
-		diffX*=0.1;
-		diffY*=-0.1;
-		getCurrentIkData().getTargetPos().incrementX(diffX);
-		getCurrentIkData().getTargetPos().incrementY(diffY);
-		doPoseIkk(0,event.isShiftKeyDown());
+		if(mouseDown){
+			if(isSelected()){
+				
+				double diffX=event.getX()-mouseDownX;
+				double diffY=event.getY()-mouseDownY;
+				mouseDownX=event.getX();
+				mouseDownY=event.getY();
+				
+				diffX*=0.1;
+				diffY*=-0.1;
+				getCurrentIkData().getTargetPos().incrementX(diffX);
+				getCurrentIkData().getTargetPos().incrementY(diffY);
+				doPoseIkk(0,event.isShiftKeyDown());
+			}else{//global
+			int diffX=event.getX()-mouseDownX;
+			int diffY=event.getY()-mouseDownY;
+			mouseDownX=event.getX();
+			mouseDownY=event.getY();
+			
+			rotationRange.setValue(rotationRange.getValue()+diffY);
+			rotationYRange.setValue(rotationYRange.getValue()+diffX);
+			}
+			
+		
 		}
 	}
 	private IKData getCurrentIkData(){
@@ -438,7 +481,14 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	
 	@Override
 	public void onMouseWheel(MouseWheelEvent event) {
-		if(event.isAltKeyDown()){//swapped
+		if(isSelected()){
+			if(event.isAltKeyDown()){//swapped
+				
+				
+			}else{
+				onMouseWheelWithShiftKey(event.getDeltaY(),event.isShiftKeyDown());
+			}
+		}else{
 			//TODO make class
 			long t=System.currentTimeMillis();
 			if(mouseLast+100>t){
@@ -452,10 +502,8 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			tmp=Math.min(4000, tmp);
 			cameraZ=tmp;
 			mouseLast=t;
-			
-		}else{
-			onMouseWheelWithShiftKey(event.getDeltaY(),event.isShiftKeyDown());
 		}
+		
 	}
 	
 	
@@ -1574,10 +1622,10 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
 		
 		//selection
-		selectionMesh=THREE.Mesh(THREE.CubeGeometry(2, 2, 2), THREE.MeshBasicMaterial().color(0x00ff00).wireFrame(true).build());
+		//selectionMesh=THREE.Mesh(THREE.CubeGeometry(2, 2, 2), THREE.MeshBasicMaterial().color(0x00ff00).wireFrame(true).build());
 		selectionMesh.setPosition(getCurrentIkData().getTargetPos());
-		bone3D.add(selectionMesh);
-		
+		//bone3D.add(selectionMesh);
+		//selectionMesh.setVisible(false);
 		/*
 		geo.setDynamic(true);
 		geo.setDirtyVertices(true);
