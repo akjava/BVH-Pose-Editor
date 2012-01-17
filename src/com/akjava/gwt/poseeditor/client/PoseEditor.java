@@ -9,14 +9,18 @@ import com.akjava.bvh.client.BVH;
 import com.akjava.bvh.client.BVHNode;
 import com.akjava.bvh.client.BVHParser;
 import com.akjava.bvh.client.BVHParser.ParserListener;
+import com.akjava.bvh.client.gwt.BoxData;
+import com.akjava.bvh.client.gwt.BoxDataParser;
 import com.akjava.bvh.client.threejs.AnimationBoneConverter;
 import com.akjava.bvh.client.threejs.AnimationDataConverter;
 import com.akjava.bvh.client.threejs.BVHConverter;
 import com.akjava.bvh.client.BVHWriter;
 import com.akjava.bvh.client.BVHMotion;
+
 import com.akjava.gwt.html5.client.HTML5InputRange;
 import com.akjava.gwt.html5.client.HTML5InputRange.HTML5InputRangeListener;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
+import com.akjava.gwt.poseeditor.client.resources.Bundles;
 import com.akjava.gwt.three.client.THREE;
 import com.akjava.gwt.three.client.core.Geometry;
 import com.akjava.gwt.three.client.core.Intersect;
@@ -99,6 +103,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		leftBottom(bottomPanel);
 	}
 	
+	private Map<String,BoxData> boxDatas;
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
 		canvas.setClearColorHex(0x333333);
@@ -135,6 +140,9 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		selectionMesh.setVisible(false);
 		
 		//line flicked think something
+		
+		
+		boxDatas=new BoxDataParser().parse(Bundles.INSTANCE.boxsize().getText());
 		
 		loadBVH("14_01.bvh");
 		
@@ -427,6 +435,11 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					}
 				}else{
 					//maybe bone or root
+					log(target.getName());
+					selectionMesh.setVisible(true);
+					selectionMesh.setPosition(target.getPosition());
+					switchSelection(null);
+					return;
 				}
 				
 			}
@@ -1428,7 +1441,11 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		List<Vector3> bonePositions=new ArrayList<Vector3>();
 		for(int i=0;i<bones.length();i++){
 			Matrix4 mv=boneMatrix.get(i);
-			Mesh mesh=THREE.Mesh(THREE.CubeGeometry(.4, .4, .4),THREE.MeshLambertMaterial().color(0xff0000).build());
+			double bsize=.5;
+			if(i==0){
+				bsize=1;
+			}
+			Mesh mesh=THREE.Mesh(THREE.CubeGeometry(bsize,bsize, bsize),THREE.MeshLambertMaterial().color(0xff0000).build());
 			bone3D.add(mesh);
 			
 			Vector3 pos=THREE.Vector3();
@@ -1439,7 +1456,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			List<Integer> path=bonePath.get(i);
 			String boneName=bones.get(i).getName();
 			//log(boneName);
-			
+			mesh.setName(boneName);
 			
 			
 			Matrix4 matrix=THREE.Matrix4();
@@ -1463,6 +1480,20 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			Mesh line=GWTGeometryUtils.createLineMesh(pos, ppos, 0xffffff);
 			bone3D.add(line);
 			
+			//cylinder
+			/* better bone faild
+			Vector3 halfPos=pos.clone().subSelf(ppos).multiplyScalar(0.5).addSelf(ppos);
+			Mesh boneMesh=THREE.Mesh(THREE.CylinderGeometry(.1,.1,.2,6), THREE.MeshLambertMaterial().color(0xffffff).build());
+			boneMesh.setPosition(halfPos);
+			boneMesh.setName(boneName);
+			bone3D.add(boneMesh);
+			
+			BoxData data=boxDatas.get(boneName);
+			if(data!=null){
+				boneMesh.setScale(data.getScaleX(), data.getScaleY(), data.getScaleZ());
+				boneMesh.getRotation().setZ(Math.toRadians(data.getRotateZ()));
+			}
+			*/
 			
 			for(IKData ik:ikdatas){
 				if(ik.getLastBoneName().equals(boneName)){
