@@ -260,6 +260,9 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 			boneNamesBox.addItem(getCurrentIkData().getBones().get(i));
 		}
 		boneNamesBox.setSelectedIndex(0);
+		}else if(selectedBone!=null){
+			boneNamesBox.addItem(selectedBone);
+			boneNamesBox.setSelectedIndex(0);
 		}
 	}
 	
@@ -282,7 +285,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		//doPoseIkk(0);
 	}
 	
-	private boolean isSelected(){
+	private boolean isSelectedIk(){
 		return currentSelectionName!=null;
 	}
 	
@@ -429,13 +432,14 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 							if(!bname.equals(currentSelectionName)){
 								switchSelection(bname);
 							}
-							
+							selectedBone=null;
 							return;//ik selected
 						}
 					}
 				}else{
 					//maybe bone or root
 					log(target.getName());
+					selectedBone=target.getName();
 					selectionMesh.setVisible(true);
 					selectionMesh.setPosition(target.getPosition());
 					switchSelection(null);
@@ -445,9 +449,11 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			}
 		}
 		
+		selectedBone=null;
 		selectionMesh.setVisible(false);
 		switchSelection(null);
 	}
+	private String selectedBone;
 
 	@Override
 	public void onMouseUp(MouseUpEvent event) {
@@ -463,7 +469,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	public void onMouseMove(MouseMoveEvent event) {
 		
 		if(mouseDown){
-			if(isSelected()){
+			if(isSelectedIk()){
 				
 				double diffX=event.getX()-mouseDownX;
 				double diffY=event.getY()-mouseDownY;
@@ -475,7 +481,20 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				getCurrentIkData().getTargetPos().incrementX(diffX);
 				getCurrentIkData().getTargetPos().incrementY(diffY);
 				doPoseIkk(0,event.isShiftKeyDown());
-			}else{//global
+			}else if(isSelectedBone()){
+				
+				int diffX=event.getX()-mouseDownX;
+				int diffY=event.getY()-mouseDownY;
+				mouseDownX=event.getX();
+				mouseDownY=event.getY();
+				
+				rotationBoneRange.setValue(rotationBoneRange.getValue()+diffY);
+				rotationBoneYRange.setValue(rotationBoneYRange.getValue()+diffX);
+				
+				rangeToBone();
+			}
+			else{//global
+			
 			int diffX=event.getX()-mouseDownX;
 			int diffY=event.getY()-mouseDownY;
 			mouseDownX=event.getX();
@@ -488,13 +507,16 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 		
 		}
 	}
+	private boolean isSelectedBone(){
+		return selectedBone!=null;
+	}
 	private IKData getCurrentIkData(){
 		return ikdatas.get(ikdataIndex);
 	}
 	
 	@Override
 	public void onMouseWheel(MouseWheelEvent event) {
-		if(isSelected()){
+		if(isSelectedIk()){
 			if(event.isAltKeyDown()){//swapped
 				
 				
@@ -1654,7 +1676,9 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
 		//selection
 		//selectionMesh=THREE.Mesh(THREE.CubeGeometry(2, 2, 2), THREE.MeshBasicMaterial().color(0x00ff00).wireFrame(true).build());
+		if(isSelectedIk()){
 		selectionMesh.setPosition(getCurrentIkData().getTargetPos());
+		}
 		//bone3D.add(selectionMesh);
 		//selectionMesh.setVisible(false);
 		/*
