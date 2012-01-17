@@ -5,13 +5,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.akjava.bvh.client.AnimationBoneConverter;
-import com.akjava.bvh.client.AnimationDataConverter;
 import com.akjava.bvh.client.BVH;
-import com.akjava.bvh.client.BVHConverter;
 import com.akjava.bvh.client.BVHNode;
 import com.akjava.bvh.client.BVHParser;
 import com.akjava.bvh.client.BVHParser.ParserListener;
+import com.akjava.bvh.client.threejs.AnimationBoneConverter;
+import com.akjava.bvh.client.threejs.AnimationDataConverter;
+import com.akjava.bvh.client.threejs.BVHConverter;
 import com.akjava.bvh.client.BVHWriter;
 import com.akjava.bvh.client.BVHMotion;
 import com.akjava.gwt.html5.client.HTML5InputRange;
@@ -117,6 +117,17 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		root=THREE.Object3D();
 		scene.add(root);
 		
+		Geometry geo=THREE.PlaneGeometry(100, 100,10,10);
+		Mesh mesh=THREE.Mesh(geo, THREE.MeshBasicMaterial().color(0xaaaaaa).wireFrame().build());
+		mesh.setRotation(Math.toRadians(-90), 0, 0);
+		root.add(mesh);
+		
+		Mesh xline=GWTGeometryUtils.createLineMesh(THREE.Vector3(-50, 0, 0.001), THREE.Vector3(50, 0, 0.001), 0x880000,3);
+		root.add(xline);
+		
+		Mesh zline=GWTGeometryUtils.createLineMesh(THREE.Vector3(0, 0, -50), THREE.Vector3(0, 0, 50), 0x008800,3);
+		root.add(zline);
+		
 		loadBVH("14_01.bvh");
 		
 		
@@ -165,6 +176,36 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		//updateIkLabels();
 		
+		
+		//calcurate by bvh 80_*
+		/*
+		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-118, 0, 0, 60, -170, 0));
+		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-180, 180, -60, 91, -180, 180));
+		boneLimits.put("RightShoulder",BoneLimit.createBoneLimit(0, 0, 0, 0,0, 0));
+		
+		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -170, 0, 0, 0));
+		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-80, 60, -91, 40, -120, 50));
+		boneLimits.put("LeftShoulder",BoneLimit.createBoneLimit(-15, 25, -20, 20,-10, 10));
+		
+		
+		
+		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
+		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-85, 91, -35, 5, -80, 40));
+		
+		boneLimits.put("LeftLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, -20, 0));
+		boneLimits.put("LeftUpLeg",BoneLimit.createBoneLimit(-85, 91, -5, 35, -40, 80));
+		
+		
+		boneLimits.put("LowerBack",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
+		boneLimits.put("Spine",BoneLimit.createBoneLimit(-30, 30, -40, 40, -40, 40));
+		//boneLimits.put("Spine1",BoneLimit.createBoneLimit(-30, 30, -30, 30, -30, 30));
+		boneLimits.put("Neck",BoneLimit.createBoneLimit(-45, 45, -45, 45, -45, 45));
+		boneLimits.put("Neck1",BoneLimit.createBoneLimit(-15, 15, -15, 15, -15, 15));
+		*/
+		
+		
+		//manual
+		
 		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 170, 0, 0));
 		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -40, 91, -50, 120));
 		boneLimits.put("RightShoulder",BoneLimit.createBoneLimit(-15, 25, -20, 20,-10, 10));
@@ -190,6 +231,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		//boneLimits.put("Spine1",BoneLimit.createBoneLimit(-30, 30, -30, 30, -30, 30));
 		boneLimits.put("Neck",BoneLimit.createBoneLimit(-45, 45, -45, 45, -45, 45));
 		boneLimits.put("Neck1",BoneLimit.createBoneLimit(-15, 15, -15, 15, -15, 15));
+		
 	}
 	
 	Map<String,BoneLimit> boneLimits=new HashMap<String,BoneLimit>();
