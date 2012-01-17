@@ -493,7 +493,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				rotationBoneRange.setValue(rotationBoneRange.getValue()+diffY);
 				rotationBoneYRange.setValue(rotationBoneYRange.getValue()+diffX);
 				
-				rangeToBone();
+				rotToBone();
 			}
 			else{//global
 			
@@ -525,7 +525,12 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			}else{
 				onMouseWheelWithShiftKey(event.getDeltaY(),event.isShiftKeyDown());
 			}
-		}else{
+		}else if(isSelectedBone()){
+			int diff=event.getDeltaY();
+			rotationBoneZRange.setValue(rotationBoneZRange.getValue()+diff);
+			rotToBone();
+		}
+		else{
 			//TODO make class
 			long t=System.currentTimeMillis();
 			if(mouseLast+100>t){
@@ -553,7 +558,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	private HTML5InputRange positionXRange;
 	private HTML5InputRange positionYRange;
 	private HTML5InputRange positionZRange;
-	private HTML5InputRange frameRange;
+	//private HTML5InputRange frameRange;
 	
 	private HTML5InputRange rotationRange;
 	private HTML5InputRange rotationYRange;
@@ -564,6 +569,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	private PopupPanel bottomPanel;
 	private HTML5InputRange currentFrameRange;
 	private Label currentFrameLabel;
+	private HTML5InputRange positionXBoneRange;
+	private HTML5InputRange positionYBoneRange;
+	private HTML5InputRange positionZBoneRange;
 	@Override
 	public void createControl(Panel parent) {
 HorizontalPanel h1=new HorizontalPanel();
@@ -678,12 +686,14 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		
 		//dont need now
+		/*
 		HorizontalPanel frames=new HorizontalPanel();
 		frameRange = new HTML5InputRange(0,1,0);
 		parent.add(HTML5Builder.createRangeLabel("Frame:", frameRange));
 		//parent.add(frames);
 		frames.add(frameRange);
-		
+		*/
+		/*
 		frameRange.addListener(new HTML5InputRangeListener() {
 			
 			@Override
@@ -691,10 +701,26 @@ HorizontalPanel h1=new HorizontalPanel();
 				doPose(frameRange.getValue());
 			}
 		});
+		*/
 		
 	
-		
-		parent.add(new Label("Bone"));
+		//
+		HorizontalPanel boneInfo=new HorizontalPanel();
+		parent.add(boneInfo);
+		boneInfo.add(new Label("Bone"));
+		rotateAndPosList = new ListBox();
+		boneInfo.add(rotateAndPosList);
+		rotateAndPosList.addItem("Rotation");
+		rotateAndPosList.addItem("Position");
+		rotateAndPosList.setSelectedIndex(0);
+		rotateAndPosList.addChangeHandler(new ChangeHandler() {
+			
+			@Override
+			public void onChange(ChangeEvent event) {
+				switchRotateAndPosList();
+			}
+		});
+	
 		
 		boneNamesBox = new ListBox();
 		
@@ -708,17 +734,98 @@ HorizontalPanel h1=new HorizontalPanel();
 		parent.add(boneNamesBox);
 		
 		
+		
+		
+		
+		
+		//positions
+		bonePositionsPanel = new VerticalPanel();
+		parent.add(bonePositionsPanel);
+		
+		HorizontalPanel h1bpos=new HorizontalPanel();
+		positionXBoneRange = new HTML5InputRange(-50,50,0);
+		bonePositionsPanel.add(HTML5Builder.createRangeLabel("X-Pos:", positionXBoneRange));
+		bonePositionsPanel.add(h1bpos);
+		h1bpos.add(positionXBoneRange);
+		Button resetB1pos=new Button("Reset");
+		resetB1pos.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				positionXBoneRange.setValue(0);
+				positionToBone();
+			}
+		});
+		h1bpos.add(resetB1pos);
+		positionXBoneRange.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				positionToBone();
+			}
+		});
+		
+		HorizontalPanel h2bpos=new HorizontalPanel();
+		
+		positionYBoneRange = new HTML5InputRange(-50,50,0);
+		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Y-Pos:", positionYBoneRange));
+		bonePositionsPanel.add(h2bpos);
+		h2bpos.add(positionYBoneRange);
+		Button reset2bpos=new Button("Reset");
+		reset2bpos.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				positionYBoneRange.setValue(0);
+				positionToBone();
+			}
+		});
+		h2bpos.add(reset2bpos);
+		positionYBoneRange.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				positionToBone();
+			}
+		});
+		
+		
+		HorizontalPanel h3bpos=new HorizontalPanel();
+		positionZBoneRange = new HTML5InputRange(-50,50,0);
+		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Z-Pos:", positionZBoneRange));
+		bonePositionsPanel.add(h3bpos);
+		h3bpos.add(positionZBoneRange);
+		Button reset3bpos=new Button("Reset");
+		reset3bpos.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				positionZBoneRange.setValue(0);
+				positionToBone();
+			}
+		});
+		h3bpos.add(reset3bpos);
+		positionZBoneRange.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				positionToBone();
+			}
+		});
+		
+		
+		
+		boneRotationsPanel = new VerticalPanel();
+		parent.add(boneRotationsPanel);
+		
 		HorizontalPanel h1b=new HorizontalPanel();
 		rotationBoneRange = new HTML5InputRange(-180,180,0);
-		parent.add(HTML5Builder.createRangeLabel("X-Rotate:", rotationBoneRange));
-		parent.add(h1b);
+		boneRotationsPanel.add(HTML5Builder.createRangeLabel("X-Rotate:", rotationBoneRange));
+		boneRotationsPanel.add(h1b);
 		h1b.add(rotationBoneRange);
 		Button resetB1=new Button("Reset");
 		resetB1.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
 				rotationBoneRange.setValue(0);
-				rangeToBone();
+				rotToBone();
 			}
 		});
 		h1b.add(resetB1);
@@ -726,22 +833,22 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			@Override
 			public void onClick(ClickEvent event) {
-				rangeToBone();
+				rotToBone();
 			}
 		});
 		
 		HorizontalPanel h2b=new HorizontalPanel();
 		
 		rotationBoneYRange = new HTML5InputRange(-180,180,0);
-		parent.add(HTML5Builder.createRangeLabel("Y-Rotate:", rotationBoneYRange));
-		parent.add(h2b);
+		boneRotationsPanel.add(HTML5Builder.createRangeLabel("Y-Rotate:", rotationBoneYRange));
+		boneRotationsPanel.add(h2b);
 		h2b.add(rotationBoneYRange);
 		Button reset2b=new Button("Reset");
 		reset2b.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
 				rotationBoneYRange.setValue(0);
-				rangeToBone();
+				rotToBone();
 			}
 		});
 		h2b.add(reset2b);
@@ -749,22 +856,22 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			@Override
 			public void onClick(ClickEvent event) {
-				rangeToBone();
+				rotToBone();
 			}
 		});
 		
 		
 		HorizontalPanel h3b=new HorizontalPanel();
 		rotationBoneZRange = new HTML5InputRange(-180,180,0);
-		parent.add(HTML5Builder.createRangeLabel("Z-Rotate:", rotationBoneZRange));
-		parent.add(h3b);
+		boneRotationsPanel.add(HTML5Builder.createRangeLabel("Z-Rotate:", rotationBoneZRange));
+		boneRotationsPanel.add(h3b);
 		h3b.add(rotationBoneZRange);
 		Button reset3b=new Button("Reset");
 		reset3b.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
 				rotationBoneZRange.setValue(0);
-				rangeToBone();
+				rotToBone();
 			}
 		});
 		h3b.add(reset3b);
@@ -772,9 +879,12 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			@Override
 			public void onClick(ClickEvent event) {
-				rangeToBone();
+				rotToBone();
 			}
 		});
+		
+		
+		
 		
 		
 		updateMaterial();
@@ -785,6 +895,33 @@ HorizontalPanel h1=new HorizontalPanel();
 		showControl();
 		
 	}
+	protected void positionToBone() {
+		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
+		int index=ab.getBoneIndex(name);
+		if(index!=0){
+			//limit root only 
+			//TODO limit by bvh channel
+			return;
+		}
+
+		Vector3 angles=GWTThreeUtils.rotationToVector3(ab.getBoneMatrix(index));
+				
+		
+		Vector3 pos=THREE.Vector3(positionXBoneRange.getValue(),
+				positionYBoneRange.getValue()
+				, positionZBoneRange.getValue());
+		Matrix4 posMx=GWTThreeUtils.translateToMatrix4(pos);
+		Matrix4 rotMx=GWTThreeUtils.rotationToMatrix4(angles);
+		rotMx.multiply(posMx,rotMx);
+		ab.setBoneMatrix(index, rotMx);
+		doPoseByMatrix(ab);
+	}
+
+	protected void switchRotateAndPosList() {
+		// TODO Auto-generated method stub
+		
+	}
+
 	private void createBottomPanel(){
 		bottomPanel = new PopupPanel();
 		bottomPanel.setVisible(true);
@@ -931,7 +1068,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		updateBoneRanges();
 	}
 
-	private void rangeToBone(){
+	private void rotToBone(){
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
 		int index=ab.getBoneIndex(name);
 		//Matrix4 mx=ab.getBoneMatrix(name);
@@ -961,7 +1098,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
 		int boneIndex=ab.getBoneIndex(name);
-		Quaternion q=GWTThreeUtils.jsArrayToQuaternion(bones.get(boneIndex).getRotq());
+		//Quaternion q=GWTThreeUtils.jsArrayToQuaternion(bones.get(boneIndex).getRotq());
 		//log("bone:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(q))));
 				
 		Vector3 angles=GWTThreeUtils.toDegreeAngle(ab.getBoneMatrix(name));
@@ -1055,7 +1192,7 @@ public void onError(Request request, Throwable exception) {
 				AnimationDataConverter dataConverter=new AnimationDataConverter();
 				dataConverter.setSkipFirst(false);
 				animationData = dataConverter.convertJsonAnimation(bones,bvh);
-				frameRange.setMax(animationData.getHierarchy().get(0).getKeys().length());
+				//frameRange.setMax(animationData.getHierarchy().get(0).getKeys().length());
 				
 				JSONLoader loader=THREE.JSONLoader();
 				loader.load("men3tmp.js", new  LoadHandler() {
@@ -1707,6 +1844,9 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 
 
 private Map<String,Mesh> targetMeshs=new HashMap<String,Mesh>();
+private ListBox rotateAndPosList;
+private VerticalPanel bonePositionsPanel;
+private VerticalPanel boneRotationsPanel;
 
 /**
  * @deprecated
