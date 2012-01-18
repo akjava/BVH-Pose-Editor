@@ -145,7 +145,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		boxDatas=new BoxDataParser().parse(Bundles.INSTANCE.boxsize().getText());
 		
-		loadBVH("14_01.bvh");
+		loadBVH("pose.bvh");
 		
 		
 		IKData ikdata1=new IKData();
@@ -1209,8 +1209,9 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 		currentMatrixs=AnimationBonesData.cloneMatrix(ps.getMatrixs());
 		ab.setBonesMatrixs(currentMatrixs);
+		if(isSelectedIk()){
 		switchSelectionIk(getCurrentIkData().getLastBoneName());
-		
+		}
 		
 		doPoseByMatrix(ab);
 		updateBoneRanges();
