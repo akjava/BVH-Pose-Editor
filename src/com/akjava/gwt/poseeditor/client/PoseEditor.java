@@ -1802,9 +1802,9 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			
 			//mesh color
 			if(pos.getY()<0){
-				mesh.getMaterial().setColor(THREE.Color(0xffeeee));//over color
+				mesh.getMaterial().setColor(THREE.Color(0xffee00));//over color
 			}else if(pos.getY()<1){
-				mesh.getMaterial().setColor(THREE.Color(0xff9999));//over color
+				mesh.getMaterial().setColor(THREE.Color(0xff8800));//over color
 			}
 			
 			bonePositions.add(pos);
