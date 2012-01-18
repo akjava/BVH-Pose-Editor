@@ -1061,6 +1061,33 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
+		Button prev=new Button("Prev");
+		pPanel.add(prev);
+		prev.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				int value=currentFrameRange.getValue();
+				if(value>0){
+					value--;
+					currentFrameRange.setValue(value);
+					updatePoseIndex(value);
+				}
+			}
+		});
+		Button next=new Button("Next");
+		pPanel.add(next);
+		next.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				int value=currentFrameRange.getValue();
+				if(value<poseFrameDatas.size()-1){
+					value++;
+					currentFrameRange.setValue(value);
+					updatePoseIndex(value);
+				}
+			}
+		});
+		
 		currentFrameLabel = new Label();
 		pPanel.add(currentFrameLabel);
 		
@@ -1101,7 +1128,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		BVHMotion motion=new BVHMotion();
-		motion.setFrameTime(1);
+		motion.setFrameTime(.25);
 		log("size:"+poseFrameDatas.size());
 		for(PoseFrameData pose:poseFrameDatas){
 			double[] values=converter.matrixsToMotion(pose.getMatrixs(),BVHConverter.ROOT_POSITION_ROTATE_ONLY,"XYZ");
