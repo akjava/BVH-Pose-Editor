@@ -225,11 +225,11 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 170, 0, 0));
 		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -40, 91, -50, 120));
-		boneLimits.put("RightShoulder",BoneLimit.createBoneLimit(-15, 25, -20, 20,-10, 10));
+		boneLimits.put("RightShoulder",BoneLimit.createBoneLimit(-10, 20, -15, 15,-5, 5));
 		
 		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -170, 0, 0, 0));
 		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-80, 60, -91, 40, -120, 50));
-		boneLimits.put("LeftShoulder",BoneLimit.createBoneLimit(-15, 25, -20, 20,-10, 10));
+		boneLimits.put("LeftShoulder",BoneLimit.createBoneLimit(-10, 20, -15, 15,-5, 5));
 		
 		
 		//straight only
@@ -337,7 +337,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 			nearMatrix.add(bm);
 		}
 		}else{
-			log("null selected");
+		//	log("null selected");
 		}
 		
 		updateIkLabels();
@@ -498,18 +498,16 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				getCurrentIkData().getTargetPos().incrementX(diffX);
 				getCurrentIkData().getTargetPos().incrementY(diffY);
 				if(event.isShiftKeyDown()){//slow
-					doPoseIkk(0,false,1);
+					doPoseIkk(0,false,1,getCurrentIkData());
 				}else if(event.isAltKeyDown()){//rapid
-					doPoseIkk(0,true,1);
+					doPoseIkk(0,true,1,getCurrentIkData());
 				}else{
-					doPoseIkk(0,true,5);
+					doPoseIkk(0,true,5,getCurrentIkData());
 				}
 				
 				
 			}else if(isSelectedBone()){
-				if(event.isShiftKeyDown()){
-					
-				}else if(event.isAltKeyDown()){
+				if(event.isAltKeyDown()){
 					int diffX=event.getX()-mouseDownX;
 					int diffY=event.getY()-mouseDownY;
 					mouseDownX=event.getX();
@@ -517,7 +515,15 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					
 					positionXBoneRange.setValue(positionXBoneRange.getValue()+diffX);
 					positionYBoneRange.setValue(positionYBoneRange.getValue()-diffY);
-					positionToBone();	
+					positionToBone();
+					if(event.isShiftKeyDown()){
+					//	switchSelectionIk(null);
+					//effect-ik
+					for(IKData ik:ikdatas){
+						
+						doPoseIkk(0,false,5,ik);
+						}
+					}
 				}else{
 				
 				
@@ -530,6 +536,14 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				rotationBoneYRange.setValue(rotationBoneYRange.getValue()+diffX);
 				
 				rotToBone();
+				if(event.isShiftKeyDown()){
+				//	switchSelectionIk(null);
+				//effect-ik
+				for(IKData ik:ikdatas){
+					
+					doPoseIkk(0,false,5,ik);
+					}
+				}
 				}
 			}
 			else{//global
@@ -569,24 +583,38 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			getCurrentIkData().getTargetPos().incrementZ(dy);
 			
 			if(event.isShiftKeyDown()){//slow
-				doPoseIkk(0,false,1);
+				doPoseIkk(0,false,1,getCurrentIkData());
 			}else if(event.isAltKeyDown()){//rapid
-				doPoseIkk(0,true,1);
+				doPoseIkk(0,true,1,getCurrentIkData());
 			}else{
-				doPoseIkk(0,true,5);
+				doPoseIkk(0,true,5,getCurrentIkData());
 			}
 			
 		}else if(isSelectedBone()){
-			if(event.isShiftKeyDown()){
-				
-			}else if(event.isAltKeyDown()){
+			if(event.isAltKeyDown()){
 			int diff=event.getDeltaY();
 			positionZBoneRange.setValue(positionZBoneRange.getValue()+diff);
-			positionToBone();	
+			positionToBone();
+			if(event.isShiftKeyDown()){
+				//switchSelectionIk(null);
+				//effect-ik
+				for(IKData ik:ikdatas){
+					doPoseIkk(0,false,5,ik);
+					}
+				}
+			
 			}else{
 			int diff=event.getDeltaY();
 			rotationBoneZRange.setValue(rotationBoneZRange.getValue()+diff);
 			rotToBone();
+				if(event.isShiftKeyDown()){
+				//	switchSelectionIk(null);
+				//effect-ik
+				for(IKData ik:ikdatas){
+					
+					doPoseIkk(0,false,5,ik);
+					}
+				}
 			}
 		}
 		else{
@@ -1143,13 +1171,15 @@ HorizontalPanel h1=new HorizontalPanel();
 		String bvhText=writer.writeToString(exportBVH);
 		
 		log(bvhText);
-		exportTextChrome(bvhText);
+		exportTextChrome(bvhText,"poseeditor"+exportIndex);
+		exportIndex++;
 	}
-	public native final void exportTextChrome(String text)/*-{
-	win = $wnd.open("", "win")
+	public native final void exportTextChrome(String text,String wname)/*-{
+	win = $wnd.open("", wname)
 	win.document.body.innerText =""+text+"";
 	}-*/;
 
+	private int exportIndex=0;
 
 	private int poseFrameDataIndex=0;
 	private List<PoseFrameData> poseFrameDatas=new ArrayList<PoseFrameData>();
@@ -1580,16 +1610,16 @@ private void initializeAnimationData(int index,boolean resetMatrix){
 	}
 	
 }
-private void stepCDDIk(int perLimit){
+private void stepCDDIk(int perLimit,IKData ikData){
 
 	//do CDDIK
 	//doCDDIk();
 	Vector3 tmp1=null,tmp2=null;
 	currentIkJointIndex=0;
-	for(int i=0;i<getCurrentIkData().getIteration();i++){
-	String targetBoneName=getCurrentIkData().getBones().get(currentIkJointIndex);
+	for(int i=0;i<ikData.getIteration();i++){
+	String targetBoneName=ikData.getBones().get(currentIkJointIndex);
 	int boneIndex=ab.getBoneIndex(targetBoneName);
-	Vector3 lastJointPos=ab.getPosition(getCurrentIkData().getLastBoneName());
+	Vector3 lastJointPos=ab.getPosition(ikData.getLastBoneName());
 	
 	
 	
@@ -1600,7 +1630,7 @@ private void stepCDDIk(int perLimit){
 	Matrix4 jointRot=ab.getBoneMatrix(targetBoneName);
 	Vector3 beforeAngles=GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(jointRot));
 	String beforeAngleValue=ThreeLog.get(beforeAngles);
-	Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, getCurrentIkData().getTargetPos());
+	Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, ikData.getTargetPos());
 	if(newMatrix==null){//invalid value
 		continue;
 	}
@@ -1664,7 +1694,7 @@ private void stepCDDIk(int perLimit){
 	//log(targetName+":"+ThreeLog.getAngle(jointRot)+",new"+ThreeLog.getAngle(newMatrix));
 	//log("parentPos,"+ThreeLog.get(jointPos)+",lastPos,"+ThreeLog.get(lastJointPos));
 	currentIkJointIndex++;
-	if(currentIkJointIndex>=getCurrentIkData().getBones().size()){
+	if(currentIkJointIndex>=ikData.getBones().size()){
 		currentIkJointIndex=0;
 	}
 	tmp1=lastJointPos;
@@ -1672,11 +1702,11 @@ private void stepCDDIk(int perLimit){
 	}
 }
 
-private void doPoseIkk(int index,boolean resetMatrix,int perLimit){
+private void doPoseIkk(int index,boolean resetMatrix,int perLimit,IKData ikdata){
 		
 	initializeBodyMesh();
 	initializeAnimationData(index,resetMatrix);
-	stepCDDIk(perLimit);	
+	stepCDDIk(perLimit,ikdata);	
 	doPoseByMatrix(ab);
 	updateBoneRanges();
 	
