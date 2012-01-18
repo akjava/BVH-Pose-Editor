@@ -1003,13 +1003,22 @@ HorizontalPanel h1=new HorizontalPanel();
 		upperPanel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
 		main.add(upperPanel);
 		
-		Button snap=new Button("Snap");//TODO before,after
+		Button snap=new Button("Add");//TODO before,after
 		upperPanel.add(snap);
 		snap.addClickHandler(new ClickHandler() {
 			
 			@Override
 			public void onClick(ClickEvent event) {
-				insertFrame(poseFrameDatas.size());
+				insertFrame(poseFrameDatas.size(),false);
+			}
+		});
+		Button replace=new Button("Replace");//TODO before,after
+		upperPanel.add(replace);
+		replace.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				insertFrame(currentFrameRange.getValue(),true);
 			}
 		});
 		
@@ -1058,8 +1067,10 @@ HorizontalPanel h1=new HorizontalPanel();
 		super.leftBottom(bottomPanel);
 	}
 	
-	private void insertFrame(int index){
-		
+	private void insertFrame(int index,boolean overwrite){
+		if(index<0){
+			index=0;
+		}
 		List<Matrix4> matrixs=AnimationBonesData.cloneMatrix(ab.getBonesMatrixs());
 		List<Vector3> targets=new ArrayList<Vector3>();
 		for(IKData ikdata:ikdatas){
@@ -1067,8 +1078,15 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 		
 		PoseFrameData ps=new PoseFrameData(matrixs, targets);
-		poseFrameDatas.add(index,ps);
-		updatePoseIndex(poseFrameDatas.size()-1);
+		if(overwrite){
+			poseFrameDatas.set(index,ps);
+			updatePoseIndex(index);
+		}else{
+			poseFrameDatas.add(index,ps);
+			updatePoseIndex(poseFrameDatas.size()-1);
+		}
+		
+		
 	}
 	
 	protected void doExport() {
@@ -1305,7 +1323,7 @@ public void onError(Request request, Throwable exception) {
 					public void loaded(Geometry geometry) {
 						baseGeometry=geometry;
 						doPose(0);
-						insertFrame(poseFrameDatas.size());//initial pose-frame
+						insertFrame(poseFrameDatas.size(),false);//initial pose-frame
 					}
 				});
 			}
