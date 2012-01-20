@@ -161,7 +161,8 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		IKData ikdata0=new IKData();
 		//ikdata0.setTargetPos(THREE.Vector3(-10, 5, 0));
 		ikdata0.setLastBoneName("RightHand");
-		ikdata0.setBones(new String[]{"RightForeArm","RightArm","RightShoulder"});
+		ikdata0.setBones(new String[]{"RightForeArm","RightArm"});
+	//	ikdata0.setBones(new String[]{"RightForeArm","RightArm","RightShoulder"});
 		ikdata0.setIteration(7);
 		ikdatas.add(ikdata0);
 		
@@ -178,7 +179,8 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		IKData ikdata2=new IKData();
 		//ikdata0.setTargetPos(THREE.Vector3(-10, 5, 0));
 		ikdata2.setLastBoneName("LeftHand");
-		ikdata2.setBones(new String[]{"LeftForeArm","LeftArm","LeftShoulder"});
+		//ikdata2.setBones(new String[]{"LeftForeArm","LeftArm","LeftShoulder"});
+		ikdata2.setBones(new String[]{"LeftForeArm","LeftArm"});
 		ikdata2.setIteration(7);
 		ikdatas.add(ikdata2);
 		
@@ -225,11 +227,11 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 170, 0, 0));
 		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -40, 91, -50, 120));
-		boneLimits.put("RightShoulder",BoneLimit.createBoneLimit(-10, 20, -15, 15,-5, 5));
+	//	boneLimits.put("RightShoulder",BoneLimit.createBoneLimit(-10, 20, -15, 15,-5, 5));
 		
 		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -170, 0, 0, 0));
 		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-80, 60, -91, 40, -120, 50));
-		boneLimits.put("LeftShoulder",BoneLimit.createBoneLimit(-10, 20, -15, 15,-5, 5));
+	//	boneLimits.put("LeftShoulder",BoneLimit.createBoneLimit(-10, 20, -15, 15,-5, 5));
 		
 		
 		//straight only
@@ -1376,7 +1378,7 @@ public void onError(Request request, Throwable exception) {
 				//frameRange.setMax(animationData.getHierarchy().get(0).getKeys().length());
 				
 				JSONLoader loader=THREE.JSONLoader();
-				loader.load("men3tmp.js", new  LoadHandler() {
+				loader.load("men3men.js", new  LoadHandler() {
 					@Override
 					public void loaded(Geometry geometry) {
 						baseGeometry=geometry;
@@ -2216,4 +2218,15 @@ private VerticalPanel boneRotationsPanel;
 		geo.computeTangents();
 		*/
 		}	
+	@Override
+	public String getHtml(){
+	String html=super.getHtml();
+	html+="<br/>"+"[Howto]<br/>Select Nothing:Mouse Drag=Rotatation-XY,Mouse Wheel= Zoom, +ALT Move-XY Camera";
+	html+="<br/>"+"Select IK(Green Box):Mouse Drag=Move IK-XY,Mouse Wheel=Move IK-Z +Shift=smoth-change +Alt=Rapid-change";
+	html+="<br/>"+"Select Bone(Red Box):Mouse Drag=Rotate-XY,Mouse Wheel=Rotate-Z";
+	html+="<br/>"+"Select Root(Red Large Box):Mouse Drag=Rotate-XY,Mouse Wheel=Rotate-Z +Shift=Follow IK +Alt=Move Position";
+	html+="<br/>"+"yello box means under Y:0,orange box means near Y:0";
+	html+="<br/>"+"<a href='http://webgl.akjava.com'>More info at webgl.akjava.com</a>";
+	return html;	
+	}
 }
