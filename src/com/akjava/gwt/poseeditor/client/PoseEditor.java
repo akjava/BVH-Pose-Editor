@@ -219,11 +219,11 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		//manual
 		
-		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 170, 0, 0));
+		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-89, 10, 0, 150, -10, 10));
 		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -40, 91, -50, 120));
 	//	boneLimits.put("RightShoulder",BoneLimit.createBoneLimit(-10, 20, -15, 15,-5, 5));
 		
-		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -170, 0, 0, 0));
+		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-89, 10, -150, 0, -10, 10));
 		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-80, 60, -91, 40, -120, 50));
 	//	boneLimits.put("LeftShoulder",BoneLimit.createBoneLimit(-10, 20, -15, 15,-5, 5));
 		
@@ -426,9 +426,9 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		
 
-		log("mouse-click:"+event.getX()+"x"+event.getY());
+		//log("mouse-click:"+event.getX()+"x"+event.getY());
 JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.getY(), screenWidth, screenHeight, camera,scene);
-		log("intersects-length:"+intersects.length());
+		//log("intersects-length:"+intersects.length());
 		for(int i=0;i<intersects.length();i++){
 			Intersect sect=intersects.get(i);
 			
@@ -1153,7 +1153,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		BVHMotion motion=new BVHMotion();
 		motion.setFrameTime(.25);
-		log("size:"+poseFrameDatas.size());
+		log("frame-size:"+poseFrameDatas.size());
 		for(PoseFrameData pose:poseFrameDatas){
 			double[] values=converter.matrixsToMotion(pose.getMatrixs(),BVHConverter.ROOT_POSITION_ROTATE_ONLY,"XYZ");
 			motion.add(values);
@@ -1166,7 +1166,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		String bvhText=writer.writeToString(exportBVH);
 		
-		log(bvhText);
+		//log(bvhText);
 		exportTextChrome(bvhText,"poseeditor"+exportIndex);
 		exportIndex++;
 	}
@@ -1260,7 +1260,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		//log("bone:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(q))));
 				
 		Vector3 angles=GWTThreeUtils.toDegreeAngle(ab.getBoneMatrix(name));
-		//log("update-bone:"+ThreeLog.get(angles));
+		log("updateBoneRotationRanges():"+ThreeLog.get(angles));
 		int x=(int) angles.getX();
 		if(x==180|| x==-180){
 			x=0;

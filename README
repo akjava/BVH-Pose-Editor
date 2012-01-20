@@ -1,0 +1,18 @@
+BVH Pose Editor
+
+Licensed Apache2.0
+included Three.js & stats.js & GWT-Three.js Wrapper is Under MIT License
+
+still alpha,any question or suggestion or but let me know
+
+English Web Site
+http://webgl.akjava.com
+
+Base Bone come from
+https://sites.google.com/a/cgspeed.com/cgspeed/motion-capture/cmu-bvh-conversion
+
+---
+Bugs
+Only Tested on Chrome
+
+there are gimbal lock problem when angle over 90
