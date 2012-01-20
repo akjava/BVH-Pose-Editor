@@ -218,7 +218,12 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		
 		//there are gimbal lock problem angle must be under 90
-		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-89, 10, 0, 89.9, -10, 10));
+		/*
+		 * to manual change to joint angle,keep under 90 is better.
+		 	but gimbal lock problem happend alreay at IK result converted to eular angle
+		 */
+		
+		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-89, 10, 0, 89, -10, 10));
 		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -40, 89, -50,89));
 		
 		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-89, 10, -89.9, 0, -10, 10));
@@ -241,7 +246,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		//manual
 		/*
-		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-89, 10, 0, 150, -10, 10));
+		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-91, 10, 0, 150, -10, 10));
 		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -40, 91, -50, 120));
 		
 		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-89, 10, -150, 0, -10, 10));
@@ -249,10 +254,10 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 
 		
 		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 40));
-		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-85, 91, -35, 5, -80, 40));
+		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-91, 91, -35, 5, -80, 40));
 		
 		boneLimits.put("LeftLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, -40, 0));
-		boneLimits.put("LeftUpLeg",BoneLimit.createBoneLimit(-85, 91, -5, 35, -40, 80));
+		boneLimits.put("LeftUpLeg",BoneLimit.createBoneLimit(-91, 91, -5, 35, -40, 80));
 		
 		
 		boneLimits.put("LowerBack",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
