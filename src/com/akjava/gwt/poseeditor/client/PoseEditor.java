@@ -6,28 +6,22 @@ import java.util.List;
 import java.util.Map;
 
 import com.akjava.bvh.client.BVH;
+import com.akjava.bvh.client.BVHMotion;
 import com.akjava.bvh.client.BVHNode;
 import com.akjava.bvh.client.BVHParser;
 import com.akjava.bvh.client.BVHParser.ParserListener;
-import com.akjava.bvh.client.gwt.BoxData;
-import com.akjava.bvh.client.gwt.BoxDataParser;
+import com.akjava.bvh.client.BVHWriter;
 import com.akjava.bvh.client.threejs.AnimationBoneConverter;
 import com.akjava.bvh.client.threejs.AnimationDataConverter;
 import com.akjava.bvh.client.threejs.BVHConverter;
-import com.akjava.bvh.client.BVHWriter;
-import com.akjava.bvh.client.BVHMotion;
-
 import com.akjava.gwt.html5.client.HTML5InputRange;
-import com.akjava.gwt.html5.client.HTML5InputRange.HTML5InputRangeListener;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
-import com.akjava.gwt.poseeditor.client.resources.Bundles;
 import com.akjava.gwt.three.client.THREE;
 import com.akjava.gwt.three.client.core.Geometry;
 import com.akjava.gwt.three.client.core.Intersect;
 import com.akjava.gwt.three.client.core.Matrix4;
 import com.akjava.gwt.three.client.core.Object3D;
 import com.akjava.gwt.three.client.core.Projector;
-import com.akjava.gwt.three.client.core.Quaternion;
 import com.akjava.gwt.three.client.core.Vector3;
 import com.akjava.gwt.three.client.core.Vector4;
 import com.akjava.gwt.three.client.core.Vertex;
@@ -104,7 +98,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		leftBottom(bottomPanel);
 	}
 	
-	private Map<String,BoxData> boxDatas;
+	
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
 		canvas.setClearColorHex(0x333333);
@@ -128,6 +122,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		mesh.setRotation(Math.toRadians(-90), 0, 0);
 		root.add(mesh);
 		
+		//line removed,because of flicking
 		Mesh xline=GWTGeometryUtils.createLineMesh(THREE.Vector3(-50, 0, 0.001), THREE.Vector3(50, 0, 0.001), 0x880000,3);
 		//root.add(xline);
 		
@@ -143,7 +138,6 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		//line flicked think something
 		
 		
-		boxDatas=new BoxDataParser().parse(Bundles.INSTANCE.boxsize().getText());
 		
 		loadBVH("pose.bvh");
 		
