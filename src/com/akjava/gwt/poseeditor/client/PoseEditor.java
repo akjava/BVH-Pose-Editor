@@ -217,20 +217,36 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		*/
 		
 		
-		//manual
+		//there are gimbal lock problem angle must be under 90
+		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-89, 10, 0, 89.9, -10, 10));
+		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -40, 89, -50,89));
 		
+		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-89, 10, -89.9, 0, -10, 10));
+		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-80, 60, -89, 40, -89, 50));
+
+		
+		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 89, 0, 0, 0, 40));
+		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-85, 89, -35, 5, -80, 40));
+		
+		boneLimits.put("LeftLeg",BoneLimit.createBoneLimit(0, 89, 0, 0, -40, 0));
+		boneLimits.put("LeftUpLeg",BoneLimit.createBoneLimit(-85, 89, -5, 35, -40, 80));
+		
+		
+		boneLimits.put("LowerBack",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
+		boneLimits.put("Spine",BoneLimit.createBoneLimit(-30, 30, -40, 40, -40, 40));
+		//boneLimits.put("Spine1",BoneLimit.createBoneLimit(-30, 30, -30, 30, -30, 30));
+		boneLimits.put("Neck",BoneLimit.createBoneLimit(-35, 35, -35, 35, -35, 35));
+		boneLimits.put("Neck1",BoneLimit.createBoneLimit(-5, 5, -5, 5, -5, 5));
+		
+		
+		//manual
+		/*
 		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-89, 10, 0, 150, -10, 10));
 		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -40, 91, -50, 120));
-	//	boneLimits.put("RightShoulder",BoneLimit.createBoneLimit(-10, 20, -15, 15,-5, 5));
 		
 		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-89, 10, -150, 0, -10, 10));
 		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-80, 60, -91, 40, -120, 50));
-	//	boneLimits.put("LeftShoulder",BoneLimit.createBoneLimit(-10, 20, -15, 15,-5, 5));
-		
-		
-		//straight only
-		//boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 8, 8));
-		//boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-85, 91, 0, 0, 20, 20));
+
 		
 		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 40));
 		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-85, 91, -35, 5, -80, 40));
@@ -244,7 +260,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		//boneLimits.put("Spine1",BoneLimit.createBoneLimit(-30, 30, -30, 30, -30, 30));
 		boneLimits.put("Neck",BoneLimit.createBoneLimit(-35, 35, -35, 35, -35, 35));
 		boneLimits.put("Neck1",BoneLimit.createBoneLimit(-5, 5, -5, 5, -5, 5));
-		
+		*/
 	}
 	
 	Map<String,BoneLimit> boneLimits=new HashMap<String,BoneLimit>();
