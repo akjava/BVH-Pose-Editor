@@ -223,7 +223,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		 * to manual change to joint angle,keep under 90 is better.
 		 	but gimbal lock problem happend alreay at IK result converted to eular angle
 		 */
-		
+		/*
 		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-89, 10, 0, 89, -10, 10));
 		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -40, 89, -50,89));
 		
@@ -243,10 +243,10 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		//boneLimits.put("Spine1",BoneLimit.createBoneLimit(-30, 30, -30, 30, -30, 30));
 		boneLimits.put("Neck",BoneLimit.createBoneLimit(-35, 35, -35, 35, -35, 35));
 		boneLimits.put("Neck1",BoneLimit.createBoneLimit(-5, 5, -5, 5, -5, 5));
-		
+		*/
 		
 		//manual
-		/*
+		
 		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-91, 10, 0, 150, -10, 10));
 		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -40, 91, -50, 120));
 		
@@ -266,7 +266,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		//boneLimits.put("Spine1",BoneLimit.createBoneLimit(-30, 30, -30, 30, -30, 30));
 		boneLimits.put("Neck",BoneLimit.createBoneLimit(-35, 35, -35, 35, -35, 35));
 		boneLimits.put("Neck1",BoneLimit.createBoneLimit(-5, 5, -5, 5, -5, 5));
-		*/
+		
 	}
 	
 	Map<String,BoneLimit> boneLimits=new HashMap<String,BoneLimit>();
@@ -1560,6 +1560,7 @@ for(NameAndVector3 nv:samples){
 	Matrix4 newMatrix=GWTThreeUtils.rotationToMatrix4(nv.getVector3());
 	newMatrix.multiply(translates,newMatrix);
 	//log("apply-matrix");
+	matrix.get(boneIndex).setAngle(GWTThreeUtils.radiantToDegree(nv.getVector3()));
 	matrix.get(boneIndex).setMatrix(newMatrix);
 	}
 }
