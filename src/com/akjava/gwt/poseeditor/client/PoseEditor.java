@@ -1657,6 +1657,10 @@ private void stepCDDIk(int perLimit,IKData ikData){
 	
 	
 	//limit per angles
+	/*
+	 * if angle value over 90 usually value is invalid.
+	 * but i dont know how to detect or fix it.
+	 */
 	Vector3 angles=GWTThreeUtils.rotationToVector3(newMatrix);
 	
 	
