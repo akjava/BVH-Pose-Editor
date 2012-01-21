@@ -1590,6 +1590,11 @@ private void initializeAnimationData(int index,boolean resetMatrix){
 	if(ab==null){
 	baseMatrixs=AnimationBonesData.boneToAngleAndMatrix(bones, animationData, index);
 	
+	for(int i=0;i<baseMatrixs.size();i++){
+		AngleAndMatrix am=baseMatrixs.get(i);
+		log(""+i+":"+ThreeLog.get(am.getAngle()));
+	}
+	
 	ab=new AnimationBonesData(bones,AnimationBonesData.cloneAngleAndMatrix(baseMatrixs) );
 	
 	}
