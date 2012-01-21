@@ -4,14 +4,15 @@ import java.util.List;
 
 import com.akjava.gwt.three.client.core.Matrix4;
 import com.akjava.gwt.three.client.core.Vector3;
+import com.akjava.gwt.three.client.gwt.animation.AngleAndMatrix;
 
 public class PoseFrameData {
-List<Matrix4> matrixs;
+List<AngleAndMatrix> matrixs;
 List<Vector3> targetPositions;
-public List<Matrix4> getMatrixs() {
+public List<AngleAndMatrix> getMatrixs() {
 	return matrixs;
 }
-public void setMatrixs(List<Matrix4> matrixs) {
+public void setMatrixs(List<AngleAndMatrix> matrixs) {
 	this.matrixs = matrixs;
 }
 public List<Vector3> getTargetPositions() {
@@ -20,7 +21,7 @@ public List<Vector3> getTargetPositions() {
 public void setTargetPositions(List<Vector3> targetPositions) {
 	this.targetPositions = targetPositions;
 }
-public PoseFrameData(List<Matrix4> matrixs,List<Vector3> targetPositions){
+public PoseFrameData(List<AngleAndMatrix> matrixs,List<Vector3> targetPositions){
 	this.matrixs=matrixs;
 	this.targetPositions=targetPositions;
 }
