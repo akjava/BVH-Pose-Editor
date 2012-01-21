@@ -1178,7 +1178,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		motion.setFrameTime(.25);
 		log("frame-size:"+poseFrameDatas.size());
 		for(PoseFrameData pose:poseFrameDatas){
-			double[] values=converter.angleAndMatrixsToMotion(pose.getMatrixs(),BVHConverter.ROOT_POSITION_ROTATE_ONLY,"XYZ");
+			double[] values=converter.angleAndMatrixsToMotion(pose.getAngleAndMatrixs(),BVHConverter.ROOT_POSITION_ROTATE_ONLY,"XYZ");
 			motion.add(values);
 		}
 		motion.setFrames(motion.getMotions().size());//
@@ -1226,7 +1226,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			Vector3 vec=ps.getTargetPositions().get(i);
 			ikdatas.get(i).getTargetPos().set(vec.getX(), vec.getY(), vec.getZ());
 		}
-		currentMatrixs=AnimationBonesData.cloneAngleAndMatrix(ps.getMatrixs());
+		currentMatrixs=AnimationBonesData.cloneAngleAndMatrix(ps.getAngleAndMatrixs());
 		ab.setBonesAngleAndMatrixs(currentMatrixs);
 		if(isSelectedIk()){
 		switchSelectionIk(getCurrentIkData().getLastBoneName());
@@ -1240,9 +1240,8 @@ HorizontalPanel h1=new HorizontalPanel();
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
 		int index=ab.getBoneIndex(name);
 		//Matrix4 mx=ab.getBoneMatrix(name);
-		Vector3 angles=THREE.Vector3(Math.toRadians(rotationBoneRange.getValue()),
-				Math.toRadians(rotationBoneYRange.getValue())
-				, Math.toRadians(rotationBoneZRange.getValue()));
+		Vector3 degAngles=THREE.Vector3(rotationBoneRange.getValue(),rotationBoneYRange.getValue(),rotationBoneZRange.getValue());
+		Vector3 angles=GWTThreeUtils.degreeToRagiant(degAngles);
 		//log("set-angle:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
 		//mx.setRotationFromEuler(angles, "XYZ");
 		
@@ -1257,6 +1256,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		//log("bone-pos:"+ThreeLog.get(bones.get(index).getPos()));
 		
 		ab.getBoneAngleAndMatrix(index).setMatrix(rotMx);
+		ab.getBoneAngleAndMatrix(index).setAngle(degAngles);
 	
 		doPoseByMatrix(ab);
 	}
@@ -1281,23 +1281,20 @@ HorizontalPanel h1=new HorizontalPanel();
 		//Quaternion q=GWTThreeUtils.jsArrayToQuaternion(bones.get(boneIndex).getRotq());
 		//log("bone:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(q))));
 				
-		Vector3 angles=GWTThreeUtils.toDegreeAngle(ab.getBoneAngleAndMatrix(name).getMatrix());
-		log("updateBoneRotationRanges():"+ThreeLog.get(angles));
+		Vector3 mAngles=GWTThreeUtils.toDegreeAngle(ab.getBoneAngleAndMatrix(name).getMatrix());
+		log("updateBoneRotationRanges():"+ThreeLog.get(mAngles));
+		
+		Vector3 angles=ab.getBoneAngleAndMatrix(name).getAngle();
 		int x=(int) angles.getX();
-		if(x==180|| x==-180){
-			x=0;
-		}
+		
 		rotationBoneRange.setValue(x);
+		
 		int y=(int) angles.getY();
-		if(y==180|| y==-180){
-			y=0;
-		}
+		
 		rotationBoneYRange.setValue(y);
 	
 		int z=(int) angles.getZ();
-		if(z==180|| z==-180){
-			z=0;
-		}
+		
 		rotationBoneZRange.setValue(z);
 	}
 	private void updateBonePositionRanges(){
@@ -1589,12 +1586,6 @@ private void initializeAnimationData(int index,boolean resetMatrix){
 	//initialize AnimationBone
 	if(ab==null){
 	baseMatrixs=AnimationBonesData.boneToAngleAndMatrix(bones, animationData, index);
-	
-	for(int i=0;i<baseMatrixs.size();i++){
-		AngleAndMatrix am=baseMatrixs.get(i);
-		log(""+i+":"+ThreeLog.get(am.getAngle()));
-	}
-	
 	ab=new AnimationBonesData(bones,AnimationBonesData.cloneAngleAndMatrix(baseMatrixs) );
 	
 	}
@@ -1653,8 +1644,8 @@ private void stepCDDIk(int perLimit,IKData ikData){
 	
 	
 	Matrix4 jointRot=ab.getBoneAngleAndMatrix(targetBoneName).getMatrix();
-	Vector3 beforeAngles=GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(jointRot));
-	String beforeAngleValue=ThreeLog.get(beforeAngles);
+	//Vector3 beforeAngles=GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(jointRot));
+	Vector3 beforeAngles=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
 	Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, ikData.getTargetPos());
 	if(newMatrix==null){//invalid value
 		continue;
@@ -1719,6 +1710,7 @@ private void stepCDDIk(int perLimit,IKData ikData){
 	newMatrix.multiply(translates,newMatrix);
 	
 	ab.getBoneAngleAndMatrix(boneIndex).setMatrix(newMatrix);
+	ab.getBoneAngleAndMatrix(boneIndex).setAngle(GWTThreeUtils.radiantToDegree(angles));
 	
 	
 	//log(targetName+":"+ThreeLog.getAngle(jointRot)+",new"+ThreeLog.getAngle(newMatrix));

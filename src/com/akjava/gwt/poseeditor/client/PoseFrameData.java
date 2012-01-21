@@ -9,10 +9,10 @@ import com.akjava.gwt.three.client.gwt.animation.AngleAndMatrix;
 public class PoseFrameData {
 List<AngleAndMatrix> matrixs;
 List<Vector3> targetPositions;
-public List<AngleAndMatrix> getMatrixs() {
+public List<AngleAndMatrix> getAngleAndMatrixs() {
 	return matrixs;
 }
-public void setMatrixs(List<AngleAndMatrix> matrixs) {
+public void setAngleAndMatrixs(List<AngleAndMatrix> matrixs) {
 	this.matrixs = matrixs;
 }
 public List<Vector3> getTargetPositions() {
