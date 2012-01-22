@@ -291,7 +291,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 	}
 	
 	private void setEnableBoneRanges(boolean rotate,boolean pos){
-		rotationBoneRange.setEnabled(rotate);
+		rotationBoneXRange.setEnabled(rotate);
 		rotationBoneYRange.setEnabled(rotate);
 		rotationBoneZRange.setEnabled(rotate);
 		
@@ -550,7 +550,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				mouseDownX=event.getX();
 				mouseDownY=event.getY();
 				
-				rotationBoneRange.setValue(rotationBoneRange.getValue()+diffY);
+				rotationBoneXRange.setValue(rotationBoneXRange.getValue()+diffY);
 				rotationBoneYRange.setValue(rotationBoneYRange.getValue()+diffX);
 				
 				rotToBone();
@@ -663,7 +663,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	private HTML5InputRange rotationRange;
 	private HTML5InputRange rotationYRange;
 	private HTML5InputRange rotationZRange;
-	private HTML5InputRange rotationBoneRange;
+	private HTML5InputRange rotationBoneXRange;
 	private HTML5InputRange rotationBoneYRange;
 	private HTML5InputRange rotationBoneZRange;
 	private PopupPanel bottomPanel;
@@ -672,6 +672,8 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	private HTML5InputRange positionXBoneRange;
 	private HTML5InputRange positionYBoneRange;
 	private HTML5InputRange positionZBoneRange;
+	private CheckBox ylockCheck;
+	private CheckBox xlockCheck;
 	@Override
 	public void createControl(Panel parent) {
 HorizontalPanel h1=new HorizontalPanel();
@@ -918,20 +920,38 @@ HorizontalPanel h1=new HorizontalPanel();
 		parent.add(boneRotationsPanel);
 		
 		HorizontalPanel h1b=new HorizontalPanel();
-		rotationBoneRange = new HTML5InputRange(-180,180,0);
-		boneRotationsPanel.add(HTML5Builder.createRangeLabel("X-Rotate:", rotationBoneRange));
+		
+		xlockCheck = new CheckBox();
+		h1b.add(xlockCheck);
+		xlockCheck.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				if(xlockCheck.getValue()){
+					boneLock.setX(getSelectedBoneName(), rotationBoneXRange.getValue());
+					rotationBoneXRange.setEnabled(false);
+				
+				}else{
+					boneLock.clearX(getSelectedBoneName());
+					rotationBoneXRange.setEnabled(true);
+				}
+				
+			}
+		});
+		
+		rotationBoneXRange = new HTML5InputRange(-180,180,0);
+		boneRotationsPanel.add(HTML5Builder.createRangeLabel("X-Rotate:", rotationBoneXRange));
 		boneRotationsPanel.add(h1b);
-		h1b.add(rotationBoneRange);
+		h1b.add(rotationBoneXRange);
 		Button resetB1=new Button("Reset");
 		resetB1.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				rotationBoneRange.setValue(0);
+				rotationBoneXRange.setValue(0);
 				rotToBone();
 			}
 		});
 		h1b.add(resetB1);
-		rotationBoneRange.addClickHandler(new ClickHandler() {
+		rotationBoneXRange.addClickHandler(new ClickHandler() {
 			
 			@Override
 			public void onClick(ClickEvent event) {
@@ -940,7 +960,22 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		
 		HorizontalPanel h2b=new HorizontalPanel();
-		
+		ylockCheck = new CheckBox();
+		h2b.add(ylockCheck);
+		ylockCheck.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				if(ylockCheck.getValue()){
+					boneLock.setY(getSelectedBoneName(), rotationBoneYRange.getValue());
+					rotationBoneYRange.setEnabled(false);
+				
+				}else{
+					boneLock.clearY(getSelectedBoneName());
+					rotationBoneYRange.setEnabled(true);
+				}
+				
+			}
+		});
 		rotationBoneYRange = new HTML5InputRange(-180,180,0);
 		boneRotationsPanel.add(HTML5Builder.createRangeLabel("Y-Rotate:", rotationBoneYRange));
 		boneRotationsPanel.add(h2b);
@@ -964,6 +999,22 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		HorizontalPanel h3b=new HorizontalPanel();
+		zlockCheck = new CheckBox();
+		h3b.add(zlockCheck);
+		zlockCheck.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				if(zlockCheck.getValue()){
+					boneLock.setZ(getSelectedBoneName(), rotationBoneZRange.getValue());
+					rotationBoneZRange.setEnabled(false);
+				
+				}else{
+					boneLock.clearZ(getSelectedBoneName());
+					rotationBoneZRange.setEnabled(true);
+				}
+				
+			}
+		});
 		rotationBoneZRange = new HTML5InputRange(-180,180,0);
 		boneRotationsPanel.add(HTML5Builder.createRangeLabel("Z-Rotate:", rotationBoneZRange));
 		boneRotationsPanel.add(h3b);
@@ -996,6 +1047,12 @@ HorizontalPanel h1=new HorizontalPanel();
 		createBottomPanel();
 		showControl();
 		
+	}
+	private String getSelectedBoneName(){
+		if(boneNamesBox.getSelectedIndex()==-1){
+			return "";
+		}
+		return boneNamesBox.getValue(boneNamesBox.getSelectedIndex());
 	}
 	protected void positionToBone() {
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
@@ -1240,7 +1297,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
 		int index=ab.getBoneIndex(name);
 		//Matrix4 mx=ab.getBoneMatrix(name);
-		Vector3 degAngles=THREE.Vector3(rotationBoneRange.getValue(),rotationBoneYRange.getValue(),rotationBoneZRange.getValue());
+		Vector3 degAngles=THREE.Vector3(rotationBoneXRange.getValue(),rotationBoneYRange.getValue(),rotationBoneZRange.getValue());
 		Vector3 angles=GWTThreeUtils.degreeToRagiant(degAngles);
 		//log("set-angle:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
 		//mx.setRotationFromEuler(angles, "XYZ");
@@ -1282,21 +1339,44 @@ HorizontalPanel h1=new HorizontalPanel();
 		//log("bone:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(q))));
 				
 		Vector3 mAngles=GWTThreeUtils.toDegreeAngle(ab.getBoneAngleAndMatrix(name).getMatrix());
-		log("updateBoneRotationRanges():"+ThreeLog.get(mAngles));
+		//log("updateBoneRotationRanges():"+ThreeLog.get(mAngles));
 		
 		Vector3 angles=ab.getBoneAngleAndMatrix(name).getAngle();
 		int x=(int) angles.getX();
 		
-		rotationBoneRange.setValue(x);
+		rotationBoneXRange.setValue(x);
+		if(boneLock.hasX(name)){
+			xlockCheck.setValue(true);
+			rotationBoneXRange.setEnabled(false);
+		}else{
+			xlockCheck.setValue(false);
+			rotationBoneXRange.setEnabled(true);
+		}
 		
 		int y=(int) angles.getY();
 		
 		rotationBoneYRange.setValue(y);
+		if(boneLock.hasY(name)){
+			ylockCheck.setValue(true);
+			rotationBoneYRange.setEnabled(false);
+		}else{
+			ylockCheck.setValue(false);
+			rotationBoneYRange.setEnabled(true);
+		}
 	
 		int z=(int) angles.getZ();
 		
 		rotationBoneZRange.setValue(z);
+		if(boneLock.hasZ(name)){
+			zlockCheck.setValue(true);
+			rotationBoneZRange.setEnabled(false);
+		}else{
+			zlockCheck.setValue(false);
+			rotationBoneZRange.setEnabled(true);
+		}
+		
 	}
+	
 	private void updateBonePositionRanges(){
 		if(boneNamesBox.getSelectedIndex()==-1){
 			return;
@@ -1627,6 +1707,7 @@ private void initializeAnimationData(int index,boolean resetMatrix){
 	}
 	
 }
+private BoneLockControler boneLock=new BoneLockControler();
 private void stepCDDIk(int perLimit,IKData ikData){
 
 	//do CDDIK
@@ -1646,7 +1727,8 @@ private void stepCDDIk(int perLimit,IKData ikData){
 	
 	Matrix4 jointRot=ab.getBoneAngleAndMatrix(targetBoneName).getMatrix();
 	//Vector3 beforeAngles=GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(jointRot));
-	Vector3 beforeAngles=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
+	Vector3 beforeAngle=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
+	Vector3 currentAngle=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
 	Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, ikData.getTargetPos());
 	if(newMatrix==null){//invalid value
 		continue;
@@ -1661,10 +1743,10 @@ private void stepCDDIk(int perLimit,IKData ikData){
 	 * if angle value over 90 usually value is invalid.
 	 * but i dont know how to detect or fix it.
 	 */
-	Vector3 angles=GWTThreeUtils.rotationToVector3(newMatrix);
+	Vector3 ikkedAngle=GWTThreeUtils.rotationToVector3(newMatrix);
 	
 	
-	Vector3 diffAngles=GWTThreeUtils.radiantToDegree(angles).subSelf(beforeAngles);
+	Vector3 diffAngles=GWTThreeUtils.radiantToDegree(ikkedAngle).subSelf(currentAngle);
 	if(Math.abs(diffAngles.getX())>perLimit){
 		double diff=perLimit;
 		if(diffAngles.getX()<0){
@@ -1686,9 +1768,15 @@ private void stepCDDIk(int perLimit,IKData ikData){
 		}
 		diffAngles.setZ(diff);
 	}
-	beforeAngles.addSelf(diffAngles);
-	angles=GWTThreeUtils.degreeToRagiant(beforeAngles);
-	//log("before:"+beforeAngleValue+" after:"+ThreeLog.get(beforeAngles));
+	currentAngle.addSelf(diffAngles);
+	
+	
+	//currentAngle.setX(0);//keep x
+	
+	
+	
+	ikkedAngle=GWTThreeUtils.degreeToRagiant(currentAngle);
+	log("before:"+ThreeLog.get(beforeAngle)+" after:"+ThreeLog.get(currentAngle));
 	
 	
 	//limit max
@@ -1696,26 +1784,38 @@ private void stepCDDIk(int perLimit,IKData ikData){
 	//log(targetBoneName);
 	//log("before-limit:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
 	if(blimit!=null){
-		blimit.apply(angles);
+		blimit.apply(ikkedAngle);
 	}
 	//invalid ignore
-	if("NaN".equals(""+angles.getX())){
+	if("NaN".equals(""+ikkedAngle.getX())){
 		continue;
 	}
-	if("NaN".equals(""+angles.getY())){
+	if("NaN".equals(""+ikkedAngle.getY())){
 		continue;
 	}
-	if("NaN".equals(""+angles.getZ())){
+	if("NaN".equals(""+ikkedAngle.getZ())){
 		continue;
 	}
 	
+	
+	if(boneLock.hasX(targetBoneName)){
+		ikkedAngle.setX(Math.toRadians(boneLock.getX(targetBoneName)));	
+	}
+	
+	if(boneLock.hasY(targetBoneName)){
+		ikkedAngle.setY(Math.toRadians(boneLock.getY(targetBoneName)));	
+	}
+	if(boneLock.hasZ(targetBoneName)){
+		ikkedAngle.setZ(Math.toRadians(boneLock.getZ(targetBoneName)));	
+	}
+	
 	//log("after-limit:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
-	newMatrix=GWTThreeUtils.rotationToMatrix4(angles);
+	newMatrix=GWTThreeUtils.rotationToMatrix4(ikkedAngle);
 	
 	newMatrix.multiply(translates,newMatrix);
 	
 	ab.getBoneAngleAndMatrix(boneIndex).setMatrix(newMatrix);
-	ab.getBoneAngleAndMatrix(boneIndex).setAngle(GWTThreeUtils.radiantToDegree(angles));
+	ab.getBoneAngleAndMatrix(boneIndex).setAngle(GWTThreeUtils.radiantToDegree(ikkedAngle));
 	
 	
 	//log(targetName+":"+ThreeLog.getAngle(jointRot)+",new"+ThreeLog.getAngle(newMatrix));
@@ -2070,6 +2170,7 @@ private Map<String,Mesh> targetMeshs=new HashMap<String,Mesh>();
 private ListBox rotateAndPosList;
 private VerticalPanel bonePositionsPanel;
 private VerticalPanel boneRotationsPanel;
+private CheckBox zlockCheck;
 
 /**
  * @deprecated
