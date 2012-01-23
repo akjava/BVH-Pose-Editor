@@ -83,6 +83,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 	private BVH bvh;
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
+	
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
@@ -1729,11 +1730,13 @@ private void stepCDDIk(int perLimit,IKData ikData){
 	//Vector3 beforeAngles=GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(jointRot));
 	Vector3 beforeAngle=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
 	Vector3 currentAngle=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
-	Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, ikData.getTargetPos());
+	//Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, ikData.getTargetPos());
+	AngleAndMatrix root=ab.getBoneAngleAndMatrix(0);
+	Matrix4 newMatrix=cddIk.getStepAngleMatrix(root.getAngle(),lastJointPos, jointPos, jointRot, ikData.getTargetPos());
 	if(newMatrix==null){//invalid value
 		continue;
 	}
-	Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(newMatrix));
+	Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(jointRot));
 	
 	
 	
@@ -1746,7 +1749,8 @@ private void stepCDDIk(int perLimit,IKData ikData){
 	Vector3 ikkedAngle=GWTThreeUtils.rotationToVector3(newMatrix);
 	
 	
-	Vector3 diffAngles=GWTThreeUtils.radiantToDegree(ikkedAngle).subSelf(currentAngle);
+	//Vector3 diffAngles=GWTThreeUtils.radiantToDegree(ikkedAngle).subSelf(currentAngle);
+	Vector3 diffAngles=GWTThreeUtils.radiantToDegree(ikkedAngle);
 	if(Math.abs(diffAngles.getX())>perLimit){
 		double diff=perLimit;
 		if(diffAngles.getX()<0){
