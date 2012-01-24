@@ -250,11 +250,11 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		//manual
 		
-		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-91, 10, 0, 150, -10, 10));
-		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -91, 91, -50, 120));
+		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 150, -10, 10));
+		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-120, 60, -91, 91, -50, 120));
 		
-		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-89, 10, -150, 0, -10, 10));
-		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-80, 60, -91, 91, -120, 50));
+		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -150, 0, -10, 10));
+		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-120, 60, -91, 91, -120, 50));
 
 		
 		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
@@ -333,13 +333,13 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		if(currentSelectionName!=null){
 		List<List<NameAndVector3>> result=createBases(getCurrentIkData());
 		//log("switchd:"+result.size());
-		/*
+		
 		List<NameAndVector3> tmp=result.get(result.size()-1);
 		
 		for(NameAndVector3 value:tmp){
 			log(value.getName()+":"+ThreeLog.get(value.getVector3()));
 		}
-		*/
+		
 		
 		if(candiateAngleAndMatrixs!=null){
 			candiateAngleAndMatrixs.clear();
@@ -370,7 +370,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 	}
 	
 	public List<List<NameAndVector3>> createBases(IKData data){
-		int angle=45;
+		int angle=40;
 		if(data.getLastBoneName().equals("RightFoot") || data.getLastBoneName().equals("LeftFoot")){
 			//something special for foot
 			angle=20;
@@ -1803,7 +1803,8 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	
 	//TODO add parent bone angles
 	AngleAndMatrix root=ab.getBoneAngleAndMatrix(0);
-	Matrix4 newMatrix=cddIk.getStepAngleMatrix(root.getAngle(),lastJointPos, jointPos, jointRot, ikData.getTargetPos());
+	Vector3 parentAngle=ab.getParentAngles(boneIndex);
+	Matrix4 newMatrix=cddIk.getStepAngleMatrix(parentAngle,lastJointPos, jointPos, jointRot, ikData.getTargetPos());
 	if(newMatrix==null){//invalid value
 		continue;
 	}
