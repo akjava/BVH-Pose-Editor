@@ -373,7 +373,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		int angle=45;
 		if(data.getLastBoneName().equals("RightFoot") || data.getLastBoneName().equals("LeftFoot")){
 			//something special for foot
-			//angle=40;
+			angle=20;
 		}
 		List<List<NameAndVector3>> all=new ArrayList();
 		List<List<NameAndVector3>> result=new ArrayList();
@@ -584,11 +584,11 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				getCurrentIkData().getTargetPos().incrementX(diffX);
 				getCurrentIkData().getTargetPos().incrementY(diffY);
 				if(event.isShiftKeyDown()){//slow
-					doPoseIkk(0,false,1,getCurrentIkData());
+					doPoseIkk(0,false,1,getCurrentIkData(),1);
 				}else if(event.isAltKeyDown()){//rapid
-					doPoseIkk(0,true,1,getCurrentIkData());
+					doPoseIkk(0,true,1,getCurrentIkData(),1);
 				}else{
-					doPoseIkk(0,true,5,getCurrentIkData());
+					doPoseIkk(0,true,1,getCurrentIkData(),5);
 				}
 				
 				
@@ -607,7 +607,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					//effect-ik
 					for(IKData ik:ikdatas){
 						
-						doPoseIkk(0,false,5,ik);
+						doPoseIkk(0,false,5,ik,1);
 						}
 					}
 				}else{
@@ -627,7 +627,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				//effect-ik
 				for(IKData ik:ikdatas){
 					
-					doPoseIkk(0,false,5,ik);
+					doPoseIkk(0,false,5,ik,1);
 					}
 				}
 				}
@@ -669,11 +669,11 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			getCurrentIkData().getTargetPos().incrementZ(dy);
 			
 			if(event.isShiftKeyDown()){//slow
-				doPoseIkk(0,false,1,getCurrentIkData());
+				doPoseIkk(0,false,1,getCurrentIkData(),1);
 			}else if(event.isAltKeyDown()){//rapid
-				doPoseIkk(0,true,1,getCurrentIkData());
+				doPoseIkk(0,true,1,getCurrentIkData(),1);
 			}else{
-				doPoseIkk(0,true,5,getCurrentIkData());
+				doPoseIkk(0,true,1,getCurrentIkData(),5);
 			}
 			
 		}else if(isSelectedBone()){
@@ -685,7 +685,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				//switchSelectionIk(null);
 				//effect-ik
 				for(IKData ik:ikdatas){
-					doPoseIkk(0,false,5,ik);
+					doPoseIkk(0,false,5,ik,1);
 					}
 				}
 			
@@ -698,7 +698,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				//effect-ik
 				for(IKData ik:ikdatas){
 					
-					doPoseIkk(0,false,5,ik);
+					doPoseIkk(0,false,5,ik,1);
 					}
 				}
 			}
@@ -1776,13 +1776,13 @@ private void initializeAnimationData(int index,boolean resetMatrix){
 	
 }
 private BoneLockControler boneLock=new BoneLockControler();
-private void stepCDDIk(int perLimit,IKData ikData){
+private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 
 	//do CDDIK
 	//doCDDIk();
 	Vector3 tmp1=null,tmp2=null;
 	currentIkJointIndex=0;
-	for(int i=0;i<ikData.getIteration();i++){
+	for(int i=0;i<ikData.getIteration()*cddLoop;i++){
 	String targetBoneName=ikData.getBones().get(currentIkJointIndex);
 	int boneIndex=ab.getBoneIndex(targetBoneName);
 	Vector3 lastJointPos=ab.getPosition(ikData.getLastBoneName());
@@ -1902,11 +1902,11 @@ private void stepCDDIk(int perLimit,IKData ikData){
 	}
 }
 
-private void doPoseIkk(int index,boolean resetMatrix,int perLimit,IKData ikdata){
+private void doPoseIkk(int index,boolean resetMatrix,int perLimit,IKData ikdata,int cddLoop){
 		
 	initializeBodyMesh();
 	initializeAnimationData(index,resetMatrix);
-	stepCDDIk(perLimit,ikdata);	
+	stepCDDIk(perLimit,ikdata,cddLoop);	
 	doPoseByMatrix(ab);
 	updateBoneRanges();
 	
