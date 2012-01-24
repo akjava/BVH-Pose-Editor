@@ -249,16 +249,16 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		//manual
 		
 		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-91, 10, 0, 150, -10, 10));
-		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -40, 91, -50, 120));
+		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -91, 91, -50, 120));
 		
 		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-89, 10, -150, 0, -10, 10));
-		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-80, 60, -91, 40, -120, 50));
+		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-80, 60, -91, 91, -120, 50));
 
 		
-		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 40));
+		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
 		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-91, 91, -35, 5, -80, 40));
 		
-		boneLimits.put("LeftLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, -40, 0));
+		boneLimits.put("LeftLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, -20, 0));
 		boneLimits.put("LeftUpLeg",BoneLimit.createBoneLimit(-91, 91, -5, 35, -40, 80));
 		
 		
@@ -1731,6 +1731,8 @@ private void stepCDDIk(int perLimit,IKData ikData){
 	Vector3 beforeAngle=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
 	Vector3 currentAngle=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
 	//Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, ikData.getTargetPos());
+	
+	//TODO add parent bone angles
 	AngleAndMatrix root=ab.getBoneAngleAndMatrix(0);
 	Matrix4 newMatrix=cddIk.getStepAngleMatrix(root.getAngle(),lastJointPos, jointPos, jointRot, ikData.getTargetPos());
 	if(newMatrix==null){//invalid value
