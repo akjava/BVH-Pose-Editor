@@ -258,10 +258,10 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 
 		
 		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
-		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-91, 91, -35, 5, -80, 40));
+		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-120, 60, -35, 5, -80, 40));
 		
 		boneLimits.put("LeftLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, -20, 0));
-		boneLimits.put("LeftUpLeg",BoneLimit.createBoneLimit(-91, 91, -5, 35, -40, 80));
+		boneLimits.put("LeftUpLeg",BoneLimit.createBoneLimit(-120, 60, -5, 35, -40, 80));
 		
 		
 		boneLimits.put("LowerBack",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
@@ -531,6 +531,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 							ikdataIndex=j;
 							selectionMesh.setVisible(true);
 							selectionMesh.setPosition(target.getPosition());
+							selectionMesh.getMaterial().getColor().setHex(0x00ff00);
 							
 							if(!bname.equals(currentSelectionName)){
 								switchSelectionIk(bname);
@@ -541,10 +542,11 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					}
 				}else{
 					//maybe bone or root
-					log(target.getName());
+					log("select:"+target.getName());
 					selectedBone=target.getName();
 					selectionMesh.setVisible(true);
 					selectionMesh.setPosition(target.getPosition());
+					selectionMesh.getMaterial().getColor().setHex(0xff0000);
 					switchSelectionIk(null);
 					
 					return;
@@ -1387,8 +1389,8 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	
 	private void updateBoneRanges(){
-	//	updateBoneRotationRanges();
-	//	updateBonePositionRanges();
+	updateBoneRotationRanges();
+	updateBonePositionRanges();
 	}
 	private void updateBoneRotationRanges(){
 		if(boneNamesBox.getSelectedIndex()==-1){
