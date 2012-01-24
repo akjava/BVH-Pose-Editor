@@ -2,8 +2,10 @@ package com.akjava.gwt.poseeditor.client;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.akjava.bvh.client.BVH;
 import com.akjava.bvh.client.BVHMotion;
@@ -331,29 +333,34 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		if(currentSelectionName!=null){
 		List<List<NameAndVector3>> result=createBases(getCurrentIkData());
 		//log("switchd:"+result.size());
+		/*
 		List<NameAndVector3> tmp=result.get(result.size()-1);
 		
 		for(NameAndVector3 value:tmp){
-		//	log(value.getName()+":"+ThreeLog.get(value.getVector3()));
+			log(value.getName()+":"+ThreeLog.get(value.getVector3()));
 		}
+		*/
 		
-		if(nearMatrix!=null){
-			nearMatrix.clear();
+		if(candiateAngleAndMatrixs!=null){
+			candiateAngleAndMatrixs.clear();
 		}else{
-			nearMatrix=new ArrayList<List<AngleAndMatrix>>();
+			candiateAngleAndMatrixs=new ArrayList<List<AngleAndMatrix>>();
 		}
-		
+		log("result-size:"+result.size());
+		int index=0;
 		for(List<NameAndVector3> nv:result){
+			//log("candiate:"+index);
 			List<AngleAndMatrix> bm=AnimationBonesData.cloneAngleAndMatrix(currentMatrixs);
 			applyMatrix(bm, nv);
 			
 			//deb
 			for(String bname:getCurrentIkData().getBones()){
-				Matrix4 mx=bm.get(ab.getBoneIndex(bname)).getMatrix();
-				//log(bname+":"+ThreeLog.get(GWTThreeUtils.toDegreeAngle(mx)));
+				Vector3 angle=bm.get(ab.getBoneIndex(bname)).getAngle();
+				//log(bname+":"+ThreeLog.get(angle));
 			}
 			
-			nearMatrix.add(bm);
+			candiateAngleAndMatrixs.add(bm);
+			index++;
 		}
 		}else{
 		//	log("null selected");
@@ -366,7 +373,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		int angle=45;
 		if(data.getLastBoneName().equals("RightFoot") || data.getLastBoneName().equals("LeftFoot")){
 			//something special for foot
-			angle=40;
+			//angle=40;
 		}
 		List<List<NameAndVector3>> all=new ArrayList();
 		List<List<NameAndVector3>> result=new ArrayList();
@@ -404,11 +411,12 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 	}
 
 	private List<NameAndVector3> createBases(String name,int step){
-		List<NameAndVector3> patterns=new ArrayList<NameAndVector3>();
+		Set<NameAndVector3> patterns=new HashSet<NameAndVector3>();
 		BoneLimit limit=boneLimits.get(name);
-		for(int x=-180;x<=180;x+=step){
-			for(int y=-180;y<=180;y+=step){
-				for(int z=-180;z<=180;z+=step){
+		/*
+		for(int x=-180;x<180;x+=step){
+			for(int y=-180;y<180;y+=step){
+				for(int z=-180;z<180;z+=step){
 					boolean pass=true;
 					if(limit!=null){
 						if(limit.getMinXDegit()>x || limit.getMaxXDegit()<x){
@@ -422,23 +430,82 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 						}
 					}
 					if(x==180||x==-180 || y==180||y==-180||z==180||z==-180){
-						pass=false;//same as 0
+						//pass=false;//no need to limit?
+					}
+					
+					if(pass){
+						log(name+" pass:"+x+","+y+","+z);
+					NameAndVector3 nvec=new NameAndVector3(name, Math.toRadians(x),Math.toRadians(y),Math.toRadians(z));
+					patterns.add(nvec);
+					}
+				}
+			}
+		}*/
+		
+		//0 - -180
+		for(int x=0;x>=-180;x-=step){
+			for(int y=0;y>=-180;y-=step){
+				for(int z=0;z>=-180;z-=step){
+					boolean pass=true;
+					if(limit!=null){
+						if(limit.getMinXDegit()>x || limit.getMaxXDegit()<x){
+							pass=false;
+						}
+						if(limit.getMinYDegit()>y || limit.getMaxYDegit()<y){
+							pass=false;
+						}
+						if(limit.getMinZDegit()>z || limit.getMaxZDegit()<z){
+							pass=false;
+						}
+					}
+					if(x==180||x==-180 || y==180||y==-180||z==180||z==-180){
+						//pass=false;//no need to limit?
 					}
 					
 					if(pass){
 					//	log(name+" pass:"+x+","+y+","+z);
 					NameAndVector3 nvec=new NameAndVector3(name, Math.toRadians(x),Math.toRadians(y),Math.toRadians(z));
 					patterns.add(nvec);
-					}else{
-						
 					}
 				}
 			}
 		}
+		//step - 179
+		for(int x=0;x<180;x+=step){
+			for(int y=0;y<180;y+=step){
+				for(int z=0;z<180;z+=step){
+					boolean pass=true;
+					if(limit!=null){
+						if(limit.getMinXDegit()>x || limit.getMaxXDegit()<x){
+							pass=false;
+						}
+						if(limit.getMinYDegit()>y || limit.getMaxYDegit()<y){
+							pass=false;
+						}
+						if(limit.getMinZDegit()>z || limit.getMaxZDegit()<z){
+							pass=false;
+						}
+					}
+					if(x==180||x==-180 || y==180||y==-180||z==180||z==-180){
+						//pass=false;//no need to limit?
+					}
+					
+					if(pass){
+					//	log(name+" pass:"+x+","+y+","+z);
+					NameAndVector3 nvec=new NameAndVector3(name, Math.toRadians(x),Math.toRadians(y),Math.toRadians(z));
+					patterns.add(nvec);
+					}
+				}
+			}
+		}
+		
+		
 		if(patterns.size()==0){
+			log(name+":use zero base");
 			patterns.add(new NameAndVector3(name,0,0,0));//empty not allowd
 		}
-		return patterns;
+		
+		return new ArrayList<NameAndVector3>(patterns);
 	}
 
 	@Override
@@ -1320,8 +1387,8 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	
 	private void updateBoneRanges(){
-		updateBoneRotationRanges();
-		updateBonePositionRanges();
+	//	updateBoneRotationRanges();
+	//	updateBonePositionRanges();
 	}
 	private void updateBoneRotationRanges(){
 		if(boneNamesBox.getSelectedIndex()==-1){
@@ -1647,7 +1714,7 @@ for(NameAndVector3 nv:samples){
 }
 
 
-List<List<AngleAndMatrix>> nearMatrix;
+List<List<AngleAndMatrix>> candiateAngleAndMatrixs;
 
 private void initializeBodyMesh(){
 	//initializeBodyMesh
@@ -1696,7 +1763,7 @@ private void initializeAnimationData(int index,boolean resetMatrix){
 	//ab.setBonesMatrixs(findStartMatrix("RightFoot",getCurrentIkData().getTargetPos()));//
 	*/
 	if(currentMatrixs!=null && resetMatrix){
-		if(nearMatrix!=null){
+		if(candiateAngleAndMatrixs!=null){
 			//need bone limit
 			ab.setBonesAngleAndMatrixs(AnimationBonesData.cloneAngleAndMatrix(findStartMatrix(getCurrentIkData().getLastBoneName(),getCurrentIkData().getTargetPos())));//)
 		}else{
@@ -1782,7 +1849,7 @@ private void stepCDDIk(int perLimit,IKData ikData){
 	
 	
 	ikkedAngle=GWTThreeUtils.degreeToRagiant(currentAngle);
-	log("before:"+ThreeLog.get(beforeAngle)+" after:"+ThreeLog.get(currentAngle));
+	//log("before:"+ThreeLog.get(beforeAngle)+" after:"+ThreeLog.get(currentAngle));
 	
 	
 	//limit max
@@ -1845,12 +1912,12 @@ private void doPoseIkk(int index,boolean resetMatrix,int perLimit,IKData ikdata)
 	
 	}
 private List<AngleAndMatrix> findStartMatrix(String boneName,Vector3 targetPos) {
-	List<AngleAndMatrix> retMatrix=nearMatrix.get(0);
+	List<AngleAndMatrix> retMatrix=candiateAngleAndMatrixs.get(0);
 	ab.setBonesAngleAndMatrixs(retMatrix);//TODO without set
 	Vector3 tpos=ab.getPosition(boneName);
 	double minlength=targetPos.clone().subSelf(tpos).length();
-	for(int i=1;i<nearMatrix.size();i++){
-		List<AngleAndMatrix> mxs=nearMatrix.get(i);
+	for(int i=1;i<candiateAngleAndMatrixs.size();i++){
+		List<AngleAndMatrix> mxs=candiateAngleAndMatrixs.get(i);
 		ab.setBonesAngleAndMatrixs(mxs);//TODO change
 		Vector3 tmpPos=ab.getPosition(boneName);
 		double tmpLength=targetPos.clone().subSelf(tmpPos).length();
