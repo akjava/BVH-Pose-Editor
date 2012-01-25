@@ -250,15 +250,16 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		//manual
 		
-		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 150, -10, 10));
+		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 140, -10, 10));
 		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-120, 60, -91, 91, -50, 120));
 		
-		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -150, 0, -10, 10));
+		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -140, 0, -10, 10));
 		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-120, 60, -91, 91, -120, 50));
 
 		
 		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
 		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-120, 60, -35, 5, -80, 40));
+		
 		
 		boneLimits.put("LeftLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, -20, 0));
 		boneLimits.put("LeftUpLeg",BoneLimit.createBoneLimit(-120, 60, -5, 35, -40, 80));
@@ -370,7 +371,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 	}
 	
 	public List<List<NameAndVector3>> createBases(IKData data){
-		int angle=40;
+		int angle=30;
 		if(data.getLastBoneName().equals("RightFoot") || data.getLastBoneName().equals("LeftFoot")){
 			//something special for foot
 			angle=20;
@@ -1541,7 +1542,7 @@ public void onError(Request request, Throwable exception) {
 				//frameRange.setMax(animationData.getHierarchy().get(0).getKeys().length());
 				
 				JSONLoader loader=THREE.JSONLoader();
-				loader.load("men3men.js", new  LoadHandler() {
+				loader.load("men3menb.js", new  LoadHandler() {
 					@Override
 					public void loaded(Geometry geometry) {
 						baseGeometry=geometry;

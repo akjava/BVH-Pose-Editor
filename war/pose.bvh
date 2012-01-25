@@ -98,7 +98,7 @@ ROOT Hips
 					CHANNELS 3 Zrotation Yrotation Xrotation
 					JOINT LeftArm
 					{
-						OFFSET 3.0 0.73219 -0.54694
+						OFFSET 2.65 0.73219 -0.54694
 						CHANNELS 3 Zrotation Yrotation Xrotation
 						JOINT LeftForeArm
 						{
@@ -141,7 +141,7 @@ ROOT Hips
 					CHANNELS 3 Zrotation Yrotation Xrotation
 					JOINT RightArm
 					{
-						OFFSET -2.85 0.73219 -0.54694
+						OFFSET -2.65 0.73219 -0.54694
 						CHANNELS 3 Zrotation Yrotation Xrotation
 						JOINT RightForeArm
 						{
