@@ -108,6 +108,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		canvas.setClearColorHex(0x333333);
 	
 		
+		
 		scene.add(THREE.AmbientLight(0xffffff));
 		
 		Light pointLight = THREE.DirectionalLight(0xffffff,1);
@@ -931,10 +932,9 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		h1bpos.add(resetB1pos);
-		positionXBoneRange.addClickHandler(new ClickHandler() {
-			
+		positionXBoneRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
-			public void onClick(ClickEvent event) {
+			public void onMouseUp(MouseUpEvent event) {
 				positionToBone();
 			}
 		});
@@ -954,10 +954,9 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		h2bpos.add(reset2bpos);
-		positionYBoneRange.addClickHandler(new ClickHandler() {
-			
+		positionYBoneRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
-			public void onClick(ClickEvent event) {
+			public void onMouseUp(MouseUpEvent event) {
 				positionToBone();
 			}
 		});
@@ -977,10 +976,9 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		h3bpos.add(reset3bpos);
-		positionZBoneRange.addClickHandler(new ClickHandler() {
-			
+		positionZBoneRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
-			public void onClick(ClickEvent event) {
+			public void onMouseUp(MouseUpEvent event) {
 				positionToBone();
 			}
 		});
@@ -1022,13 +1020,13 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		h1b.add(resetB1);
-		rotationBoneXRange.addClickHandler(new ClickHandler() {
-			
+		rotationBoneXRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
-			public void onClick(ClickEvent event) {
+			public void onMouseUp(MouseUpEvent event) {
 				rotToBone();
 			}
 		});
+		
 		
 		HorizontalPanel h2b=new HorizontalPanel();
 		ylockCheck = new CheckBox();
@@ -1060,10 +1058,9 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		h2b.add(reset2b);
-		rotationBoneYRange.addClickHandler(new ClickHandler() {
-			
+		rotationBoneYRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
-			public void onClick(ClickEvent event) {
+			public void onMouseUp(MouseUpEvent event) {
 				rotToBone();
 			}
 		});
@@ -1099,10 +1096,9 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		h3b.add(reset3b);
-		rotationBoneZRange.addClickHandler(new ClickHandler() {
-			
+		rotationBoneZRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
-			public void onClick(ClickEvent event) {
+			public void onMouseUp(MouseUpEvent event) {
 				rotToBone();
 			}
 		});
@@ -1779,15 +1775,79 @@ private void initializeAnimationData(int index,boolean resetMatrix){
 	
 }
 private BoneLockControler boneLock=new BoneLockControler();
+
+
+//this new position base ikk faild
+private Vector3 findNextStep(int boneIndex,int lastBoneIndex,Vector3 targetPos){
+	Vector3 lastTrans=ab.getMatrixPosition(lastBoneIndex);
+	List<Integer> path=ab.getBonePath(lastBoneIndex);
+	Matrix4 matrix=THREE.Matrix4();
+	for(int i=0;i<path.size()-1;i++){
+		int bindex=path.get(i);
+		AngleAndMatrix am=ab.getBoneAngleAndMatrix(bindex);
+		matrix.multiplySelf(am.getMatrix());
+	}
+	Vector3 base=THREE.Vector3(0,0,0);
+	Vector3 pos=matrix.multiplyVector3(lastTrans.clone());
+	double length=pos.subSelf(targetPos).length();
+	//log("length:"+length+","+0+"x"+0+"x"+0);
+	Vector3 tmpVec=THREE.Vector3();
+	for(int x=-1;x<=1;x++){
+		for(int y=-1;y<=1;y++){
+			for(int z=-1;z<=1;z++){
+				if(x==0 && y==0 && z==0){
+					continue;
+				}
+				tmpVec.set(x*5, y*5, z*5);
+				matrix=THREE.Matrix4();
+				for(int i=0;i<path.size()-1;i++){
+					int bindex=path.get(i);
+					AngleAndMatrix am=ab.getBoneAngleAndMatrix(bindex);
+					Matrix4 m=am.getMatrix();
+					if(bindex==boneIndex){
+						Vector3 newAngle=am.getAngle().clone().addSelf(tmpVec);
+						Vector3 pv=GWTThreeUtils.toPositionVec(m);
+						
+						m=THREE.Matrix4();
+						m.setPosition(pv);
+						m.setRotationFromEuler(newAngle, "XYZ");
+						
+					}
+					matrix.multiplySelf(m);
+				}
+				
+				pos=matrix.multiplyVector3(lastTrans.clone());
+				double tmpl=pos.subSelf(targetPos).length();
+				//log("length:"+tmpl+","+x+"x"+y+"x"+z);
+				if(tmpl<length){
+					base.set(x*5,y*5,z*5);
+					length=tmpl;
+				}
+			}
+		}
+	}
+	//log("mutch:"+ThreeLog.get(base));
+	return base.addSelf(ab.getBoneAngleAndMatrix(boneIndex).getAngle());
+}
+
 private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 
 	//do CDDIK
 	//doCDDIk();
 	Vector3 tmp1=null,tmp2=null;
 	currentIkJointIndex=0;
+	
 	for(int i=0;i<ikData.getIteration()*cddLoop;i++){
 	String targetBoneName=ikData.getBones().get(currentIkJointIndex);
 	int boneIndex=ab.getBoneIndex(targetBoneName);
+	
+	
+	Vector3 ikkedAngle=null;
+	Matrix4 jointRot=ab.getBoneAngleAndMatrix(targetBoneName).getMatrix();
+	Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(jointRot));
+	Vector3 currentAngle=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
+	//log("current:"+ThreeLog.get(currentAngle));
+	if(perLimit>0){
 	Vector3 lastJointPos=ab.getPosition(ikData.getLastBoneName());
 	
 	
@@ -1796,10 +1856,10 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	Vector3 jointPos=ab.getPosition(targetBoneName);
 	
 	
-	Matrix4 jointRot=ab.getBoneAngleAndMatrix(targetBoneName).getMatrix();
+	
 	//Vector3 beforeAngles=GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(jointRot));
 	Vector3 beforeAngle=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
-	Vector3 currentAngle=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
+	
 	//Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, ikData.getTargetPos());
 	
 	//TODO add parent bone angles
@@ -1809,7 +1869,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	if(newMatrix==null){//invalid value
 		continue;
 	}
-	Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(jointRot));
+	
 	
 	
 	
@@ -1819,11 +1879,17 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	 * if angle value over 90 usually value is invalid.
 	 * but i dont know how to detect or fix it.
 	 */
-	Vector3 ikkedAngle=GWTThreeUtils.rotationToVector3(newMatrix);
+	ikkedAngle=GWTThreeUtils.rotationToVector3(newMatrix);
 	
 	
 	//Vector3 diffAngles=GWTThreeUtils.radiantToDegree(ikkedAngle).subSelf(currentAngle);
 	Vector3 diffAngles=GWTThreeUtils.radiantToDegree(ikkedAngle);
+	if(perLimit==1){
+	diffAngles.normalize();
+	}
+	//diffAngles.normalize().addScalar(perLimit);//miss choice
+	
+	//log("diff:"+ThreeLog.get(diffAngles));
 	if(Math.abs(diffAngles.getX())>perLimit){
 		double diff=perLimit;
 		if(diffAngles.getX()<0){
@@ -1845,14 +1911,22 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 		}
 		diffAngles.setZ(diff);
 	}
-	currentAngle.addSelf(diffAngles);
 	
+	currentAngle.addSelf(diffAngles);
+	//log("added:"+ThreeLog.get(currentAngle));
 	
 	//currentAngle.setX(0);//keep x
 	
 	
 	
 	ikkedAngle=GWTThreeUtils.degreeToRagiant(currentAngle);
+	}else{
+		//faild TODO fix it
+		Vector3 angle=findNextStep(boneIndex, ab.getBoneIndex(ikData.getLastBoneName()), ikData.getTargetPos());
+		//log(targetBoneName+" before:"+ThreeLog.get(ab.getBoneAngleAndMatrix(boneIndex).getAngle())+" after:"+ThreeLog.get(angle));
+		ikkedAngle=GWTThreeUtils.degreeToRagiant(angle);
+		
+	}
 	//log("before:"+ThreeLog.get(beforeAngle)+" after:"+ThreeLog.get(currentAngle));
 	
 	
@@ -1887,7 +1961,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	}
 	
 	//log("after-limit:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
-	newMatrix=GWTThreeUtils.rotationToMatrix4(ikkedAngle);
+	Matrix4 newMatrix=GWTThreeUtils.rotationToMatrix4(ikkedAngle);
 	
 	newMatrix.multiply(translates,newMatrix);
 	
@@ -1901,8 +1975,8 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	if(currentIkJointIndex>=ikData.getBones().size()){
 		currentIkJointIndex=0;
 	}
-	tmp1=lastJointPos;
-	tmp2=jointPos;
+	//tmp1=lastJointPos;
+	//tmp2=jointPos;
 	}
 }
 
