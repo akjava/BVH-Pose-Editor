@@ -50,6 +50,7 @@ import com.akjava.gwt.three.client.lights.Light;
 import com.akjava.gwt.three.client.materials.Material;
 import com.akjava.gwt.three.client.objects.Mesh;
 import com.akjava.gwt.three.client.renderers.WebGLRenderer;
+import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
@@ -103,8 +104,10 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 	}
 	
 	
+	private WebGLRenderer renderer;
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
+		this.renderer=renderer;
 		canvas.setClearColorHex(0x333333);
 	
 		
@@ -1104,6 +1107,17 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		
 		
+		Button test=new Button("TEST");
+		parent.add(test);
+		test.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				String url=renderer.gwtPngDataUrl();
+				log(url);
+				Window.open(url, "newwin", null);
+			}
+		});
 		
 		
 		
@@ -1193,6 +1207,41 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
+		/*
+		 *should think system
+		Button cut=new Button("Cut");
+		upperPanel.add(cut);
+		cut.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				
+				doCut();
+			}
+		});
+		*/
+		Button copy=new Button("Copy");
+		upperPanel.add(copy);
+		copy.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				
+				doCopy();
+			}
+		});
+		
+		Button paste=new Button("Paste");
+		upperPanel.add(paste);
+		paste.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				
+				doPaste();
+			}
+		});
+		
 		Button remove=new Button("Remove");
 		upperPanel.add(remove);
 		remove.addClickHandler(new ClickHandler() {
@@ -1265,10 +1314,26 @@ HorizontalPanel h1=new HorizontalPanel();
 		super.leftBottom(bottomPanel);
 	}
 	
-	private void insertFrame(int index,boolean overwrite){
-		if(index<0){
-			index=0;
+	protected void doPaste() {
+		if(clipboard!=null){
+			poseFrameDatas.add(currentFrameRange.getValue()+1,clipboard.clone());
+			updatePoseIndex(currentFrameRange.getValue()+1);
 		}
+	}
+
+	protected void doCut() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	
+	PoseFrameData clipboard;
+	protected void doCopy() {
+		// TODO Auto-generated method stub
+		clipboard=snapCurrentFrameData();
+	}
+
+	private PoseFrameData snapCurrentFrameData(){
 		List<AngleAndMatrix> matrixs=AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs());
 		List<Vector3> targets=new ArrayList<Vector3>();
 		for(IKData ikdata:ikdatas){
@@ -1276,6 +1341,14 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 		
 		PoseFrameData ps=new PoseFrameData(matrixs, targets);
+		return ps;
+	}
+	
+	private void insertFrame(int index,boolean overwrite){
+		if(index<0){
+			index=0;
+		}
+		PoseFrameData ps=snapCurrentFrameData();
 		if(overwrite){
 			poseFrameDatas.set(index,ps);
 			updatePoseIndex(index);
@@ -1316,6 +1389,16 @@ HorizontalPanel h1=new HorizontalPanel();
 		//log(bvhText);
 		exportTextChrome(bvhText,"poseeditor"+exportIndex);
 		exportIndex++;
+		
+		Canvas canvas=Canvas.createIfSupported();
+		int thumbW=200;
+		int thumbH=200;
+		canvas.setSize("200px", "200px");
+		canvas.setCoordinateSpaceWidth(thumbW);
+		canvas.setCoordinateSpaceHeight(thumbH);
+		canvas.getContext2d().drawImage(renderer.gwtCanvas(),0,0,screenWidth,screenHeight,0,0,thumbW,thumbH);
+		String url=canvas.toDataUrl();
+		Window.open(url, "newwin", null);
 	}
 	public native final void exportTextChrome(String text,String wname)/*-{
 	win = $wnd.open("", wname)
