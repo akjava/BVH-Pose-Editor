@@ -749,6 +749,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	private HTML5InputRange positionZBoneRange;
 	private CheckBox ylockCheck;
 	private CheckBox xlockCheck;
+	private List<String> ikLocks=new ArrayList<String>();
 	@Override
 	public void createControl(Panel parent) {
 HorizontalPanel h1=new HorizontalPanel();
@@ -899,7 +900,8 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 	
-		
+		HorizontalPanel boneNames=new HorizontalPanel();
+		parent.add(boneNames);
 		boneNamesBox = new ListBox();
 		
 		boneNamesBox.addChangeHandler(new ChangeHandler() {
@@ -909,9 +911,22 @@ HorizontalPanel h1=new HorizontalPanel();
 				updateBoneRanges();
 			}
 		});
-		parent.add(boneNamesBox);
-		
-		
+		boneNames.add(boneNamesBox);
+		ikLockCheck = new CheckBox("ik-lock");
+		boneNames.add(ikLockCheck);
+		ikLockCheck.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				//String name=boneNameBox.get
+				if(ikLockCheck.getValue()){
+					ikLocks.add(getSelectedBoneName());
+				}else{
+					ikLocks.remove(getSelectedBoneName());
+				}
+				
+			}
+		});
 		
 		
 		
@@ -1471,6 +1486,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	private void updateBoneRanges(){
 	updateBoneRotationRanges();
 	updateBonePositionRanges();
+	
 	}
 	private void updateBoneRotationRanges(){
 		if(boneNamesBox.getSelectedIndex()==-1){
@@ -1478,6 +1494,11 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
 		
+		if(ikLocks.contains(name)){
+			ikLockCheck.setValue(true);
+		}else{
+			ikLockCheck.setValue(false);
+		}
 		
 		
 		int boneIndex=ab.getBoneIndex(name);
@@ -1922,6 +1943,15 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	
 	for(int i=0;i<ikData.getIteration()*cddLoop;i++){
 	String targetBoneName=ikData.getBones().get(currentIkJointIndex);
+	
+	if(ikLocks.contains(targetBoneName)){
+		currentIkJointIndex++;
+		if(currentIkJointIndex>=ikData.getBones().size()){
+			currentIkJointIndex=0;
+		}
+		continue;
+	}
+	
 	int boneIndex=ab.getBoneIndex(targetBoneName);
 	
 	
@@ -2405,6 +2435,7 @@ private ListBox rotateAndPosList;
 private VerticalPanel bonePositionsPanel;
 private VerticalPanel boneRotationsPanel;
 private CheckBox zlockCheck;
+private CheckBox ikLockCheck;
 
 /**
  * @deprecated
