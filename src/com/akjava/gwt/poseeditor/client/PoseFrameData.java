@@ -12,6 +12,7 @@ import com.akjava.gwt.three.client.gwt.animation.ik.IKData;
 public class PoseFrameData {
 List<AngleAndMatrix> matrixs;
 List<Vector3> targetPositions;
+List<String> targetNames;
 public List<AngleAndMatrix> getAngleAndMatrixs() {
 	return matrixs;
 }
@@ -24,9 +25,10 @@ public List<Vector3> getTargetPositions() {
 public void setTargetPositions(List<Vector3> targetPositions) {
 	this.targetPositions = targetPositions;
 }
-public PoseFrameData(List<AngleAndMatrix> matrixs,List<Vector3> targetPositions){
+public PoseFrameData(List<AngleAndMatrix> matrixs,List<Vector3> targetPositions,List<String> targetNames){
 	this.matrixs=matrixs;
 	this.targetPositions=targetPositions;
+	this.targetNames=targetNames;
 }
 public PoseFrameData clone(){
 	List<AngleAndMatrix> matrixs=AnimationBonesData.cloneAngleAndMatrix(this.matrixs);
@@ -34,6 +36,10 @@ public PoseFrameData clone(){
 	for(Vector3 vec:targetPositions){
 		targets.add(vec.clone());
 	}
-	return new PoseFrameData(matrixs,targets);
+	List<String> names=new ArrayList<String>();
+	for(String name:targetNames){
+		names.add(name);
+	}
+	return new PoseFrameData(matrixs,targets,names);
 }
 }

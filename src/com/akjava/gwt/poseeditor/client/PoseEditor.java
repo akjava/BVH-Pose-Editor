@@ -150,7 +150,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		loadBVH("pose.bvh");
 		
 		
-		IKData ikdata1=new IKData();
+		IKData ikdata1=new IKData("LowerBack-Neck1");
 		//ikdata1.setTargetPos(THREE.Vector3(0, 20, 0));
 		ikdata1.setLastBoneName("Head");
 		ikdata1.setBones(new String[]{"Neck1","Neck","Spine","LowerBack"});
@@ -160,7 +160,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		
 		
-		IKData ikdata0=new IKData();
+		IKData ikdata0=new IKData("RightArm-RightForeArm");
 		//ikdata0.setTargetPos(THREE.Vector3(-10, 5, 0));
 		ikdata0.setLastBoneName("RightHand");
 		ikdata0.setBones(new String[]{"RightForeArm","RightArm"});
@@ -170,7 +170,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		
 		//
-		IKData ikdata=new IKData();
+		IKData ikdata=new IKData("RightUpLeg-RightLeg");
 		//ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
 		ikdata.setLastBoneName("RightFoot");
 		ikdata.setBones(new String[]{"RightLeg","RightUpLeg"});
@@ -178,7 +178,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		ikdatas.add(ikdata);
 		
 		
-		IKData ikdata2=new IKData();
+		IKData ikdata2=new IKData("LeftArm-LeftForeArm");
 		//ikdata0.setTargetPos(THREE.Vector3(-10, 5, 0));
 		ikdata2.setLastBoneName("LeftHand");
 		//ikdata2.setBones(new String[]{"LeftForeArm","LeftArm","LeftShoulder"});
@@ -188,7 +188,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		
 		
 		//
-		IKData ikdata3=new IKData();
+		IKData ikdata3=new IKData("LeftUpLeg-LeftLeg");
 		//ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
 		ikdata3.setLastBoneName("LeftFoot");
 		ikdata3.setBones(new String[]{"LeftLeg","LeftUpLeg"});
@@ -1412,11 +1412,16 @@ HorizontalPanel h1=new HorizontalPanel();
 	private PoseFrameData snapCurrentFrameData(){
 		List<AngleAndMatrix> matrixs=AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs());
 		List<Vector3> targets=new ArrayList<Vector3>();
+		List<String> names=new ArrayList<String>();
+		
 		for(IKData ikdata:ikdatas){
 			targets.add(ikdata.getTargetPos().clone());
+			names.add(ikdata.getName());
 		}
 		
-		PoseFrameData ps=new PoseFrameData(matrixs, targets);
+		
+		
+		PoseFrameData ps=new PoseFrameData(matrixs, targets,names);
 		return ps;
 	}
 	
