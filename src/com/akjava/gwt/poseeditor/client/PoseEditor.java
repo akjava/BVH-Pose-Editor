@@ -389,11 +389,11 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 			//log(name+"-size:"+patterns.size());
 		}
 		//log(data.getLastBoneName()+"-joint-size:"+all.size());
-		doAdd(all,result,data.getBones(),0,null,2);
+		addBase(all,result,data.getBones(),0,null,2);
 		return result;
 	}
 	
-	private void doAdd(List<List<NameAndVector3>> all,
+	private void addBase(List<List<NameAndVector3>> all,
 			List<List<NameAndVector3>> result, List<String> boneNames, int index,List<NameAndVector3> tmp,int depth) {
 		if(index>=boneNames.size() || index==depth){
 			result.add(tmp);
@@ -411,7 +411,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 			
 			
 			list.add(child);
-			doAdd(all,result,boneNames,index+1,list,2);
+			addBase(all,result,boneNames,index+1,list,2);
 		}
 	}
 
@@ -1189,6 +1189,11 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 	}
 
+	private String getNewName(){
+		return "Untitled"+(fileIndex);
+	}
+	
+	private int fileIndex;
 	private void createBottomPanel(){
 		bottomPanel = new PopupPanel();
 		bottomPanel.setVisible(true);
@@ -1199,6 +1204,30 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		//upper
+		HorizontalPanel topPanel=new HorizontalPanel();
+		main.add(topPanel);
+		
+		fileNames = new ListBox();
+		
+		fileNames.addChangeHandler(new ChangeHandler() {
+			@Override
+			public void onChange(ChangeEvent event) {
+				selectPoseEditorDatas(fileNames.getSelectedIndex());
+			}
+		});
+		
+		
+		topPanel.add(fileNames);
+		Button newFile=new Button("New");
+		topPanel.add(newFile);
+		newFile.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				doNewFile();
+			}
+		});
+		
 		HorizontalPanel upperPanel=new HorizontalPanel();
 		upperPanel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
 		main.add(upperPanel);
@@ -1209,7 +1238,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			@Override
 			public void onClick(ClickEvent event) {
-				insertFrame(poseFrameDatas.size(),false);
+				insertFrame(getSelectedPoseEditorData().getPoseFrameDatas().size(),false);
 			}
 		});
 		Button replace=new Button("Replace");//TODO before,after
@@ -1264,7 +1293,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			@Override
 			public void onClick(ClickEvent event) {
 				
-				poseFrameDatas.remove(poseFrameDataIndex);
+				getSelectedPoseEditorData().getPoseFrameDatas().remove(poseFrameDataIndex);
 				updatePoseIndex(poseFrameDataIndex-1);
 			}
 		});
@@ -1315,7 +1344,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			@Override
 			public void onClick(ClickEvent event) {
 				int value=currentFrameRange.getValue();
-				if(value<poseFrameDatas.size()-1){
+				if(value<getSelectedPoseEditorData().getPoseFrameDatas().size()-1){
 					value++;
 					currentFrameRange.setValue(value);
 					updatePoseIndex(value);
@@ -1329,9 +1358,39 @@ HorizontalPanel h1=new HorizontalPanel();
 		super.leftBottom(bottomPanel);
 	}
 	
+	private int poseEditorDataSelection;
+	List<PoseEditorData> poseEditorDatas=new ArrayList<PoseEditorData>();
+	
+	public void selectPoseEditorDatas(int index){
+		poseEditorDataSelection=index;
+		fileNames.setSelectedIndex(index);
+		
+		updatePoseIndex(0);
+	}
+	private PoseEditorData getSelectedPoseEditorData(){
+		return poseEditorDatas.get(poseEditorDataSelection);
+	}
+	
+	protected void doNewFile() {
+		fileIndex++;
+		String newName=getNewName();
+		PoseEditorData ped=new PoseEditorData();
+		ped.setName(newName);
+		
+		List<PoseFrameData> pfList=new ArrayList<PoseFrameData>();
+		ped.setPoseFrameDatas(pfList);
+		pfList.add(initialPoseFrameData.clone());
+		
+		ped.setBones(boneList);//TODO support multiple bone
+		
+		poseEditorDatas.add(ped);
+		fileNames.addItem(newName);
+		fileNames.setSelectedIndex(fileNames.getItemCount()-1);
+	}
+
 	protected void doPaste() {
 		if(clipboard!=null){
-			poseFrameDatas.add(currentFrameRange.getValue()+1,clipboard.clone());
+			getSelectedPoseEditorData().getPoseFrameDatas().add(currentFrameRange.getValue()+1,clipboard.clone());
 			updatePoseIndex(currentFrameRange.getValue()+1);
 		}
 	}
@@ -1348,6 +1407,8 @@ HorizontalPanel h1=new HorizontalPanel();
 		clipboard=snapCurrentFrameData();
 	}
 
+	private PoseFrameData initialPoseFrameData;
+	
 	private PoseFrameData snapCurrentFrameData(){
 		List<AngleAndMatrix> matrixs=AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs());
 		List<Vector3> targets=new ArrayList<Vector3>();
@@ -1365,11 +1426,11 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 		PoseFrameData ps=snapCurrentFrameData();
 		if(overwrite){
-			poseFrameDatas.set(index,ps);
+			getSelectedPoseEditorData().getPoseFrameDatas().set(index,ps);
 			updatePoseIndex(index);
 		}else{
-			poseFrameDatas.add(index,ps);
-			updatePoseIndex(poseFrameDatas.size()-1);
+			getSelectedPoseEditorData().getPoseFrameDatas().add(index,ps);
+			updatePoseIndex(getSelectedPoseEditorData().getPoseFrameDatas().size()-1);
 		}
 		
 		
@@ -1388,8 +1449,8 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		BVHMotion motion=new BVHMotion();
 		motion.setFrameTime(.25);
-		log("frame-size:"+poseFrameDatas.size());
-		for(PoseFrameData pose:poseFrameDatas){
+		log("frame-size:"+getSelectedPoseEditorData().getPoseFrameDatas().size());
+		for(PoseFrameData pose:getSelectedPoseEditorData().getPoseFrameDatas()){
 			double[] values=converter.angleAndMatrixsToMotion(pose.getAngleAndMatrixs(),BVHConverter.ROOT_POSITION_ROTATE_ONLY,"XYZ");
 			motion.add(values);
 		}
@@ -1420,10 +1481,14 @@ HorizontalPanel h1=new HorizontalPanel();
 	win.document.body.innerText =""+text+"";
 	}-*/;
 
+	
 	private int exportIndex=0;
 
+	
+	
 	private int poseFrameDataIndex=0;
-	private List<PoseFrameData> poseFrameDatas=new ArrayList<PoseFrameData>();
+	//private List<PoseFrameData> poseFrameDatas=new ArrayList<PoseFrameData>();
+	
 	
 	private void updatePoseIndex(int index){
 		if(index==-1){
@@ -1432,9 +1497,9 @@ HorizontalPanel h1=new HorizontalPanel();
 		currentFrameLabel.setText("");	
 		}else{
 		//poseIndex=index;
-		currentFrameRange.setMax(poseFrameDatas.size()-1);
+		currentFrameRange.setMax(getSelectedPoseEditorData().getPoseFrameDatas().size()-1);
 		currentFrameRange.setValue(index);
-		currentFrameLabel.setText((index+1)+"/"+poseFrameDatas.size());
+		currentFrameLabel.setText((index+1)+"/"+getSelectedPoseEditorData().getPoseFrameDatas().size());
 		selectFrameData(index);
 		}
 	}
@@ -1442,7 +1507,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	private void selectFrameData(int index) {
 		//log("update:"+index);
 		poseFrameDataIndex=index;
-		PoseFrameData ps=poseFrameDatas.get(index);
+		PoseFrameData ps=getSelectedPoseEditorData().getPoseFrameDatas().get(index);
 		//update
 		for(int i=0;i<ikdatas.size();i++){
 			Vector3 vec=ps.getTargetPositions().get(i);
@@ -1620,6 +1685,8 @@ public void onError(Request request, Throwable exception) {
 
 
 	private Geometry baseGeometry;
+	
+private List<AnimationBone> boneList=new ArrayList<AnimationBone>();
 	protected void parseBVH(String bvhText) {
 		final BVHParser parser=new BVHParser();
 		
@@ -1635,6 +1702,9 @@ public void onError(Request request, Throwable exception) {
 				
 				AnimationBoneConverter converter=new AnimationBoneConverter();
 				bones = converter.convertJsonBone(bvh);
+				for(int i=0;i<bones.length();i++){
+					boneList.add(bones.get(i));
+				}
 				
 				AnimationDataConverter dataConverter=new AnimationDataConverter();
 				dataConverter.setSkipFirst(false);
@@ -1647,7 +1717,9 @@ public void onError(Request request, Throwable exception) {
 					public void loaded(Geometry geometry) {
 						baseGeometry=geometry;
 						doPose(0);
-						insertFrame(poseFrameDatas.size(),false);//initial pose-frame
+						initialPoseFrameData=snapCurrentFrameData();
+						doNewFile();
+						//insertFrame(getSelectedPoseEditorData().getPoseFrameDatas().size(),false);//initial pose-frame
 					}
 				});
 			}
@@ -2436,6 +2508,7 @@ private VerticalPanel bonePositionsPanel;
 private VerticalPanel boneRotationsPanel;
 private CheckBox zlockCheck;
 private CheckBox ikLockCheck;
+private ListBox fileNames;
 
 /**
  * @deprecated
