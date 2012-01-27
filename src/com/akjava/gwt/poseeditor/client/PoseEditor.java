@@ -1520,7 +1520,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		ab.setBonesAngleAndMatrixs(currentMatrixs);
 		//update
 		for(int i=0;i<ikdatas.size();i++){
-			Vector3 vec=ps.getTargetPositions().get(i).clone();
+			Vector3 vec=ps.getIkTargetPositions().get(i).clone();
 			vec.addSelf(ab.getBonePosition(ikdatas.get(i).getLastBoneName()));//relative path
 			
 			ikdatas.get(i).getTargetPos().set(vec.getX(), vec.getY(), vec.getZ());
@@ -1697,7 +1697,7 @@ public void onError(Request request, Throwable exception) {
 
 	private Geometry baseGeometry;
 	
-private List<AnimationBone> boneList=new ArrayList<AnimationBone>();
+private List<String> boneList=new ArrayList<String>();
 	protected void parseBVH(String bvhText) {
 		final BVHParser parser=new BVHParser();
 		
@@ -1714,7 +1714,7 @@ private List<AnimationBone> boneList=new ArrayList<AnimationBone>();
 				AnimationBoneConverter converter=new AnimationBoneConverter();
 				bones = converter.convertJsonBone(bvh);
 				for(int i=0;i<bones.length();i++){
-					boneList.add(bones.get(i));
+					boneList.add(bones.get(i).getName());
 				}
 				
 				AnimationDataConverter dataConverter=new AnimationDataConverter();

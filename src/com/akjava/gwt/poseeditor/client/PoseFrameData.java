@@ -12,37 +12,56 @@ import com.akjava.gwt.three.client.gwt.animation.ik.IKData;
 public class PoseFrameData {
 List<AngleAndPosition> matrixs;//for current bone
 
-List<Vector3> positions;//relate-pos
-List<Vector3> angles;
+private List<Vector3> positions;//relate-pos,+bonePos & multiply angles -> matrixs
+public List<Vector3> getPositions() {
+	return positions;
+}
+public void setPositions(List<Vector3> positions) {
+	this.positions = positions;
+}
+public List<Vector3> getAngles() {
+	return angles;
+}
+public void setAngles(List<Vector3> angles) {
+	this.angles = angles;
+}
+private List<Vector3> angles;
 
 
-List<Vector3> targetPositions;	//TODO must be relative
-List<String> targetNames;
+List<Vector3> ikTargetPositions;	
+List<String> ikTargetNames;
 public List<AngleAndPosition> getAngleAndMatrixs() {
 	return matrixs;
 }
 public void setAngleAndMatrixs(List<AngleAndPosition> matrixs) {
 	this.matrixs = matrixs;
 }
-public List<Vector3> getTargetPositions() {
-	return targetPositions;
+public List<Vector3> getIkTargetPositions() {
+	return ikTargetPositions;
 }
-public void setTargetPositions(List<Vector3> targetPositions) {
-	this.targetPositions = targetPositions;
+public void setIkTargetPositions(List<Vector3> targetPositions) {
+	this.ikTargetPositions = targetPositions;
 }
-public PoseFrameData(List<AngleAndPosition> matrixs,List<Vector3> targetPositions,List<String> targetNames){
+public PoseFrameData(List<AngleAndPosition> matrixs,List<Vector3> ikTargetPositions,List<String> ikTargetNames){
 	this.matrixs=matrixs;
-	this.targetPositions=targetPositions;
-	this.targetNames=targetNames;
+	this.ikTargetPositions=ikTargetPositions;
+	this.ikTargetNames=ikTargetNames;
 }
+public List<String> getIkTargetNames() {
+	return ikTargetNames;
+}
+public void setIkTargetNames(List<String> ikTargetNames) {
+	this.ikTargetNames = ikTargetNames;
+}
+public PoseFrameData(){}
 public PoseFrameData clone(){
 	List<AngleAndPosition> matrixs=AnimationBonesData.cloneAngleAndMatrix(this.matrixs);
 	List<Vector3> targets=new ArrayList<Vector3>();
-	for(Vector3 vec:targetPositions){
+	for(Vector3 vec:ikTargetPositions){
 		targets.add(vec.clone());
 	}
 	List<String> names=new ArrayList<String>();
-	for(String name:targetNames){
+	for(String name:ikTargetNames){
 		names.add(name);
 	}
 	return new PoseFrameData(matrixs,targets,names);
