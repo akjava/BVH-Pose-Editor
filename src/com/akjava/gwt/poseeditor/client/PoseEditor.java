@@ -111,20 +111,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		this.renderer=renderer;
 		canvas.setClearColorHex(0x333333);
 	
-		Matrix4 tmp=THREE.Matrix4();
-		tmp.setPosition(THREE.Vector3(1,1,1));
-		
-		Matrix4 tmp2=THREE.Matrix4();
-		tmp2.setRotationFromEuler(THREE.Vector3(1,1,1),"XYZ");
-		
-		Matrix4 tmp3=THREE.Matrix4();
-		tmp3.multiply(tmp, tmp2);
-		log(tmp3);
-		
-		Matrix4 tmp4=THREE.Matrix4();
-		tmp4.multiply(tmp2, tmp);
-		log(tmp4);
-		
+	
 		scene.add(THREE.AmbientLight(0xffffff));
 		
 		Light pointLight = THREE.DirectionalLight(0xffffff,1);
@@ -1386,11 +1373,11 @@ HorizontalPanel h1=new HorizontalPanel();
 		JSONObject data=PoseEditorData.writeData(pdata);
 		//log(data.toString());
 		
-		PoseEditorData readData=PoseEditorData.readData(data.toString());
-		log("readed");
-		readData.updateMatrix(ab);
-		log("updated matrix");
 		
+		
+		//test
+		PoseEditorData readData=PoseEditorData.readData(data.toString());
+		readData.updateMatrix(ab);
 		readData.setName("tmp1");
 		doLoad(readData);
 	}
@@ -1431,7 +1418,9 @@ HorizontalPanel h1=new HorizontalPanel();
 	public void doLoad(PoseEditorData ped){
 		poseEditorDatas.add(ped);
 		fileNames.addItem(ped.getName());
-		fileNames.setSelectedIndex(fileNames.getItemCount()-1);
+		
+		selectPoseEditorDatas(poseEditorDatas.size()-1);
+		
 		//called addChangeHandler
 	}
 
@@ -1465,11 +1454,11 @@ HorizontalPanel h1=new HorizontalPanel();
 			Vector3 angle=matrixs.get(i).getAngle().clone();
 			angles.add(angle);
 			
-			Vector3 position=ab.getMatrixPosition(i);
+			Vector3 position=ab.getMatrixPosition(i);//TODO getPosition()?
 			position.subSelf(ab.getBaseBoneRelativePosition(i));
 			
 			positions.add(position);
-			log(ab.getBoneName(i)+" pos="+ThreeLog.get(position)+",base="+ThreeLog.get(ab.getBaseBonePosition(i)));
+		//	log(ab.getBoneName(i)+" pos="+ThreeLog.get(position)+",base="+ThreeLog.get(ab.getBaseBoneRelativePosition(i)));
 		}
 		
 		List<Vector3> targets=new ArrayList<Vector3>();
@@ -1577,13 +1566,13 @@ HorizontalPanel h1=new HorizontalPanel();
 	private void selectFrameData(int index) {
 		//log("update:"+index);
 		poseFrameDataIndex=index;
-		PoseFrameData ps=getSelectedPoseEditorData().getPoseFrameDatas().get(index);
+		PoseFrameData pfd=getSelectedPoseEditorData().getPoseFrameDatas().get(index);
 		
-		currentMatrixs=AnimationBonesData.cloneAngleAndMatrix(ps.getAngleAndMatrixs());
+		currentMatrixs=AnimationBonesData.cloneAngleAndMatrix(pfd.getAngleAndMatrixs());
 		ab.setBonesAngleAndMatrixs(currentMatrixs);
 		//update
 		for(int i=0;i<ikdatas.size();i++){
-			Vector3 vec=ps.getIkTargetPositions().get(i).clone();
+			Vector3 vec=pfd.getIkTargetPositions().get(i).clone();
 			vec.addSelf(ab.getBonePosition(ikdatas.get(i).getLastBoneName()));//relative path
 			
 			ikdatas.get(i).getTargetPos().set(vec.getX(), vec.getY(), vec.getZ());
@@ -1988,6 +1977,9 @@ private void initializeAnimationData(int index,boolean resetMatrix){
 	baseMatrixs=AnimationBonesData.boneToAngleAndMatrix(bones, animationData, index);
 	ab=new AnimationBonesData(bones,AnimationBonesData.cloneAngleAndMatrix(baseMatrixs) );
 	
+	for(int i=0;i<bones.length();i++){
+	//	log(bones.get(i).getName()+":"+ThreeLog.get(baseMatrixs.get(i).getPosition()));
+	}
 	}
 	
 	//TODO make automatic
