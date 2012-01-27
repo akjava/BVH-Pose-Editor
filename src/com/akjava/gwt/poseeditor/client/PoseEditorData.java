@@ -5,7 +5,10 @@ import java.util.List;
 
 import com.akjava.gwt.lib.client.LogUtils;
 import com.akjava.gwt.three.client.THREE;
+import com.akjava.gwt.three.client.core.Matrix4;
 import com.akjava.gwt.three.client.core.Vector3;
+import com.akjava.gwt.three.client.gwt.animation.AngleAndPosition;
+import com.akjava.gwt.three.client.gwt.animation.AnimationBonesData;
 import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONNumber;
 import com.google.gwt.json.client.JSONObject;
@@ -44,6 +47,40 @@ private List<String> bones;
 private double cdate;
 
 
+public void updateMatrix(AnimationBonesData abData){
+	
+	LogUtils.log("pfsize:"+poseFrameDatas.size());
+	
+	
+	for(PoseFrameData fdata:poseFrameDatas){
+		List<AngleAndPosition> apList=new ArrayList<AngleAndPosition>();
+		fdata.setAngleAndMatrixs(apList);
+		for(int i=0;i<fdata.getAngles().size();i++){
+			LogUtils.log("x");
+			Vector3 anglePos=fdata.getAngles().get(i).clone();
+			Vector3 posRef=fdata.getPositions().get(i).clone();
+			LogUtils.log("x1:"+bones);
+			LogUtils.log("bones"+bones.size());
+			int index=abData.getBoneIndex(bones.get(i));
+			if(index!=-1){//has bone
+				Vector3 bonePos=abData.getBaseBoneRelativePosition(index);
+				LogUtils.log("x2");
+				posRef.addSelf(bonePos);
+			}else{
+				LogUtils.log("not-has:"+bones.get(i));
+			}
+			LogUtils.log("y");
+			Matrix4 mx=THREE.Matrix4();
+			mx.setPosition(posRef);
+			mx.setRotationFromEuler(anglePos, "XYZ");
+			AngleAndPosition ap=new AngleAndPosition(anglePos, posRef, mx);
+			LogUtils.log("z:"+fdata.getAngleAndMatrixs());
+			LogUtils.log("z:1"+ap);
+			fdata.getAngleAndMatrixs().add(ap);
+			LogUtils.log("z:2");
+		}
+	}
+}
 
 public static JSONObject writeData(PoseEditorData data){
 	JSONObject poseData=new JSONObject();
@@ -58,9 +95,10 @@ public static JSONObject writeData(PoseEditorData data){
 	for(int i=0;i<data.getBones().size();i++){
 		bones.set(i, new JSONString(data.getBones().get(i)));
 	}
-	//LogUtils.log("bone");
+	poseData.put("bones", bones);
 	
-	LogUtils.log("size:"+data.getPoseFrameDatas().size());
+	
+	
 	
 	JSONArray frames=new JSONArray();
 	for(int i=0;i<data.getPoseFrameDatas().size();i++){
@@ -120,6 +158,8 @@ private static JSONArray toJSONArray(Vector3 vec){
 public static PoseEditorData readData(String jsonString){
 	JSONValue value=JSONParser.parseLenient(jsonString);
 	
+	LogUtils.log(value.toString());
+	
 	JSONObject poseData=value.isObject();
 	if(poseData==null){
 		LogUtils.log("invalid-data");
@@ -134,6 +174,7 @@ public static PoseEditorData readData(String jsonString){
 		return null;
 	}
 	data.setName(name.stringValue());
+	LogUtils.log(data.getName());
 	
 	
 	JSONValue cdateValue=poseData.get("cdate");
@@ -143,7 +184,7 @@ public static PoseEditorData readData(String jsonString){
 		return null;
 	}
 	data.setCdate(cdate.doubleValue());
-	
+	LogUtils.log(""+data.getCdate());
 	//bone-names
 	JSONArray boneNames=poseData.get("bones").isArray();
 	if(boneNames==null){
@@ -162,6 +203,9 @@ public static PoseEditorData readData(String jsonString){
 		}
 		
 	}
+	LogUtils.log("bones:"+bones.size());
+	data.setBones(bones);
+	
 	JSONArray frames=poseData.get("frames").isArray();
 	if(frames==null){
 		LogUtils.log("invalid-frames");
@@ -172,11 +216,14 @@ public static PoseEditorData readData(String jsonString){
 	
 	
 	int fs=frames.size();
+	LogUtils.log("frame-size:"+fs);
 	for(int i=0;i<fs;i++){
 		PoseFrameData frameData=new PoseFrameData();
 		JSONValue js=frames.get(i);
+		LogUtils.log("js:"+js);
 		JSONObject jsn=js.isObject();
 		if(jsn!=null){
+			LogUtils.log("jsn");
 			//angle
 			List<Vector3> angles=readAngles(jsn.get("angles"));
 			if(angles==null){
@@ -184,7 +231,7 @@ public static PoseEditorData readData(String jsonString){
 				return null;
 			}
 			frameData.setAngles(angles);
-			
+			LogUtils.log("a");
 			
 			List<Vector3> positions=readPositions(jsn.get("positions"));
 			if(positions==null){
@@ -192,7 +239,7 @@ public static PoseEditorData readData(String jsonString){
 				return null;
 			}
 			frameData.setPositions(positions);
-			
+			LogUtils.log("b");
 			
 			List<String> nameList=readIkNames(jsn.get("ik-names"));
 			if(nameList==null){
@@ -201,7 +248,7 @@ public static PoseEditorData readData(String jsonString){
 			}
 			frameData.setIkTargetNames(nameList);
 			
-			
+			LogUtils.log("c");
 			
 			List<Vector3> ikPositions=readIkPositions(jsn.get("ik-positions"));
 			if(ikPositions==null){
@@ -209,11 +256,12 @@ public static PoseEditorData readData(String jsonString){
 				return null;
 			}
 			frameData.setIkTargetPositions(ikPositions);
-			
+			LogUtils.log("d");
 		}else{
 			LogUtils.log("invalid-frames:"+i);
 			return null;
 		}
+		LogUtils.log("e");
 		frameDatas.add(frameData);
 	}
 	data.setPoseFrameDatas(frameDatas);

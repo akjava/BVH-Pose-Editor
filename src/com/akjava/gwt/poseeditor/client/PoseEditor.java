@@ -111,6 +111,20 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		this.renderer=renderer;
 		canvas.setClearColorHex(0x333333);
 	
+		Matrix4 tmp=THREE.Matrix4();
+		tmp.setPosition(THREE.Vector3(1,1,1));
+		
+		Matrix4 tmp2=THREE.Matrix4();
+		tmp2.setRotationFromEuler(THREE.Vector3(1,1,1),"XYZ");
+		
+		Matrix4 tmp3=THREE.Matrix4();
+		tmp3.multiply(tmp, tmp2);
+		log(tmp3);
+		
+		Matrix4 tmp4=THREE.Matrix4();
+		tmp4.multiply(tmp2, tmp);
+		log(tmp4);
+		
 		scene.add(THREE.AmbientLight(0xffffff));
 		
 		Light pointLight = THREE.DirectionalLight(0xffffff,1);
@@ -1368,9 +1382,17 @@ HorizontalPanel h1=new HorizontalPanel();
 	
 	protected void doSaveFile() {
 		PoseEditorData pdata=getSelectedPoseEditorData();
-		log("pdata:"+pdata);
+		
 		JSONObject data=PoseEditorData.writeData(pdata);
-		log(data.getJavaScriptObject());
+		//log(data.toString());
+		
+		PoseEditorData readData=PoseEditorData.readData(data.toString());
+		log("readed");
+		readData.updateMatrix(ab);
+		log("updated matrix");
+		
+		readData.setName("tmp1");
+		doLoad(readData);
 	}
 
 
@@ -1404,6 +1426,13 @@ HorizontalPanel h1=new HorizontalPanel();
 		poseEditorDatas.add(ped);
 		fileNames.addItem(newName);
 		fileNames.setSelectedIndex(fileNames.getItemCount()-1);
+	}
+	
+	public void doLoad(PoseEditorData ped){
+		poseEditorDatas.add(ped);
+		fileNames.addItem(ped.getName());
+		fileNames.setSelectedIndex(fileNames.getItemCount()-1);
+		//called addChangeHandler
 	}
 
 	protected void doPaste() {
