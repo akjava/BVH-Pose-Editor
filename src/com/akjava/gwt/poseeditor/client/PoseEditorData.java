@@ -58,6 +58,13 @@ public static PoseEditorData readData(String jsonString){
 	}
 	data.setName(name.stringValue());
 	
+	//bone-names
+	
+	//frames
+		//angle
+		//position -->AngleAndMatrix relate-path of bone
+		//ikdata
+	
 	return data;
 }
 }

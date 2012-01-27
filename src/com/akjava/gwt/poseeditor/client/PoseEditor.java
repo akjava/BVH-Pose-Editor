@@ -35,7 +35,7 @@ import com.akjava.gwt.three.client.gwt.GWTGeometryUtils;
 import com.akjava.gwt.three.client.gwt.GWTThreeUtils;
 import com.akjava.gwt.three.client.gwt.SimpleDemoEntryPoint;
 import com.akjava.gwt.three.client.gwt.ThreeLog;
-import com.akjava.gwt.three.client.gwt.animation.AngleAndMatrix;
+import com.akjava.gwt.three.client.gwt.animation.AngleAndPosition;
 import com.akjava.gwt.three.client.gwt.animation.AnimationBone;
 import com.akjava.gwt.three.client.gwt.animation.AnimationBonesData;
 import com.akjava.gwt.three.client.gwt.animation.AnimationData;
@@ -349,13 +349,13 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		if(candiateAngleAndMatrixs!=null){
 			candiateAngleAndMatrixs.clear();
 		}else{
-			candiateAngleAndMatrixs=new ArrayList<List<AngleAndMatrix>>();
+			candiateAngleAndMatrixs=new ArrayList<List<AngleAndPosition>>();
 		}
 		log("result-size:"+result.size());
 		int index=0;
 		for(List<NameAndVector3> nv:result){
 			//log("candiate:"+index);
-			List<AngleAndMatrix> bm=AnimationBonesData.cloneAngleAndMatrix(currentMatrixs);
+			List<AngleAndPosition> bm=AnimationBonesData.cloneAngleAndMatrix(currentMatrixs);
 			applyMatrix(bm, nv);
 			
 			//deb
@@ -1410,12 +1410,14 @@ HorizontalPanel h1=new HorizontalPanel();
 	private PoseFrameData initialPoseFrameData;
 	
 	private PoseFrameData snapCurrentFrameData(){
-		List<AngleAndMatrix> matrixs=AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs());
+		List<AngleAndPosition> matrixs=AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs());
 		List<Vector3> targets=new ArrayList<Vector3>();
 		List<String> names=new ArrayList<String>();
 		
 		for(IKData ikdata:ikdatas){
-			targets.add(ikdata.getTargetPos().clone());
+			Vector3 pos=ikdata.getTargetPos().clone();
+			pos.subSelf(ab.getBonePosition(ikdata.getLastBoneName()));//relative path
+			targets.add(pos);
 			names.add(ikdata.getName());
 		}
 		
@@ -1513,13 +1515,17 @@ HorizontalPanel h1=new HorizontalPanel();
 		//log("update:"+index);
 		poseFrameDataIndex=index;
 		PoseFrameData ps=getSelectedPoseEditorData().getPoseFrameDatas().get(index);
-		//update
-		for(int i=0;i<ikdatas.size();i++){
-			Vector3 vec=ps.getTargetPositions().get(i);
-			ikdatas.get(i).getTargetPos().set(vec.getX(), vec.getY(), vec.getZ());
-		}
+		
 		currentMatrixs=AnimationBonesData.cloneAngleAndMatrix(ps.getAngleAndMatrixs());
 		ab.setBonesAngleAndMatrixs(currentMatrixs);
+		//update
+		for(int i=0;i<ikdatas.size();i++){
+			Vector3 vec=ps.getTargetPositions().get(i).clone();
+			vec.addSelf(ab.getBonePosition(ikdatas.get(i).getLastBoneName()));//relative path
+			
+			ikdatas.get(i).getTargetPos().set(vec.getX(), vec.getY(), vec.getZ());
+		}
+		
 		if(isSelectedIk()){
 		switchSelectionIk(getCurrentIkData().getLastBoneName());
 		}
@@ -1876,12 +1882,12 @@ private List<AnimationBone> boneList=new ArrayList<AnimationBone>();
 	
 	
 AnimationBonesData ab;
-List<AngleAndMatrix> baseMatrixs;		
+List<AngleAndPosition> baseMatrixs;		
 
 
 
 
-private void applyMatrix(List<AngleAndMatrix> matrix,List<NameAndVector3> samples){
+private void applyMatrix(List<AngleAndPosition> matrix,List<NameAndVector3> samples){
 for(NameAndVector3 nv:samples){
 	int boneIndex=ab.getBoneIndex(nv.getName());
 	Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(ab.getBoneAngleAndMatrix(boneIndex).getMatrix()));
@@ -1894,7 +1900,7 @@ for(NameAndVector3 nv:samples){
 }
 
 
-List<List<AngleAndMatrix>> candiateAngleAndMatrixs;
+List<List<AngleAndPosition>> candiateAngleAndMatrixs;
 
 private void initializeBodyMesh(){
 	//initializeBodyMesh
@@ -1909,7 +1915,7 @@ private void initializeBodyMesh(){
 					root.remove(bodyMesh);
 				}
 }
-List<AngleAndMatrix> currentMatrixs;
+List<AngleAndPosition> currentMatrixs;
 private void initializeAnimationData(int index,boolean resetMatrix){
 
 	//initialize AnimationBone
@@ -1965,7 +1971,7 @@ private Vector3 findNextStep(int boneIndex,int lastBoneIndex,Vector3 targetPos){
 	Matrix4 matrix=THREE.Matrix4();
 	for(int i=0;i<path.size()-1;i++){
 		int bindex=path.get(i);
-		AngleAndMatrix am=ab.getBoneAngleAndMatrix(bindex);
+		AngleAndPosition am=ab.getBoneAngleAndMatrix(bindex);
 		matrix.multiplySelf(am.getMatrix());
 	}
 	Vector3 base=THREE.Vector3(0,0,0);
@@ -1983,7 +1989,7 @@ private Vector3 findNextStep(int boneIndex,int lastBoneIndex,Vector3 targetPos){
 				matrix=THREE.Matrix4();
 				for(int i=0;i<path.size()-1;i++){
 					int bindex=path.get(i);
-					AngleAndMatrix am=ab.getBoneAngleAndMatrix(bindex);
+					AngleAndPosition am=ab.getBoneAngleAndMatrix(bindex);
 					Matrix4 m=am.getMatrix();
 					if(bindex==boneIndex){
 						Vector3 newAngle=am.getAngle().clone().addSelf(tmpVec);
@@ -2038,12 +2044,12 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	Vector3 currentAngle=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
 	//log("current:"+ThreeLog.get(currentAngle));
 	if(perLimit>0){
-	Vector3 lastJointPos=ab.getPosition(ikData.getLastBoneName());
+	Vector3 lastJointPos=ab.getBonePosition(ikData.getLastBoneName());
 	
 	
 	
 	//Vector3 jointPos=ab.getParentPosition(targetName);
-	Vector3 jointPos=ab.getPosition(targetBoneName);
+	Vector3 jointPos=ab.getBonePosition(targetBoneName);
 	
 	
 	
@@ -2053,7 +2059,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	//Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, ikData.getTargetPos());
 	
 	//TODO add parent bone angles
-	AngleAndMatrix root=ab.getBoneAngleAndMatrix(0);
+	AngleAndPosition root=ab.getBoneAngleAndMatrix(0);
 	Vector3 parentAngle=ab.getParentAngles(boneIndex);
 	Matrix4 newMatrix=cddIk.getStepAngleMatrix(parentAngle,lastJointPos, jointPos, jointRot, ikData.getTargetPos());
 	if(newMatrix==null){//invalid value
@@ -2179,15 +2185,15 @@ private void doPoseIkk(int index,boolean resetMatrix,int perLimit,IKData ikdata,
 	updateBoneRanges();
 	
 	}
-private List<AngleAndMatrix> findStartMatrix(String boneName,Vector3 targetPos) {
-	List<AngleAndMatrix> retMatrix=candiateAngleAndMatrixs.get(0);
+private List<AngleAndPosition> findStartMatrix(String boneName,Vector3 targetPos) {
+	List<AngleAndPosition> retMatrix=candiateAngleAndMatrixs.get(0);
 	ab.setBonesAngleAndMatrixs(retMatrix);//TODO without set
-	Vector3 tpos=ab.getPosition(boneName);
+	Vector3 tpos=ab.getBonePosition(boneName);
 	double minlength=targetPos.clone().subSelf(tpos).length();
 	for(int i=1;i<candiateAngleAndMatrixs.size();i++){
-		List<AngleAndMatrix> mxs=candiateAngleAndMatrixs.get(i);
+		List<AngleAndPosition> mxs=candiateAngleAndMatrixs.get(i);
 		ab.setBonesAngleAndMatrixs(mxs);//TODO change
-		Vector3 tmpPos=ab.getPosition(boneName);
+		Vector3 tmpPos=ab.getBonePosition(boneName);
 		double tmpLength=targetPos.clone().subSelf(tmpPos).length();
 		if(tmpLength<minlength){
 			minlength=tmpLength;
@@ -2236,7 +2242,7 @@ CDDIK cddIk=new CDDIK();
 private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
 		
-	List<AngleAndMatrix> boneMatrix=animationBonesData.getBonesAngleAndMatrixs();
+	List<AngleAndPosition> boneMatrix=animationBonesData.getBonesAngleAndMatrixs();
 		
 		bonePath=boneToPath(bones);
 		if(bone3D!=null){
