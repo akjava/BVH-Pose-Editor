@@ -56,14 +56,31 @@ public void setIkTargetNames(List<String> ikTargetNames) {
 public PoseFrameData(){}
 public PoseFrameData clone(){
 	List<AngleAndPosition> matrixs=AnimationBonesData.cloneAngleAndMatrix(this.matrixs);
+	
+	
+	
+	List<Vector3> ags=new ArrayList<Vector3>();
+	for(Vector3 vec:angles){
+		ags.add(vec.clone());
+	}
+	
+	List<Vector3> pos=new ArrayList<Vector3>();
+	for(Vector3 vec:positions){
+		pos.add(vec.clone());
+	}
+	
 	List<Vector3> targets=new ArrayList<Vector3>();
 	for(Vector3 vec:ikTargetPositions){
 		targets.add(vec.clone());
 	}
+	
 	List<String> names=new ArrayList<String>();
 	for(String name:ikTargetNames){
 		names.add(name);
 	}
-	return new PoseFrameData(matrixs,targets,names);
+	PoseFrameData pdata= new PoseFrameData(matrixs,targets,names);
+	pdata.setAngles(ags);
+	pdata.setPositions(pos);
+	return pdata;
 }
 }

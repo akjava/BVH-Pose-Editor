@@ -68,6 +68,7 @@ import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.http.client.URL;
+import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
@@ -110,8 +111,6 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		this.renderer=renderer;
 		canvas.setClearColorHex(0x333333);
 	
-		
-		
 		scene.add(THREE.AmbientLight(0xffffff));
 		
 		Light pointLight = THREE.DirectionalLight(0xffffff,1);
@@ -1227,6 +1226,15 @@ HorizontalPanel h1=new HorizontalPanel();
 				doNewFile();
 			}
 		});
+		Button saveFile=new Button("Save");
+		topPanel.add(saveFile);
+		saveFile.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				doSaveFile();
+			}
+		});
 		
 		HorizontalPanel upperPanel=new HorizontalPanel();
 		upperPanel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
@@ -1358,6 +1366,14 @@ HorizontalPanel h1=new HorizontalPanel();
 		super.leftBottom(bottomPanel);
 	}
 	
+	protected void doSaveFile() {
+		PoseEditorData pdata=getSelectedPoseEditorData();
+		log("pdata:"+pdata);
+		JSONObject data=PoseEditorData.writeData(pdata);
+		log(data.getJavaScriptObject());
+	}
+
+
 	private int poseEditorDataSelection;
 	List<PoseEditorData> poseEditorDatas=new ArrayList<PoseEditorData>();
 	
@@ -1376,12 +1392,14 @@ HorizontalPanel h1=new HorizontalPanel();
 		String newName=getNewName();
 		PoseEditorData ped=new PoseEditorData();
 		ped.setName(newName);
+		ped.setCdate(System.currentTimeMillis());
 		
 		List<PoseFrameData> pfList=new ArrayList<PoseFrameData>();
 		ped.setPoseFrameDatas(pfList);
 		pfList.add(initialPoseFrameData.clone());
 		
-		ped.setBones(boneList);//TODO support multiple bone
+		ped.setBones(boneList);
+		
 		
 		poseEditorDatas.add(ped);
 		fileNames.addItem(newName);
@@ -1411,6 +1429,20 @@ HorizontalPanel h1=new HorizontalPanel();
 	
 	private PoseFrameData snapCurrentFrameData(){
 		List<AngleAndPosition> matrixs=AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs());
+		
+		List<Vector3> angles=new ArrayList<Vector3>();
+		List<Vector3> positions=new ArrayList<Vector3>();
+		for(int i=0;i<matrixs.size();i++){
+			Vector3 angle=matrixs.get(i).getAngle().clone();
+			angles.add(angle);
+			
+			Vector3 position=ab.getMatrixPosition(i);
+			position.subSelf(ab.getBaseBoneRelativePosition(i));
+			
+			positions.add(position);
+			log(ab.getBoneName(i)+" pos="+ThreeLog.get(position)+",base="+ThreeLog.get(ab.getBaseBonePosition(i)));
+		}
+		
 		List<Vector3> targets=new ArrayList<Vector3>();
 		List<String> names=new ArrayList<String>();
 		
@@ -1424,6 +1456,8 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		PoseFrameData ps=new PoseFrameData(matrixs, targets,names);
+		ps.setAngles(angles);
+		ps.setPositions(positions);
 		return ps;
 	}
 	
@@ -1786,11 +1820,13 @@ private List<String> boneList=new ArrayList<String>();
 			Vector3 motionPos=AnimationBone.jsArrayToVector3(motion.getPos());
 			//seems same as bone
 		//	LogUtils.log(motionPos);
-			mx.setTranslation(motionPos.getX(), motionPos.getY(), motionPos.getZ());
+			mx.setPosition(motionPos);
+			mx.setRotationFromQuaternion(motion.getRot());
+			/*
 			Matrix4 mx2=THREE.Matrix4();
 			mx2.setRotationFromQuaternion(motion.getRot());
 			mx.multiplySelf(mx2);
-			
+			*/
 			/*
 			Vector3 tmpRot=THREE.Vector3();
 			tmpRot.setRotationFromMatrix(mx);

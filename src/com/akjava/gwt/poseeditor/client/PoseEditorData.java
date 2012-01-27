@@ -42,21 +42,25 @@ private String name;
 private List<PoseFrameData> poseFrameDatas;
 private List<String> bones;
 private double cdate;
-//TODO read & write
 
 
-public static String writeData(PoseEditorData data){
+
+public static JSONObject writeData(PoseEditorData data){
 	JSONObject poseData=new JSONObject();
 	
 	//name
 	poseData.put("name", new JSONString(data.getName()));
 	poseData.put("cdate", new JSONNumber(data.getCdate()));
 	
+	//LogUtils.log("name-cdate");
 	//bones
 	JSONArray bones=new JSONArray();
 	for(int i=0;i<data.getBones().size();i++){
 		bones.set(i, new JSONString(data.getBones().get(i)));
 	}
+	//LogUtils.log("bone");
+	
+	LogUtils.log("size:"+data.getPoseFrameDatas().size());
 	
 	JSONArray frames=new JSONArray();
 	for(int i=0;i<data.getPoseFrameDatas().size();i++){
@@ -65,39 +69,44 @@ public static String writeData(PoseEditorData data){
 		
 		//angles
 		List<Vector3> angles=fdata.getAngles();
+		if(angles==null){
+			LogUtils.log("warn:angles is null");
+		}
 		JSONArray anglesValue=new JSONArray();
 		for(int j=0;j<angles.size();j++){
 			anglesValue.set(j, toJSONArray(angles.get(j)));
 		}
 		frameValue.put("angles", anglesValue);
-		
+		//LogUtils.log("angles");
 		//positions
-		List<Vector3> positions=fdata.getAngles();
+		List<Vector3> positions=fdata.getPositions();
 		JSONArray positionValue=new JSONArray();
 		for(int j=0;j<positions.size();j++){
 			positionValue.set(j, toJSONArray(positions.get(j)));
 		}
 		frameValue.put("positions", positionValue);
-		
+		//LogUtils.log("positions");
 		List<String> ikNames=fdata.getIkTargetNames();
 		JSONArray ikNameValue=new JSONArray();
 		for(int j=0;j<ikNames.size();j++){
 			ikNameValue.set(j, new JSONString(ikNames.get(j)));
 		}
 		frameValue.put("ik-names", ikNameValue);
-		
+		//LogUtils.log("ik-names");
 		
 		//positions
 		List<Vector3> ikpositions=fdata.getIkTargetPositions();
 		JSONArray ikpositionsValue=new JSONArray();
 			for(int j=0;j<ikpositions.size();j++){
-			positionValue.set(j, toJSONArray(ikpositions.get(j)));
+				ikpositionsValue.set(j, toJSONArray(ikpositions.get(j)));
 			}
 			frameValue.put("ik-positions", ikpositionsValue);
+		//LogUtils.log("ik-positions");
+		frames.set(i, frameValue);
 	}
 	poseData.put("frames", frames);
 	
-	return poseData.toString();
+	return poseData;
 }
 
 private static JSONArray toJSONArray(Vector3 vec){
