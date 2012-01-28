@@ -18,6 +18,7 @@ import com.akjava.bvh.client.threejs.AnimationDataConverter;
 import com.akjava.bvh.client.threejs.BVHConverter;
 import com.akjava.gwt.html5.client.HTML5InputRange;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
+import com.akjava.gwt.lib.client.StorageControler;
 import com.akjava.gwt.three.client.THREE;
 import com.akjava.gwt.three.client.core.Geometry;
 import com.akjava.gwt.three.client.core.Intersect;
@@ -33,7 +34,6 @@ import com.akjava.gwt.three.client.extras.loaders.JSONLoader;
 import com.akjava.gwt.three.client.extras.loaders.JSONLoader.LoadHandler;
 import com.akjava.gwt.three.client.gwt.GWTGeometryUtils;
 import com.akjava.gwt.three.client.gwt.GWTThreeUtils;
-import com.akjava.gwt.three.client.gwt.SimpleDemoEntryPoint;
 import com.akjava.gwt.three.client.gwt.ThreeLog;
 import com.akjava.gwt.three.client.gwt.animation.AngleAndPosition;
 import com.akjava.gwt.three.client.gwt.animation.AnimationBone;
@@ -46,6 +46,7 @@ import com.akjava.gwt.three.client.gwt.animation.NameAndVector3;
 import com.akjava.gwt.three.client.gwt.animation.WeightBuilder;
 import com.akjava.gwt.three.client.gwt.animation.ik.CDDIK;
 import com.akjava.gwt.three.client.gwt.animation.ik.IKData;
+import com.akjava.gwt.three.client.gwt.ui.SimpleTabDemoEntryPoint;
 import com.akjava.gwt.three.client.lights.Light;
 import com.akjava.gwt.three.client.materials.Material;
 import com.akjava.gwt.three.client.objects.Mesh;
@@ -62,6 +63,8 @@ import com.google.gwt.event.dom.client.MouseOutEvent;
 import com.google.gwt.event.dom.client.MouseUpEvent;
 import com.google.gwt.event.dom.client.MouseUpHandler;
 import com.google.gwt.event.dom.client.MouseWheelEvent;
+import com.google.gwt.event.logical.shared.SelectionEvent;
+import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
@@ -72,7 +75,11 @@ import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
+import com.google.gwt.user.client.ui.FlowPanel;
+import com.google.gwt.user.client.ui.Grid;
+import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.Panel;
@@ -83,7 +90,7 @@ import com.google.gwt.user.client.ui.VerticalPanel;
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
  */
-public class PoseEditor extends SimpleDemoEntryPoint{
+public class PoseEditor extends SimpleTabDemoEntryPoint{
 	private BVH bvh;
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
@@ -106,8 +113,16 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 	
 	
 	private WebGLRenderer renderer;
+
+	public static final String KEY_INDEX="DATA_INDEX";
+	public static final String KEY_DATA="DATA_VALUE";
+	public static final String KEY_IMAGE="DATA_IMAGE";
+	
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
+		
+		preference = new StorageControler();
+		
 		this.renderer=renderer;
 		canvas.setClearColorHex(0x333333);
 	
@@ -275,6 +290,108 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		boneLimits.put("Neck",BoneLimit.createBoneLimit(-29, 29, -29, 29, -29, 29));
 		boneLimits.put("Neck1",BoneLimit.createBoneLimit(-5, 5, -5, 5, -5, 5));
 		
+		createTabs();
+		
+		updateDatasPanel();
+	}
+	
+	private void updateDatasPanel(){
+		datasPanel.clear();
+		int index=preference.getValue(KEY_INDEX, 0);
+		for(int i=0;i<index;i++){
+			String b64=preference.getValue(KEY_IMAGE+i,null);
+			String json=preference.getValue(KEY_DATA+i,null);
+			if(b64!=null && json!=null){
+			DataPanel dp=new DataPanel(i,b64,json);
+			//dp.setSize("200px", "200px");
+			datasPanel.add(dp);
+			}
+		}
+	}
+	
+	public class DataPanel extends HorizontalPanel{
+		private int index;
+		public DataPanel(int ind,String base64,final String json){
+			this.index=ind;
+			Image img=new Image();
+			img.setUrl(base64);
+			add(img);
+			//TODO support simple info
+			
+			Button loadBt=new Button("Load");
+			add(loadBt);
+			loadBt.addClickHandler(new ClickHandler() {
+				
+				@Override
+				public void onClick(ClickEvent event) {
+					PoseEditorData ped=PoseEditorData.readData(json);
+					
+					if(ped!=null){
+					doLoad(ped);
+					}else{
+						//TODO error catch
+						Window.alert("load faild");
+					}
+				}
+			});
+			
+			Button removeBt=new Button("Remove");
+			add(removeBt);
+			removeBt.addClickHandler(new ClickHandler() {
+				
+				@Override
+				public void onClick(ClickEvent event) {
+					doRemoveData(index);
+				}
+			});
+			
+		}
+	}
+	
+	private void doRemoveData(int index){
+		preference.setValue(KEY_DATA+index, null);
+		preference.setValue(KEY_IMAGE+index, null);
+		updateDatasPanel();
+	}
+	
+	private void createTabs(){
+		tabPanel.addSelectionHandler(new SelectionHandler<Integer>() {
+			
+			@Override
+			public void onSelection(SelectionEvent<Integer> event) {
+				int selection=event.getSelectedItem();
+				if(selection==0){
+					stats.setVisible(true);
+					showControl();
+					dialog2.setVisible(true);
+				}else{
+				stats.setVisible(false);
+				hideControl();
+				dialog2.setVisible(false);
+				}
+			}
+		});
+		VerticalPanel datasRoot=new VerticalPanel();
+		tabPanel.add(datasRoot,"Datas");
+		datasPanel = new FlowPanel();
+		datasRoot.add(datasPanel);
+		datasPanel.setStyleName("debug");
+		datasPanel.setSize("800px", "600px");
+		
+		
+		//about
+		String html="";
+		html+="<br/>"+"[Howto]<br/>Select Nothing:Mouse Drag=Rotatation-XY,Mouse Wheel= Zoom, +ALT Move-XY Camera";
+		html+="<br/>"+"Select IK(Green Box):Mouse Drag=Move IK-XY,Mouse Wheel=Move IK-Z +Shift=smoth-change +Alt=Rapid-change";
+		html+="<br/>"+"Select Bone(Red Box):Mouse Drag=Rotate-XY,Mouse Wheel=Rotate-Z";
+		html+="<br/>"+"Select Root(Red Large Box):Mouse Drag=Rotate-XY,Mouse Wheel=Rotate-Z +Shift=Follow IK +Alt=Move Position";
+		html+="<br/>"+"yello box means under Y:0,orange box means near Y:0";
+		html+="<br/>"+"<a href='http://webgl.akjava.com'>More info at webgl.akjava.com</a>";
+		HTML htmlP=new HTML(html);
+		VerticalPanel aboutRoot=new VerticalPanel();
+		//TODO credit
+		aboutRoot.add(htmlP);
+		tabPanel.add(aboutRoot,"About");
 	}
 	
 	Map<String,BoneLimit> boneLimits=new HashMap<String,BoneLimit>();
@@ -351,7 +468,7 @@ public class PoseEditor extends SimpleDemoEntryPoint{
 		}else{
 			candiateAngleAndMatrixs=new ArrayList<List<AngleAndPosition>>();
 		}
-		log("result-size:"+result.size());
+		//log("result-size:"+result.size());
 		int index=0;
 		for(List<NameAndVector3> nv:result){
 			//log("candiate:"+index);
@@ -1368,18 +1485,54 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	
 	protected void doSaveFile() {
+		
+		
 		PoseEditorData pdata=getSelectedPoseEditorData();
 		
-		JSONObject data=PoseEditorData.writeData(pdata);
+		String result=Window.prompt("Save File", pdata.getName());
+		if(result!=null){
+			pdata.setName(result);
+			JSONObject data=PoseEditorData.writeData(pdata);
+			fileNames.setItemText(poseEditorDataSelection, result);
+			
+			//TODO
+			if(!preference.isAvailable()){
+				//TODO just export
+			}
+			//save database
+			int dataIndex=preference.getValue(KEY_INDEX, 0);
+			
+			
+			//TODO method?
+			Canvas canvas=Canvas.createIfSupported();
+			int thumbW=32;
+			int thumbH=32;
+			canvas.setSize(thumbW+"px", thumbH+"px");
+			canvas.setCoordinateSpaceWidth(thumbW);
+			canvas.setCoordinateSpaceHeight(thumbH);
+			canvas.getContext2d().drawImage(renderer.gwtCanvas(),0,0,screenWidth,screenHeight,0,0,thumbW,thumbH);
+			String thumbnail=canvas.toDataUrl();
+			//Window.open(thumbnail, "tmp", null);
+			
+			preference.setValue(KEY_DATA+dataIndex, data.toString());
+			preference.setValue(KEY_IMAGE+dataIndex, thumbnail);
+			//if error just export
+			dataIndex++;
+			preference.setValue(KEY_INDEX, dataIndex);
+			
+			updateDatasPanel();
+		}
 		//log(data.toString());
 		
 		
 		
+		/*
 		//test
 		PoseEditorData readData=PoseEditorData.readData(data.toString());
 		readData.updateMatrix(ab);
 		readData.setName("tmp1");
 		doLoad(readData);
+		*/
 	}
 
 
@@ -1416,6 +1569,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	
 	public void doLoad(PoseEditorData ped){
+		ped.updateMatrix(ab);//need bone data
 		poseEditorDatas.add(ped);
 		fileNames.addItem(ped.getName());
 		
@@ -1525,15 +1679,8 @@ HorizontalPanel h1=new HorizontalPanel();
 		exportTextChrome(bvhText,"poseeditor"+exportIndex);
 		exportIndex++;
 		
-		Canvas canvas=Canvas.createIfSupported();
-		int thumbW=200;
-		int thumbH=200;
-		canvas.setSize("200px", "200px");
-		canvas.setCoordinateSpaceWidth(thumbW);
-		canvas.setCoordinateSpaceHeight(thumbH);
-		canvas.getContext2d().drawImage(renderer.gwtCanvas(),0,0,screenWidth,screenHeight,0,0,thumbW,thumbH);
-		String url=canvas.toDataUrl();
-		Window.open(url, "newwin", null);
+		
+		
 	}
 	public native final void exportTextChrome(String text,String wname)/*-{
 	win = $wnd.open("", wname)
@@ -1564,24 +1711,26 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	
 	private void selectFrameData(int index) {
-		//log("update:"+index);
+		log("update:"+index);
 		poseFrameDataIndex=index;
 		PoseFrameData pfd=getSelectedPoseEditorData().getPoseFrameDatas().get(index);
-		
+		log("u-1:"+pfd.getAngleAndMatrixs());
 		currentMatrixs=AnimationBonesData.cloneAngleAndMatrix(pfd.getAngleAndMatrixs());
 		ab.setBonesAngleAndMatrixs(currentMatrixs);
 		//update
+		log("u-2");
 		for(int i=0;i<ikdatas.size();i++){
 			Vector3 vec=pfd.getIkTargetPositions().get(i).clone();
 			vec.addSelf(ab.getBonePosition(ikdatas.get(i).getLastBoneName()));//relative path
 			
 			ikdatas.get(i).getTargetPos().set(vec.getX(), vec.getY(), vec.getZ());
 		}
-		
+		log("u-3");
 		if(isSelectedIk()){
 		switchSelectionIk(getCurrentIkData().getLastBoneName());
 		}
 		
+		log("u-4");
 		doPoseByMatrix(ab);
 		updateBoneRanges();
 	}
@@ -1906,9 +2055,10 @@ private List<String> boneList=new ArrayList<String>();
 	 */
 	private void doPose(int index){
 		
-		
+		//initial bone names
+		log(bones);
 		for(int i=0;i<bones.length();i++){
-			log(bones.get(i).getName());
+			//log(bones.get(i).getName());
 		}
 		
 	
@@ -2577,6 +2727,8 @@ private VerticalPanel boneRotationsPanel;
 private CheckBox zlockCheck;
 private CheckBox ikLockCheck;
 private ListBox fileNames;
+private StorageControler preference;
+private FlowPanel datasPanel;
 
 /**
  * @deprecated
@@ -2752,12 +2904,12 @@ private ListBox fileNames;
 	@Override
 	public String getHtml(){
 	String html=super.getHtml();
-	html+="<br/>"+"[Howto]<br/>Select Nothing:Mouse Drag=Rotatation-XY,Mouse Wheel= Zoom, +ALT Move-XY Camera";
-	html+="<br/>"+"Select IK(Green Box):Mouse Drag=Move IK-XY,Mouse Wheel=Move IK-Z +Shift=smoth-change +Alt=Rapid-change";
-	html+="<br/>"+"Select Bone(Red Box):Mouse Drag=Rotate-XY,Mouse Wheel=Rotate-Z";
-	html+="<br/>"+"Select Root(Red Large Box):Mouse Drag=Rotate-XY,Mouse Wheel=Rotate-Z +Shift=Follow IK +Alt=Move Position";
-	html+="<br/>"+"yello box means under Y:0,orange box means near Y:0";
-	html+="<br/>"+"<a href='http://webgl.akjava.com'>More info at webgl.akjava.com</a>";
+
 	return html;	
+	}
+
+	@Override
+	public String getTabTitle() {
+		return "Editor";
 	}
 }

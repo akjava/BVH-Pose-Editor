@@ -161,7 +161,7 @@ private static JSONArray toJSONArray(Vector3 vec){
 public static PoseEditorData readData(String jsonString){
 	JSONValue value=JSONParser.parseLenient(jsonString);
 	
-	LogUtils.log(value.toString());
+	//LogUtils.log(value.toString());
 	
 	JSONObject poseData=value.isObject();
 	if(poseData==null){
@@ -177,7 +177,7 @@ public static PoseEditorData readData(String jsonString){
 		return null;
 	}
 	data.setName(name.stringValue());
-	LogUtils.log(data.getName());
+//	LogUtils.log(data.getName());
 	
 	
 	JSONValue cdateValue=poseData.get("cdate");
@@ -187,7 +187,7 @@ public static PoseEditorData readData(String jsonString){
 		return null;
 	}
 	data.setCdate(cdate.doubleValue());
-	LogUtils.log(""+data.getCdate());
+	//LogUtils.log(""+data.getCdate());
 	//bone-names
 	JSONArray boneNames=poseData.get("bones").isArray();
 	if(boneNames==null){
