@@ -48,7 +48,21 @@ private List<PoseFrameData> poseFrameDatas;
 private List<String> bones;
 private double cdate;
 
+private int fileId=-1;
+public int getFileId() {
+	return fileId;
+}
+public void setFileId(int fileId) {
+	this.fileId = fileId;
+}
+private boolean modified;
 
+public boolean isModified() {
+	return modified;
+}
+public void setModified(boolean modified) {
+	this.modified = modified;
+}
 public void updateMatrix(AnimationBonesData abData){
 	
 	

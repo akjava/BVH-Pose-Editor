@@ -1,6 +1,7 @@
 package com.akjava.gwt.poseeditor.client;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -71,12 +72,15 @@ import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.http.client.URL;
+import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.json.client.JSONObject;
+import com.google.gwt.json.client.JSONParser;
+import com.google.gwt.json.client.JSONString;
+import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
@@ -84,6 +88,7 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.PopupPanel;
+import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 
 
@@ -94,7 +99,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 	private BVH bvh;
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
-	
+	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
@@ -117,6 +122,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 	public static final String KEY_INDEX="DATA_INDEX";
 	public static final String KEY_DATA="DATA_VALUE";
 	public static final String KEY_IMAGE="DATA_IMAGE";
+	public static final String KEY_HEAD="DATA_HEAD";
 	
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
@@ -270,10 +276,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 		//manual
 		
 		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 140, -10, 10));
-		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-120, 60, -91, 91, -50, 120));
+		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-120, 60, -91, 91, -70, 120));
 		
 		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -140, 0, -10, 10));
-		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-120, 60, -91, 91, -120, 50));
+		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-120, 60, -91, 91, -120, 70));
 
 		
 		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
@@ -298,11 +304,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 	private void updateDatasPanel(){
 		datasPanel.clear();
 		int index=preference.getValue(KEY_INDEX, 0);
-		for(int i=0;i<index;i++){
+		for(int i=index;i>=0;i--){
 			String b64=preference.getValue(KEY_IMAGE+i,null);
 			String json=preference.getValue(KEY_DATA+i,null);
+			String head=preference.getValue(KEY_HEAD+i,null);
 			if(b64!=null && json!=null){
-			DataPanel dp=new DataPanel(i,b64,json);
+			DataPanel dp=new DataPanel(i,head,b64,json);
 			//dp.setSize("200px", "200px");
 			datasPanel.add(dp);
 			}
@@ -311,12 +318,29 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 	
 	public class DataPanel extends HorizontalPanel{
 		private int index;
-		public DataPanel(int ind,String base64,final String json){
+		private String name;
+		private long cdate;
+		private String json;
+		public DataPanel(final int ind,String head,String base64, String text){
+			json=text;
 			this.index=ind;
 			Image img=new Image();
 			img.setUrl(base64);
+			
+			
+			String name_cdate[]=head.split("\t");
+			name=name_cdate[0];
+			cdate=(long)(Double.parseDouble(name_cdate[1]));
+			
+			String dlabel=dateFormat.format(new Date(cdate));
+			add(new Label(dlabel));
 			add(img);
-			//TODO support simple info
+			
+			final Label nameLabel=new Label(name);
+			nameLabel.setWidth("160px");
+			add(nameLabel);
+			
+			
 			
 			Button loadBt=new Button("Load");
 			add(loadBt);
@@ -324,9 +348,17 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 				
 				@Override
 				public void onClick(ClickEvent event) {
+					int loadedIndex=isLoaded(ind);
+					if(loadedIndex!=-1){
+						selectPoseEditorDatas(loadedIndex);
+						tabPanel.selectTab(0);//datas
+						return;
+					}
 					PoseEditorData ped=PoseEditorData.readData(json);
 					
+					
 					if(ped!=null){
+					ped.setFileId(ind);
 					doLoad(ped);
 					}else{
 						//TODO error catch
@@ -335,17 +367,70 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 				}
 			});
 			
-			Button removeBt=new Button("Remove");
+			Button editBt=new Button("Edit Name");
+			add(editBt);
+			editBt.addClickHandler(new ClickHandler() {
+				
+				@Override
+				public void onClick(ClickEvent event) {
+					
+					
+					JSONValue jsonValue=JSONParser.parseLenient(json);
+					JSONObject ped=jsonValue.isObject();
+					if(ped!=null){
+						String newName=Window.prompt("Change Name",name);
+						//ped.setName(newName);
+						
+						name=newName;
+						ped.put("name", new JSONString(name));
+						json=ped.toString();
+						nameLabel.setText(name);
+						//JSONObject data=PoseEditorData.writeData(ped);
+						preference.setValue(KEY_DATA+index, json);
+						preference.setValue(KEY_HEAD+index, name+"\t"+cdate);
+						//rewrite
+					}else{
+						//TODO error catch
+						Window.alert("load faild");
+					}
+				}
+			});
+			
+			Button removeBt=new Button("Delate");
 			add(removeBt);
 			removeBt.addClickHandler(new ClickHandler() {
 				
 				@Override
 				public void onClick(ClickEvent event) {
+					boolean ret=Window.confirm("Delete data:"+name);
+					if(ret){
 					doRemoveData(index);
+					}
+				}
+			});
+			
+			Button exportBt=new Button("Export");
+			add(exportBt);
+			exportBt.addClickHandler(new ClickHandler() {
+				
+				@Override
+				public void onClick(ClickEvent event) {
+					PoseEditorData ped=PoseEditorData.readData(json);
+					doExport(ped);
 				}
 			});
 			
 		}
+	}
+	
+	private int  isLoaded(int index){
+		for(int i=0;i<poseEditorDatas.size();i++){
+			PoseEditorData data=poseEditorDatas.get(i);
+			if(data.getFileId()==index){
+				return i;
+			}
+		}
+		return -1;
 	}
 	
 	private void doRemoveData(int index){
@@ -363,9 +448,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 				if(selection==0){
 					stats.setVisible(true);
 					showControl();
+					bottomPanel.setVisible(true);
 					dialog2.setVisible(true);
 				}else{
 				stats.setVisible(false);
+				bottomPanel.setVisible(false);
 				hideControl();
 				dialog2.setVisible(false);
 				}
@@ -373,10 +460,15 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 		});
 		VerticalPanel datasRoot=new VerticalPanel();
 		tabPanel.add(datasRoot,"Datas");
-		datasPanel = new FlowPanel();
-		datasRoot.add(datasPanel);
+		
+		
+		
+		datasPanel = new VerticalPanel();
+		
 		datasPanel.setStyleName("debug");
-		datasPanel.setSize("800px", "600px");
+		ScrollPanel scroll=new ScrollPanel(datasPanel);
+		scroll.setSize("550px", "500px");
+		datasRoot.add(scroll);
 		
 		
 		//about
@@ -1344,13 +1436,23 @@ HorizontalPanel h1=new HorizontalPanel();
 				doNewFile();
 			}
 		});
-		Button saveFile=new Button("Save");
-		topPanel.add(saveFile);
-		saveFile.addClickHandler(new ClickHandler() {
+		saveButton = new Button("Save");
+		topPanel.add(saveButton);
+		saveButton.addClickHandler(new ClickHandler() {
 			
 			@Override
 			public void onClick(ClickEvent event) {
 				doSaveFile();
+			}
+		});
+		
+		Button saveAsButton = new Button("SaveAs");
+		topPanel.add(saveAsButton);
+		saveAsButton.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				doSaveAsFile(getSelectedPoseEditorData());
 			}
 		});
 		
@@ -1420,19 +1522,14 @@ HorizontalPanel h1=new HorizontalPanel();
 			public void onClick(ClickEvent event) {
 				
 				getSelectedPoseEditorData().getPoseFrameDatas().remove(poseFrameDataIndex);
+				getSelectedPoseEditorData().setModified(true);
 				updatePoseIndex(poseFrameDataIndex-1);
+				
+				updateSaveButtons();
 			}
 		});
 		
-		Button export=new Button("Export");
-		upperPanel.add(export);
-		export.addClickHandler(new ClickHandler() {
-			
-			@Override
-			public void onClick(ClickEvent event) {
-				doExport();
-			}
-		});
+		
 		
 		HorizontalPanel pPanel=new HorizontalPanel();
 		main.add(pPanel);
@@ -1484,11 +1581,9 @@ HorizontalPanel h1=new HorizontalPanel();
 		super.leftBottom(bottomPanel);
 	}
 	
-	protected void doSaveFile() {
-		
-		
-		PoseEditorData pdata=getSelectedPoseEditorData();
-		
+	
+	
+	protected void doSaveAsFile(PoseEditorData pdata) {
 		String result=Window.prompt("Save File", pdata.getName());
 		if(result!=null){
 			pdata.setName(result);
@@ -1498,7 +1593,10 @@ HorizontalPanel h1=new HorizontalPanel();
 			//TODO
 			if(!preference.isAvailable()){
 				//TODO just export
+				return;
 			}
+			
+			
 			//save database
 			int dataIndex=preference.getValue(KEY_INDEX, 0);
 			
@@ -1516,12 +1614,40 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			preference.setValue(KEY_DATA+dataIndex, data.toString());
 			preference.setValue(KEY_IMAGE+dataIndex, thumbnail);
-			//if error just export
+			preference.setValue(KEY_HEAD+dataIndex, pdata.getName()+"\t"+pdata.getCdate());
+			pdata.setFileId(dataIndex);
+			
+			//increment
 			dataIndex++;
 			preference.setValue(KEY_INDEX, dataIndex);
 			
+			
+			pdata.setModified(false);
+			updateSaveButtons();
 			updateDatasPanel();
+			
+			
+			
+			tabPanel.selectTab(1);//datas
 		}
+		
+		
+	}
+	protected void doSaveFile() {
+		
+		
+		PoseEditorData pdata=getSelectedPoseEditorData();
+		
+		int fileId=pdata.getFileId();
+		if(fileId!=-1){
+			JSONObject data=PoseEditorData.writeData(pdata);
+			preference.setValue(KEY_DATA+fileId, data.toString());
+			pdata.setModified(false);
+			updateSaveButtons();
+		}else{
+			doSaveAsFile(pdata);
+		}
+		
 		//log(data.toString());
 		
 		
@@ -1553,6 +1679,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		fileIndex++;
 		String newName=getNewName();
 		PoseEditorData ped=new PoseEditorData();
+		ped.setModified(true);//new always
 		ped.setName(newName);
 		ped.setCdate(System.currentTimeMillis());
 		
@@ -1566,6 +1693,9 @@ HorizontalPanel h1=new HorizontalPanel();
 		poseEditorDatas.add(ped);
 		fileNames.addItem(newName);
 		fileNames.setSelectedIndex(fileNames.getItemCount()-1);
+		selectPoseEditorDatas(fileNames.getItemCount()-1);
+		
+		updateSaveButtons();
 	}
 	
 	public void doLoad(PoseEditorData ped){
@@ -1575,6 +1705,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		selectPoseEditorDatas(poseEditorDatas.size()-1);
 		
+		tabPanel.selectTab(0);//datas
 		//called addChangeHandler
 	}
 
@@ -1646,10 +1777,21 @@ HorizontalPanel h1=new HorizontalPanel();
 			updatePoseIndex(getSelectedPoseEditorData().getPoseFrameDatas().size()-1);
 		}
 		
-		
+		getSelectedPoseEditorData().setModified(true);
+		updateSaveButtons();
 	}
 	
-	protected void doExport() {
+	private void updateSaveButtons() {
+		if(getSelectedPoseEditorData().isModified()){
+			saveButton.setEnabled(true);
+		}else{
+			saveButton.setEnabled(false);
+		}
+	}
+
+	protected void doExport(PoseEditorData ped) {
+		ped.updateMatrix(ab);//current-bone
+		
 		BVH exportBVH=new BVH();
 		
 		BVHConverter converter=new BVHConverter();
@@ -1662,8 +1804,8 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		BVHMotion motion=new BVHMotion();
 		motion.setFrameTime(.25);
-		log("frame-size:"+getSelectedPoseEditorData().getPoseFrameDatas().size());
-		for(PoseFrameData pose:getSelectedPoseEditorData().getPoseFrameDatas()){
+		
+		for(PoseFrameData pose:ped.getPoseFrameDatas()){
 			double[] values=converter.angleAndMatrixsToMotion(pose.getAngleAndMatrixs(),BVHConverter.ROOT_POSITION_ROTATE_ONLY,"XYZ");
 			motion.add(values);
 		}
@@ -1711,26 +1853,26 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	
 	private void selectFrameData(int index) {
-		log("update:"+index);
+		
 		poseFrameDataIndex=index;
 		PoseFrameData pfd=getSelectedPoseEditorData().getPoseFrameDatas().get(index);
-		log("u-1:"+pfd.getAngleAndMatrixs());
+		
 		currentMatrixs=AnimationBonesData.cloneAngleAndMatrix(pfd.getAngleAndMatrixs());
 		ab.setBonesAngleAndMatrixs(currentMatrixs);
 		//update
-		log("u-2");
+		
 		for(int i=0;i<ikdatas.size();i++){
 			Vector3 vec=pfd.getIkTargetPositions().get(i).clone();
 			vec.addSelf(ab.getBonePosition(ikdatas.get(i).getLastBoneName()));//relative path
 			
 			ikdatas.get(i).getTargetPos().set(vec.getX(), vec.getY(), vec.getZ());
 		}
-		log("u-3");
+		
 		if(isSelectedIk()){
 		switchSelectionIk(getCurrentIkData().getLastBoneName());
 		}
 		
-		log("u-4");
+		
 		doPoseByMatrix(ab);
 		updateBoneRanges();
 	}
@@ -1928,7 +2070,11 @@ private List<String> boneList=new ArrayList<String>();
 					@Override
 					public void loaded(Geometry geometry) {
 						baseGeometry=geometry;
+						
+						
 						doPose(0);
+						doPose(0);//bug i have no idea,need call twice to better initial pose
+						
 						initialPoseFrameData=snapCurrentFrameData();
 						doNewFile();
 						//insertFrame(getSelectedPoseEditorData().getPoseFrameDatas().size(),false);//initial pose-frame
@@ -2059,6 +2205,7 @@ private List<String> boneList=new ArrayList<String>();
 		log(bones);
 		for(int i=0;i<bones.length();i++){
 			//log(bones.get(i).getName());
+
 		}
 		
 	
@@ -2461,7 +2608,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		//selection
 		
 		//test ikk
-		Mesh cddIk0=THREE.Mesh(THREE.CubeGeometry(.5, .5, .5),THREE.MeshLambertMaterial().color(0x00ff00).build());
+		Mesh cddIk0=THREE.Mesh(THREE.CubeGeometry(.8, .8, .8),THREE.MeshLambertMaterial().color(0x00ff00).build());
 		cddIk0.setPosition(getCurrentIkData().getTargetPos());
 		bone3D.add(cddIk0);
 		
@@ -2728,7 +2875,8 @@ private CheckBox zlockCheck;
 private CheckBox ikLockCheck;
 private ListBox fileNames;
 private StorageControler preference;
-private FlowPanel datasPanel;
+private VerticalPanel datasPanel;
+private Button saveButton;
 
 /**
  * @deprecated
