@@ -2261,7 +2261,7 @@ private List<String> boneList=new ArrayList<String>();
 		}
 		
 	
-	initializeBodyMesh();
+	//initializeBodyMesh();
 	initializeAnimationData(index,false);
 	//stepCDDIk();	
 	log("do-pose");
@@ -2285,7 +2285,7 @@ private List<String> boneList=new ArrayList<String>();
 	
 	//for after loading
 private void doRePose(int index){
-	initializeBodyMesh();
+	//initializeBodyMesh();
 	initializeAnimationData(index,true);
 	//stepCDDIk();	
 	doPoseByMatrix(ab);
@@ -2316,6 +2316,7 @@ for(NameAndVector3 nv:samples){
 
 List<List<AngleAndPosition>> candiateAngleAndMatrixs;
 
+/*
 private void initializeBodyMesh(){
 			//initializeBodyMesh
 			if(bodyMesh==null){//initial Indices & weight,be careful bodyMesh create in doPoseByMatrix
@@ -2344,6 +2345,7 @@ private void initializeBodyMesh(){
 					root.remove(bodyMesh);
 				}
 }
+*/
 List<AngleAndPosition> currentMatrixs;
 private void initializeAnimationData(int index,boolean resetMatrix){
 
@@ -2610,7 +2612,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 
 private void doPoseIkk(int index,boolean resetMatrix,int perLimit,IKData ikdata,int cddLoop){
 		
-	initializeBodyMesh();
+	//initializeBodyMesh();
 	initializeAnimationData(index,resetMatrix);
 	stepCDDIk(perLimit,ikdata,cddLoop);	
 	doPoseByMatrix(ab);
@@ -2796,6 +2798,20 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
 
 		
+		//initialize AutoWeight
+		if(bodyMesh==null){//initial
+			bodyIndices = (JsArray<Vector4>) JsArray.createArray();
+			bodyWeight = (JsArray<Vector4>) JsArray.createArray();
+			//geometry initialized 0 indices & weights
+			if(baseGeometry.getSkinIndices().length()!=0 && baseGeometry.getSkinWeight().length()!=0){
+				log("auto-weight from geometry:");
+				WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_FROM_GEOMETRY, bodyIndices, bodyWeight);
+			}else{
+				WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_NearParentAndChildren, bodyIndices, bodyWeight);
+				}
+			}else{
+				root.remove(bodyMesh);
+			}
 		
 		//Geometry geo=bodyMesh.getGeometry();
 		Geometry geo=GeometryUtils.clone(baseGeometry);
@@ -2905,18 +2921,6 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		geo.computeVertexNormals();
 		
 		//Material material=THREE.MeshLambertMaterial().map(ImageUtils.loadTexture("men3smart_texture.png")).build();
-		
-		if(bodyMesh==null){//initial
-			
-			//log("body mesh initialize"); //called by doPose();
-			/*
-			bodyIndices = (JsArray<Vector4>) JsArray.createArray();
-			bodyWeight = (JsArray<Vector4>) JsArray.createArray();
-			WeightBuilder.autoWeight(baseGeometry, bones, 2, bodyIndices, bodyWeight);	//3 is not good
-			*/
-			}else{
-				root.remove(bodyMesh);
-			}
 		
 		bodyMesh=THREE.Mesh(geo, bodyMaterial);
 		root.add(bodyMesh);
