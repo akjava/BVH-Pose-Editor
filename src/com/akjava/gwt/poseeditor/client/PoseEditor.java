@@ -19,6 +19,10 @@ import com.akjava.bvh.client.threejs.AnimationDataConverter;
 import com.akjava.bvh.client.threejs.BVHConverter;
 import com.akjava.gwt.html5.client.HTML5InputRange;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
+import com.akjava.gwt.html5.client.file.File;
+import com.akjava.gwt.html5.client.file.FileHandler;
+import com.akjava.gwt.html5.client.file.FileReader;
+import com.akjava.gwt.html5.client.file.FileUtils;
 import com.akjava.gwt.lib.client.StorageControler;
 import com.akjava.gwt.three.client.THREE;
 import com.akjava.gwt.three.client.core.Geometry;
@@ -80,6 +84,7 @@ import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
+import com.google.gwt.user.client.ui.FileUpload;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
@@ -436,6 +441,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 	private void doRemoveData(int index){
 		preference.setValue(KEY_DATA+index, null);
 		preference.setValue(KEY_IMAGE+index, null);
+		preference.setValue(KEY_HEAD+index, null);
 		updateDatasPanel();
 	}
 	
@@ -456,6 +462,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 				hideControl();
 				dialog2.setVisible(false);
 				}
+				resized(screenWidth,screenHeight);//for some blackout;
 			}
 		});
 		VerticalPanel datasRoot=new VerticalPanel();
@@ -1331,7 +1338,27 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		
 		
-		Button test=new Button("TEST");
+		FileUpload meshUpload=new FileUpload();
+		parent.add(meshUpload);
+		meshUpload.addChangeHandler(new ChangeHandler() {
+			
+			@Override
+			public void onChange(ChangeEvent event) {
+				JsArray<File> files = FileUtils.toFile(event.getNativeEvent());
+				
+				final FileReader reader=FileReader.createFileReader();
+				reader.setOnLoad(new FileHandler() {
+					@Override
+					public void onLoad() {
+						LoadJsonModel(reader.getResultAsString());
+					}
+				});
+				reader.readAsText(files.get(0),"utf-8");
+			}
+		});
+		
+		
+		Button test=new Button("screen-shot");
 		parent.add(test);
 		test.addClickHandler(new ClickHandler() {
 			
@@ -1345,12 +1372,33 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		
+		
+		
+		
 		updateMaterial();
 		positionYRange.setValue(-140);//for test
 		
 		updateIkLabels();
 		createBottomPanel();
 		showControl();
+		
+	}
+	private void LoadJsonModel(String jsonText){
+		GWTGeometryUtils.loadJsonModel(jsonText,new  LoadHandler() {
+			@Override
+			public void loaded(Geometry geometry) {
+				if(bodyMesh!=null){
+					root.remove(bodyMesh);//for initialzie
+					bodyMesh=null;
+				}
+				ab=null;//for remake.
+				
+				baseGeometry=geometry;//change body mesh
+				//TODO set bone
+				
+				doRePose(0);
+			}
+		});
 		
 	}
 	private String getSelectedBoneName(){
@@ -1523,7 +1571,7 @@ HorizontalPanel h1=new HorizontalPanel();
 				
 				getSelectedPoseEditorData().getPoseFrameDatas().remove(poseFrameDataIndex);
 				getSelectedPoseEditorData().setModified(true);
-				updatePoseIndex(poseFrameDataIndex-1);
+				updatePoseIndex(Math.max(0,poseFrameDataIndex-1));
 				
 				updateSaveButtons();
 			}
@@ -1626,7 +1674,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			updateSaveButtons();
 			updateDatasPanel();
 			
-			
+
 			
 			tabPanel.selectTab(1);//datas
 		}
@@ -1644,6 +1692,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			preference.setValue(KEY_DATA+fileId, data.toString());
 			pdata.setModified(false);
 			updateSaveButtons();
+			updateDatasPanel();//
 		}else{
 			doSaveAsFile(pdata);
 		}
@@ -1659,6 +1708,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		readData.setName("tmp1");
 		doLoad(readData);
 		*/
+		
 	}
 
 
@@ -1670,6 +1720,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		fileNames.setSelectedIndex(index);
 		
 		updatePoseIndex(0);
+		updateSaveButtons();
 	}
 	private PoseEditorData getSelectedPoseEditorData(){
 		return poseEditorDatas.get(poseEditorDataSelection);
@@ -1707,6 +1758,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		tabPanel.selectTab(0);//datas
 		//called addChangeHandler
+		updateSaveButtons();
 	}
 
 	protected void doPaste() {
@@ -2072,7 +2124,7 @@ private List<String> boneList=new ArrayList<String>();
 						baseGeometry=geometry;
 						
 						
-						doPose(0);
+						//doPose(0);
 						doPose(0);//bug i have no idea,need call twice to better initial pose
 						
 						initialPoseFrameData=snapCurrentFrameData();
@@ -2212,6 +2264,7 @@ private List<String> boneList=new ArrayList<String>();
 	initializeBodyMesh();
 	initializeAnimationData(index,false);
 	//stepCDDIk();	
+	log("do-pose");
 	doPoseByMatrix(ab);
 	
 	updateBoneRanges();
@@ -2230,6 +2283,16 @@ private List<String> boneList=new ArrayList<String>();
 	
 	}
 	
+	//for after loading
+private void doRePose(int index){
+	initializeBodyMesh();
+	initializeAnimationData(index,true);
+	//stepCDDIk();	
+	doPoseByMatrix(ab);
+	
+	updateBoneRanges();
+	log("update-bone-range");
+	}
 	
 	
 AnimationBonesData ab;
@@ -2254,13 +2317,28 @@ for(NameAndVector3 nv:samples){
 List<List<AngleAndPosition>> candiateAngleAndMatrixs;
 
 private void initializeBodyMesh(){
-	//initializeBodyMesh
-			if(bodyMesh==null){//initial
+			//initializeBodyMesh
+			if(bodyMesh==null){//initial Indices & weight,be careful bodyMesh create in doPoseByMatrix
 				bodyIndices = (JsArray<Vector4>) JsArray.createArray();
 				bodyWeight = (JsArray<Vector4>) JsArray.createArray();
-				WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_NearParentAndChildren, bodyIndices, bodyWeight);
-				
-				
+
+				//geometry initialized 0 indices & weights
+				if(baseGeometry.getSkinIndices().length()!=0 && baseGeometry.getSkinWeight().length()!=0){
+					log("auto-weight from geometry:");
+					WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_FROM_GEOMETRY, bodyIndices, bodyWeight);
+					
+				}else{
+					//WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_NearParentAndChildren, bodyIndices, bodyWeight);
+					
+					WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_NearParentAndChildren, bodyIndices, bodyWeight);
+					
+					
+				}
+				//WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_NearAgressive, bodyIndices, bodyWeight);
+				log("initialized-weight:"+bodyIndices.length());
+				for(int i=0;i<bodyIndices.length();i++){
+					log(bodyIndices.get(i).getX()+" x "+bodyIndices.get(i).getY());
+				}
 				
 				}else{
 					root.remove(bodyMesh);
@@ -2309,7 +2387,7 @@ private void initializeAnimationData(int index,boolean resetMatrix){
 		}else{
 			ab.setBonesAngleAndMatrixs(AnimationBonesData.cloneAngleAndMatrix(currentMatrixs));	
 		}
-		//TODO only need
+		//TODO only need?
 	}else{
 		
 	}
@@ -2608,19 +2686,20 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		//selection
 		
 		//test ikk
-		Mesh cddIk0=THREE.Mesh(THREE.CubeGeometry(.8, .8, .8),THREE.MeshLambertMaterial().color(0x00ff00).build());
+		/*
+		Mesh cddIk0=THREE.Mesh(THREE.CubeGeometry(1.5, 1.5, 1.5),THREE.MeshLambertMaterial().color(0x00ff00).build());
 		cddIk0.setPosition(getCurrentIkData().getTargetPos());
 		bone3D.add(cddIk0);
-		
+		*/
 		
 		
 		List<Matrix4> moveMatrix=new ArrayList<Matrix4>(); 
 		List<Vector3> bonePositions=new ArrayList<Vector3>();
 		for(int i=0;i<bones.length();i++){
 			Matrix4 mv=boneMatrix.get(i).getMatrix();
-			double bsize=.5;
+			double bsize=.7;
 			if(i==0){
-				bsize=1;
+				bsize=1.5;
 			}
 			Mesh mesh=THREE.Mesh(THREE.CubeGeometry(bsize,bsize, bsize),THREE.MeshLambertMaterial().color(0xff0000).build());
 			bone3D.add(mesh);
@@ -2679,9 +2758,9 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 					if(ikMesh==null){//at first call this from non-ik stepped.
 						//log("xxx");
 						//initial
-						Vector3 ikpos=pos.clone().subSelf(ppos).multiplyScalar(2).addSelf(ppos);
+						Vector3 ikpos=pos.clone().subSelf(ppos).multiplyScalar(1.5).addSelf(ppos);
 						//ikpos=pos.clone();
-						ikMesh=THREE.Mesh(THREE.CubeGeometry(1, 1, 1),THREE.MeshLambertMaterial().color(0x00ff00).build());
+						ikMesh=THREE.Mesh(THREE.CubeGeometry(1.5, 1.5, 1.5),THREE.MeshLambertMaterial().color(0x00ff00).build());
 						ikMesh.setPosition(ikpos);
 						ikMesh.setName("ik:"+boneName);
 					//	log(boneName+":"+ThreeLog.get(ikpos));
@@ -2721,6 +2800,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		//Geometry geo=bodyMesh.getGeometry();
 		Geometry geo=GeometryUtils.clone(baseGeometry);
 		
+		log("bi-length:"+bodyIndices.length());
 		
 		for(int i=0;i<baseGeometry.vertices().length();i++){
 			Vertex baseVertex=baseGeometry.vertices().get(i);
@@ -2732,6 +2812,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			int boneIndex1=(int) bodyIndices.get(i).getX();
 			int boneIndex2=(int) bodyIndices.get(i).getY();
 			String name=animationBonesData.getBoneName(boneIndex1);
+			log(boneIndex1+"x"+boneIndex2);
 			
 			/*
 			 * 
@@ -2826,9 +2907,13 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		//Material material=THREE.MeshLambertMaterial().map(ImageUtils.loadTexture("men3smart_texture.png")).build();
 		
 		if(bodyMesh==null){//initial
+			
+			//log("body mesh initialize"); //called by doPose();
+			/*
 			bodyIndices = (JsArray<Vector4>) JsArray.createArray();
 			bodyWeight = (JsArray<Vector4>) JsArray.createArray();
-			WeightBuilder.autoWeight(baseGeometry, bones, 2, bodyIndices, bodyWeight);	
+			WeightBuilder.autoWeight(baseGeometry, bones, 2, bodyIndices, bodyWeight);	//3 is not good
+			*/
 			}else{
 				root.remove(bodyMesh);
 			}
