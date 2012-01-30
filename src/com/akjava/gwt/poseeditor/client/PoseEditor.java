@@ -173,7 +173,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 		
 		
 		
-		loadBVH("pose.bvh");
+		loadBVH("pose.bvh");//initial bone
 		
 		
 		IKData ikdata1=new IKData("LowerBack-Neck1");
@@ -1391,10 +1391,22 @@ HorizontalPanel h1=new HorizontalPanel();
 					root.remove(bodyMesh);//for initialzie
 					bodyMesh=null;
 				}
-				ab=null;//for remake.
+				
+				ab=null;//for remake matrix.
 				
 				baseGeometry=geometry;//change body mesh
-				//TODO set bone
+				
+				if(baseGeometry.getBones()!=null){
+					log("create-bone from geometry");
+					setBone(baseGeometry.getBones());
+					
+				}else{
+					//initialize default bone
+					AnimationBoneConverter converter=new AnimationBoneConverter();
+					setBone(converter.convertJsonBone(bvh));
+				}
+				//log(""+(baseGeometry.getBones()!=null));
+				//log(baseGeometry.getBones());
 				
 				doRePose(0);
 			}
@@ -2106,15 +2118,12 @@ private List<String> boneList=new ArrayList<String>();
 			public void onSuccess(BVH bv) {
 				bvh=bv;
 				
+				//createBonesFromBVH
 				AnimationBoneConverter converter=new AnimationBoneConverter();
-				bones = converter.convertJsonBone(bvh);
-				for(int i=0;i<bones.length();i++){
-					boneList.add(bones.get(i).getName());
-				}
+				setBone(converter.convertJsonBone(bvh));
 				
-				AnimationDataConverter dataConverter=new AnimationDataConverter();
-				dataConverter.setSkipFirst(false);
-				animationData = dataConverter.convertJsonAnimation(bones,bvh);
+				
+				
 				//frameRange.setMax(animationData.getHierarchy().get(0).getKeys().length());
 				
 				JSONLoader loader=THREE.JSONLoader();
@@ -2135,6 +2144,19 @@ private List<String> boneList=new ArrayList<String>();
 			}
 		});	
 	}
+	
+	private void setBone(JsArray<AnimationBone> bo){
+		bones=bo;
+		AnimationDataConverter dataConverter=new AnimationDataConverter();
+		dataConverter.setSkipFirst(false);
+		animationData = dataConverter.convertJsonAnimation(bones,bvh);//use for first pose
+		boneList.clear();
+		for(int i=0;i<bones.length();i++){
+			boneList.add(bones.get(i).getName());
+			log(bones.get(i).getName()+","+ThreeLog.get(GWTThreeUtils.jsArrayToVector3(bones.get(i).getPos())));
+		}
+	}
+	
 	
 	public static class MatrixAndVector3{
 		public MatrixAndVector3(){}
@@ -2182,11 +2204,11 @@ private List<String> boneList=new ArrayList<String>();
 			//log(bone.getName());
 			
 			Matrix4 mx=THREE.Matrix4();
-			Vector3 motionPos=AnimationBone.jsArrayToVector3(motion.getPos());
+			Vector3 motionPos=GWTThreeUtils.jsArrayToVector3(motion.getPos());
 			//seems same as bone
 		//	LogUtils.log(motionPos);
 			mx.setPosition(motionPos);
-			mx.setRotationFromQuaternion(motion.getRot());
+			mx.setRotationFromQuaternion(GWTThreeUtils.jsArrayToQuaternion(motion.getRot()));
 			/*
 			Matrix4 mx2=THREE.Matrix4();
 			mx2.setRotationFromQuaternion(motion.getRot());
@@ -2353,10 +2375,10 @@ private void initializeAnimationData(int index,boolean resetMatrix){
 	if(ab==null){
 	baseMatrixs=AnimationBonesData.boneToAngleAndMatrix(bones, animationData, index);
 	ab=new AnimationBonesData(bones,AnimationBonesData.cloneAngleAndMatrix(baseMatrixs) );
-	
+	currentMatrixs=null;
 	for(int i=0;i<bones.length();i++){
-	//	log(bones.get(i).getName()+":"+ThreeLog.get(baseMatrixs.get(i).getPosition()));
-	}
+		//	log(bones.get(i).getName()+":"+ThreeLog.get(baseMatrixs.get(i).getPosition()));
+		}
 	}
 	
 	//TODO make automatic
@@ -2816,7 +2838,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		//Geometry geo=bodyMesh.getGeometry();
 		Geometry geo=GeometryUtils.clone(baseGeometry);
 		
-		log("bi-length:"+bodyIndices.length());
+		//log("bi-length:"+bodyIndices.length());
 		
 		for(int i=0;i<baseGeometry.vertices().length();i++){
 			Vertex baseVertex=baseGeometry.vertices().get(i);
@@ -2828,7 +2850,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			int boneIndex1=(int) bodyIndices.get(i).getX();
 			int boneIndex2=(int) bodyIndices.get(i).getY();
 			String name=animationBonesData.getBoneName(boneIndex1);
-			log(boneIndex1+"x"+boneIndex2);
+			//log(boneIndex1+"x"+boneIndex2);
 			
 			/*
 			 * 
