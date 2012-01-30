@@ -1144,6 +1144,35 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
+		//mirror
+		Button mirror=new Button("do Mirror");
+		mirror.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				String name=getSelectedBoneName();
+				if(name==null){
+					return;
+				}
+					//h mirror
+					String targetName=getMirroredName(name);
+					log("mirror:"+targetName);
+					if(targetName==null){
+						return;
+					}
+					
+					int index=ab.getBoneIndex(targetName);
+					if(index!=-1){
+						log("mirror:"+index);
+						Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
+						rotationBoneXRange.setValue((int) angle.getX());
+						rotationBoneYRange.setValue((int) angle.getY()*-1);
+						rotationBoneZRange.setValue((int) angle.getZ()*-1);
+						rotToBone();
+					}
+				
+			}
+		});
+		parent.add(mirror);
 		
 		
 		
@@ -1383,6 +1412,22 @@ HorizontalPanel h1=new HorizontalPanel();
 		showControl();
 		
 	}
+	protected String getMirroredName(String name) {
+		if(name.indexOf("Right")!=-1){
+			return name.replace("Right", "Left");
+		}
+		if(name.indexOf("right")!=-1){
+			return name.replace("right", "left");
+		}
+		if(name.indexOf("Left")!=-1){
+			return name.replace("Left", "Right");
+		}
+		if(name.indexOf("left")!=-1){
+			return name.replace("left", "right");
+		}
+		return null;
+	}
+
 	private void LoadJsonModel(String jsonText){
 		GWTGeometryUtils.loadJsonModel(jsonText,new  LoadHandler() {
 			@Override
