@@ -24,6 +24,8 @@ import com.akjava.gwt.html5.client.file.FileHandler;
 import com.akjava.gwt.html5.client.file.FileReader;
 import com.akjava.gwt.html5.client.file.FileUtils;
 import com.akjava.gwt.lib.client.StorageControler;
+import com.akjava.gwt.lib.client.StorageDataList.HeaderAndValue;
+import com.akjava.gwt.poseeditor.client.PreferenceTabPanel.PreferenceListener;
 import com.akjava.gwt.three.client.THREE;
 import com.akjava.gwt.three.client.core.Geometry;
 import com.akjava.gwt.three.client.core.Intersect;
@@ -100,7 +102,7 @@ import com.google.gwt.user.client.ui.VerticalPanel;
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
  */
-public class PoseEditor extends SimpleTabDemoEntryPoint{
+public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceListener{
 	private BVH bvh;
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
@@ -132,7 +134,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
 		
-		preference = new StorageControler();
+		storageControler = new StorageControler();
 		
 		this.renderer=renderer;
 		canvas.setClearColorHex(0x333333);
@@ -308,11 +310,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 	
 	private void updateDatasPanel(){
 		datasPanel.clear();
-		int index=preference.getValue(KEY_INDEX, 0);
+		int index=storageControler.getValue(KEY_INDEX, 0);
 		for(int i=index;i>=0;i--){
-			String b64=preference.getValue(KEY_IMAGE+i,null);
-			String json=preference.getValue(KEY_DATA+i,null);
-			String head=preference.getValue(KEY_HEAD+i,null);
+			String b64=storageControler.getValue(KEY_IMAGE+i,null);
+			String json=storageControler.getValue(KEY_DATA+i,null);
+			String head=storageControler.getValue(KEY_HEAD+i,null);
 			if(b64!=null && json!=null){
 			DataPanel dp=new DataPanel(i,head,b64,json);
 			//dp.setSize("200px", "200px");
@@ -391,8 +393,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 						json=ped.toString();
 						nameLabel.setText(name);
 						//JSONObject data=PoseEditorData.writeData(ped);
-						preference.setValue(KEY_DATA+index, json);
-						preference.setValue(KEY_HEAD+index, name+"\t"+cdate);
+						storageControler.setValue(KEY_DATA+index, json);
+						storageControler.setValue(KEY_HEAD+index, name+"\t"+cdate);
 						//rewrite
 					}else{
 						//TODO error catch
@@ -439,9 +441,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 	}
 	
 	private void doRemoveData(int index){
-		preference.setValue(KEY_DATA+index, null);
-		preference.setValue(KEY_IMAGE+index, null);
-		preference.setValue(KEY_HEAD+index, null);
+		storageControler.setValue(KEY_DATA+index, null);
+		storageControler.setValue(KEY_IMAGE+index, null);
+		storageControler.setValue(KEY_HEAD+index, null);
 		updateDatasPanel();
 	}
 	
@@ -478,6 +480,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 		datasRoot.add(scroll);
 		
 		
+		tabPanel.add(new PreferenceTabPanel(storageControler,this),"Preference");
+		
 		//about
 		String html="";
 		html+="<br/>"+"[Howto]<br/>Select Nothing:Mouse Drag=Rotatation-XY,Mouse Wheel= Zoom, +ALT Move-XY Camera";
@@ -493,6 +497,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint{
 		tabPanel.add(aboutRoot,"About");
 	}
 	
+	private void createPreferenceTab(VerticalPanel preferencePanel) {
+		
+	}
+
+
 	Map<String,BoneLimit> boneLimits=new HashMap<String,BoneLimit>();
 	
 	private void updateIkLabels(){
@@ -1454,6 +1463,11 @@ HorizontalPanel h1=new HorizontalPanel();
 				//log(baseGeometry.getBones());
 				
 				doRePose(0);
+				
+				if(poseEditorDatas.size()==0){//initial new list
+				initialPoseFrameData=snapCurrentFrameData();
+				doNewFile();
+				}
 			}
 		});
 		
@@ -1681,7 +1695,18 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		
 		currentFrameLabel = new Label();
+		currentFrameLabel.setWidth("40px");
 		pPanel.add(currentFrameLabel);
+		
+		Button first=new Button("First");
+		pPanel.add(first);
+		first.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				currentFrameRange.setValue(0);
+				updatePoseIndex(0);
+			}
+		});
 		
 		super.leftBottom(bottomPanel);
 	}
@@ -1696,14 +1721,14 @@ HorizontalPanel h1=new HorizontalPanel();
 			fileNames.setItemText(poseEditorDataSelection, result);
 			
 			//TODO
-			if(!preference.isAvailable()){
+			if(!storageControler.isAvailable()){
 				//TODO just export
 				return;
 			}
 			
 			
 			//save database
-			int dataIndex=preference.getValue(KEY_INDEX, 0);
+			int dataIndex=storageControler.getValue(KEY_INDEX, 0);
 			
 			
 			//TODO method?
@@ -1717,14 +1742,14 @@ HorizontalPanel h1=new HorizontalPanel();
 			String thumbnail=canvas.toDataUrl();
 			//Window.open(thumbnail, "tmp", null);
 			
-			preference.setValue(KEY_DATA+dataIndex, data.toString());
-			preference.setValue(KEY_IMAGE+dataIndex, thumbnail);
-			preference.setValue(KEY_HEAD+dataIndex, pdata.getName()+"\t"+pdata.getCdate());
+			storageControler.setValue(KEY_DATA+dataIndex, data.toString());
+			storageControler.setValue(KEY_IMAGE+dataIndex, thumbnail);
+			storageControler.setValue(KEY_HEAD+dataIndex, pdata.getName()+"\t"+pdata.getCdate());
 			pdata.setFileId(dataIndex);
 			
 			//increment
 			dataIndex++;
-			preference.setValue(KEY_INDEX, dataIndex);
+			storageControler.setValue(KEY_INDEX, dataIndex);
 			
 			
 			pdata.setModified(false);
@@ -1746,7 +1771,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		int fileId=pdata.getFileId();
 		if(fileId!=-1){
 			JSONObject data=PoseEditorData.writeData(pdata);
-			preference.setValue(KEY_DATA+fileId, data.toString());
+			storageControler.setValue(KEY_DATA+fileId, data.toString());
 			pdata.setModified(false);
 			updateSaveButtons();
 			updateDatasPanel();//
@@ -2170,7 +2195,7 @@ private List<String> boneList=new ArrayList<String>();
 				
 				
 				//frameRange.setMax(animationData.getHierarchy().get(0).getKeys().length());
-				
+				/*
 				JSONLoader loader=THREE.JSONLoader();
 				loader.load("men3menb.js", new  LoadHandler() {
 					@Override
@@ -2186,6 +2211,7 @@ private List<String> boneList=new ArrayList<String>();
 						//insertFrame(getSelectedPoseEditorData().getPoseFrameDatas().size(),false);//initial pose-frame
 					}
 				});
+				*/
 			}
 		});	
 	}
@@ -3030,7 +3056,7 @@ private VerticalPanel boneRotationsPanel;
 private CheckBox zlockCheck;
 private CheckBox ikLockCheck;
 private ListBox fileNames;
-private StorageControler preference;
+private StorageControler storageControler;
 private VerticalPanel datasPanel;
 private Button saveButton;
 
@@ -3215,5 +3241,16 @@ private Button saveButton;
 	@Override
 	public String getTabTitle() {
 		return "Editor";
+	}
+
+	@Override
+	public void modelChanged(HeaderAndValue model) {
+		LoadJsonModel(model.getData());
+	}
+
+	@Override
+	public void textureChanged(HeaderAndValue texture) {
+		// TODO Auto-generated method stub
+		
 	}
 }
