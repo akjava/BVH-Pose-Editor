@@ -26,6 +26,7 @@ import com.akjava.gwt.html5.client.file.FileUtils;
 import com.akjava.gwt.lib.client.StorageControler;
 import com.akjava.gwt.lib.client.StorageDataList.HeaderAndValue;
 import com.akjava.gwt.poseeditor.client.PreferenceTabPanel.PreferenceListener;
+import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
 import com.akjava.gwt.three.client.THREE;
 import com.akjava.gwt.three.client.core.Geometry;
 import com.akjava.gwt.three.client.core.Intersect;
@@ -37,7 +38,6 @@ import com.akjava.gwt.three.client.core.Vector4;
 import com.akjava.gwt.three.client.core.Vertex;
 import com.akjava.gwt.three.client.extras.GeometryUtils;
 import com.akjava.gwt.three.client.extras.ImageUtils;
-import com.akjava.gwt.three.client.extras.loaders.JSONLoader;
 import com.akjava.gwt.three.client.extras.loaders.JSONLoader.LoadHandler;
 import com.akjava.gwt.three.client.gwt.GWTGeometryUtils;
 import com.akjava.gwt.three.client.gwt.GWTThreeUtils;
@@ -83,11 +83,11 @@ import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.json.client.JSONValue;
+import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.FileUpload;
-import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
@@ -175,7 +175,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		
 		
-		loadBVH("pose.bvh");//initial bone
+		//delay make problem
+		//loadBVH("pose.bvh");//initial bone
 		
 		
 		IKData ikdata1=new IKData("LowerBack-Neck1");
@@ -306,6 +307,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		createTabs();
 		
 		updateDatasPanel();
+		
+		parseInitialBVH(PoseEditorBundles.INSTANCE.pose().getText());
 	}
 	
 	private void updateDatasPanel(){
@@ -479,8 +482,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		scroll.setSize("550px", "500px");
 		datasRoot.add(scroll);
 		
-		
-		tabPanel.add(new PreferenceTabPanel(storageControler,this),"Preference");
+		log("selection:"+storageControler.getValue(PreferenceTabPanel.KEY_MODEL_SELECTION, 0));
+		//storageControler.setValue(PreferenceTabPanel.KEY_MODEL_SELECTION, 0);
+		preferencePanel=new PreferenceTabPanel(storageControler,this);
+		tabPanel.add(preferencePanel,"Preference");
 		
 		//about
 		String html="";
@@ -496,10 +501,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		aboutRoot.add(htmlP);
 		tabPanel.add(aboutRoot,"About");
 	}
+	PreferenceTabPanel preferencePanel;
 	
-	private void createPreferenceTab(VerticalPanel preferencePanel) {
-		
-	}
+	
 
 
 	Map<String,BoneLimit> boneLimits=new HashMap<String,BoneLimit>();
@@ -1455,6 +1459,7 @@ HorizontalPanel h1=new HorizontalPanel();
 					setBone(baseGeometry.getBones());
 					
 				}else{
+					log("bvh:"+bvh);
 					//initialize default bone
 					AnimationBoneConverter converter=new AnimationBoneConverter();
 					setBone(converter.convertJsonBone(bvh));
@@ -2144,6 +2149,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 	}
 
+	//TODO use for load bvh
 	private void loadBVH(String path){
 		
 		RequestBuilder builder = new RequestBuilder(RequestBuilder.GET, URL.encode(path));
@@ -2154,7 +2160,7 @@ HorizontalPanel h1=new HorizontalPanel();
 					@Override
 					public void onResponseReceived(Request request, Response response) {
 						String bvhText=response.getText();
-						parseBVH(bvhText);
+						parseInitialBVH(bvhText);
 
 					}
 					
@@ -2176,7 +2182,7 @@ public void onError(Request request, Throwable exception) {
 	private Geometry baseGeometry;
 	
 private List<String> boneList=new ArrayList<String>();
-	protected void parseBVH(String bvhText) {
+	protected void parseInitialBVH(String bvhText) {
 		final BVHParser parser=new BVHParser();
 		
 		parser.parseAsync(bvhText, new ParserListener() {
@@ -2193,7 +2199,9 @@ private List<String> boneList=new ArrayList<String>();
 				AnimationBoneConverter converter=new AnimationBoneConverter();
 				setBone(converter.convertJsonBone(bvh));
 				
-				
+				if(preferencePanel!=null){
+					preferencePanel.loadSelectionModel();
+				}
 				
 				//frameRange.setMax(animationData.getHierarchy().get(0).getKeys().length());
 				/*
@@ -3246,6 +3254,7 @@ private Button saveButton;
 
 	@Override
 	public void modelChanged(HeaderAndValue model) {
+		log("model-load:"+model.getData());
 		LoadJsonModel(model.getData());
 	}
 

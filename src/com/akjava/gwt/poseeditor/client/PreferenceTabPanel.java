@@ -85,7 +85,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 						
 						loadModel(new HeaderAndValue(id, file.getFileName(), text));
 						modelListBox.addItem(file.getFileName(),""+id);
-						controler.setValue(KEY_MODEL_SELECTION, id);
+						//controler.setValue(KEY_MODEL_SELECTION, id);
 					}
 				});
 				reader.readAsText(file,"utf-8");
@@ -128,9 +128,14 @@ public class PreferenceTabPanel extends VerticalPanel {
 			modelListBox.addItem(models.get(i).getHeader(),""+models.get(i).getId());
 		}
 		
-		int selection=controler.getValue(KEY_MODEL_SELECTION, 0);
-		modelListBox.setSelectedIndex(selection);
-		loadModelByListIndex(selection);
+		int listBoxSelection=controler.getValue(KEY_MODEL_SELECTION, 0);//default bone
+		
+		if(listBoxSelection>=modelListBox.getItemCount()){
+			LogUtils.log("warn model index is invalid:"+listBoxSelection);
+			listBoxSelection=0;
+		}
+		modelListBox.setSelectedIndex(listBoxSelection);
+		
 		
 		HorizontalPanel buttons = new HorizontalPanel();
 		add(buttons);
@@ -153,10 +158,15 @@ public class PreferenceTabPanel extends VerticalPanel {
 		// remove
 		// export
 	}
+	public void loadSelectionModel(){
+		loadModelByListIndex(modelListBox.getSelectedIndex());
+	}
 
 	private void loadModelByListIndex(final int index) {
 		String id = modelListBox.getValue(index);
 		final String modelName=modelListBox.getItemText(index);
+		
+		LogUtils.log(id+","+modelName);
 		final int idIndex = Integer.parseInt(id);
 		if (idIndex < 0) {
 			String path = presetModelMap.get(idIndex);
@@ -192,6 +202,8 @@ public class PreferenceTabPanel extends VerticalPanel {
 		} else {
 			// load from cache
 			HeaderAndValue hv=modelControler.getDataValue(idIndex);
+			
+			
 			loadModel(hv);
 			controler.setValue(KEY_MODEL_SELECTION, index);
 		}

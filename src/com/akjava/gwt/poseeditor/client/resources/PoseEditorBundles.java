@@ -7,5 +7,7 @@ import com.google.gwt.resources.client.TextResource;
 public interface PoseEditorBundles extends ClientBundle {
 public static PoseEditorBundles INSTANCE=GWT.create(PoseEditorBundles.class);
 	TextResource modelNames();
+	@Source("pose.bvh")
+	TextResource pose();
 
 }
