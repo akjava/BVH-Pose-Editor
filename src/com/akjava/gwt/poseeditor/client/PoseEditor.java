@@ -1380,24 +1380,6 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		
 		
-		FileUpload meshUpload=new FileUpload();
-		parent.add(meshUpload);
-		meshUpload.addChangeHandler(new ChangeHandler() {
-			
-			@Override
-			public void onChange(ChangeEvent event) {
-				JsArray<File> files = FileUtils.toFile(event.getNativeEvent());
-				
-				final FileReader reader=FileReader.createFileReader();
-				reader.setOnLoad(new FileHandler() {
-					@Override
-					public void onLoad() {
-						LoadJsonModel(reader.getResultAsString());
-					}
-				});
-				reader.readAsText(files.get(0),"utf-8");
-			}
-		});
 		
 		
 		Button test=new Button("screen-shot");

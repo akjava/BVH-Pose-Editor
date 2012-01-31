@@ -45,6 +45,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 
 	private StorageDataList modelControler;
 	public static final String KEY_MODEL_SELECTION="MODEL_SELECTION";
+	private Button removeBt;
 	public PreferenceListener getListener() {
 		return listener;
 	}
@@ -117,7 +118,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 
 			@Override
 			public void onChange(ChangeEvent event) {
-				//preset cant remove
+				updateButtons();
 			}
 		});
 		
@@ -149,6 +150,16 @@ public class PreferenceTabPanel extends VerticalPanel {
 						.getSelectedIndex());
 			}
 		});
+		removeBt = new Button("Remove");
+		buttons.add(removeBt);
+		removeBt.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				
+				removeModelByListIndex(modelListBox
+						.getSelectedIndex());
+			}
+		});
 		// loadFrom store
 
 		
@@ -158,8 +169,39 @@ public class PreferenceTabPanel extends VerticalPanel {
 		// remove
 		// export
 	}
+	protected void updateButtons() {
+		//preset cant remove
+		String id = modelListBox.getValue(modelListBox.getSelectedIndex());
+		final int idIndex = Integer.parseInt(id);
+		if(idIndex<0){
+			removeBt.setEnabled(false);
+		}else{
+			removeBt.setEnabled(true);
+		}
+	}
+
 	public void loadSelectionModel(){
 		loadModelByListIndex(modelListBox.getSelectedIndex());
+	}
+	
+	private void removeModelByListIndex(final int index) {
+		String id = modelListBox.getValue(index);
+		final String modelName=modelListBox.getItemText(index);
+		
+		LogUtils.log(id+","+modelName);
+		final int idIndex = Integer.parseInt(id);
+		if (idIndex < 0) {
+			//never calld;
+		} else {
+			
+			modelControler.clearData(idIndex);
+			int boxIndex=modelListBox.getSelectedIndex();
+			modelListBox.removeItem(boxIndex);
+			modelListBox.setSelectedIndex(boxIndex-1);
+			
+			updateButtons();
+			loadSelectionModel();
+		}
 	}
 
 	private void loadModelByListIndex(final int index) {
