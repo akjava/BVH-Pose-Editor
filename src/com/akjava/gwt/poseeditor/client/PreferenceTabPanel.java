@@ -53,9 +53,9 @@ public class PreferenceTabPanel extends VerticalPanel {
 		this.listener = listener;
 	}
 
-	public PreferenceTabPanel(StorageControler controler,
+	public PreferenceTabPanel(StorageControler cs,
 			PreferenceListener listener) {
-		this.controler = controler;
+		this.controler = cs;
 		this.listener = listener;
 
 		FileUpload meshUpload=new FileUpload();
@@ -84,6 +84,8 @@ public class PreferenceTabPanel extends VerticalPanel {
 						int id=modelControler.incrementId();
 						
 						loadModel(new HeaderAndValue(id, file.getFileName(), text));
+						modelListBox.addItem(file.getFileName(),""+id);
+						controler.setValue(KEY_MODEL_SELECTION, id);
 					}
 				});
 				reader.readAsText(file,"utf-8");
@@ -191,6 +193,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 			// load from cache
 			HeaderAndValue hv=modelControler.getDataValue(idIndex);
 			loadModel(hv);
+			controler.setValue(KEY_MODEL_SELECTION, index);
 		}
 	}
 	

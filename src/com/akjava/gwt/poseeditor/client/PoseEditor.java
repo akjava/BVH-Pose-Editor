@@ -2122,6 +2122,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	
 	private Material bodyMaterial;
+	private String textureUrl="female_texture1.png";
 	protected void updateMaterial() {
 		
 		Material material=null;
@@ -2131,10 +2132,10 @@ HorizontalPanel h1=new HorizontalPanel();
 			opacity=0.75;
 		}
 		if(basicMaterialCheck.getValue()){
-			material=THREE.MeshBasicMaterial().map(ImageUtils.loadTexture("men3smart_texture2.png")).transparent(transparent).opacity(opacity).build();
+			material=THREE.MeshBasicMaterial().map(ImageUtils.loadTexture(textureUrl)).transparent(transparent).opacity(opacity).build();
 			
 		}else{
-			material=THREE.MeshLambertMaterial().map(ImageUtils.loadTexture("men3smart_texture2.png")).transparent(transparent).opacity(opacity).build();
+			material=THREE.MeshLambertMaterial().map(ImageUtils.loadTexture(textureUrl)).transparent(transparent).opacity(opacity).build();
 		}
 		bodyMaterial=material;
 		
