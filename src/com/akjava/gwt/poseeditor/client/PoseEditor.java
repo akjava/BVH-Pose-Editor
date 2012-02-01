@@ -88,6 +88,7 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.FileUpload;
+import com.google.gwt.user.client.ui.FormPanel;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
@@ -119,6 +120,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 
 	@Override
 	public void resized(int width, int height) {
+		log("resized:"+width+"x"+height);
 		super.resized(width, height);
 		leftBottom(bottomPanel);
 	}
@@ -1394,6 +1396,32 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
+		parent.add(new Label("Texture Image"));
+		final FormPanel fp=new FormPanel();//for reset file
+		FileUpload textureUpload=new FileUpload();
+		parent.add(fp);
+		fp.add(textureUpload);
+		textureUpload.addChangeHandler(new ChangeHandler() {
+			
+			@Override
+			public void onChange(ChangeEvent event) {
+				JsArray<File> files = FileUtils.toFile(event.getNativeEvent());
+				
+				final FileReader reader=FileReader.createFileReader();
+				reader.setOnLoad(new FileHandler() {
+					@Override
+					public void onLoad() {
+						//log("load:"+Benchmark.end("load"));
+						//GWT.log(reader.getResultAsString());
+						textureUrl=reader.getResultAsString();
+						updateMaterial();
+						fp.reset();
+					}
+				});
+				reader.readAsDataURL(files.get(0));
+			}
+		});
+		
 		
 		
 		
@@ -1728,7 +1756,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			canvas.getContext2d().drawImage(renderer.gwtCanvas(),0,0,screenWidth,screenHeight,0,0,thumbW,thumbH);
 			String thumbnail=canvas.toDataUrl();
 			//Window.open(thumbnail, "tmp", null);
-			
+			try{
 			storageControler.setValue(KEY_DATA+dataIndex, data.toString());
 			storageControler.setValue(KEY_IMAGE+dataIndex, thumbnail);
 			storageControler.setValue(KEY_HEAD+dataIndex, pdata.getName()+"\t"+pdata.getCdate());
@@ -1746,6 +1774,9 @@ HorizontalPanel h1=new HorizontalPanel();
 
 			
 			tabPanel.selectTab(1);//datas
+			}catch(Exception e){
+				Window.alert("Error:"+e.getMessage());
+			}
 		}
 		
 		
@@ -1758,10 +1789,14 @@ HorizontalPanel h1=new HorizontalPanel();
 		int fileId=pdata.getFileId();
 		if(fileId!=-1){
 			JSONObject data=PoseEditorData.writeData(pdata);
+			try{
 			storageControler.setValue(KEY_DATA+fileId, data.toString());
 			pdata.setModified(false);
 			updateSaveButtons();
 			updateDatasPanel();//
+			}catch(Exception e){
+				Window.alert("Error:"+e.getMessage());
+			}
 		}else{
 			doSaveAsFile(pdata);
 		}
@@ -2200,6 +2235,7 @@ private List<String> boneList=new ArrayList<String>();
 				
 				if(preferencePanel!=null){
 					preferencePanel.loadSelectionModel();
+					preferencePanel.loadSelectionTexture();
 				}
 				
 				//frameRange.setMax(animationData.getHierarchy().get(0).getKeys().length());
@@ -3261,7 +3297,7 @@ private Button saveButton;
 
 	@Override
 	public void textureChanged(HeaderAndValue texture) {
-		// TODO Auto-generated method stub
-		
+		textureUrl=texture.getData();
+		updateMaterial();
 	}
 }

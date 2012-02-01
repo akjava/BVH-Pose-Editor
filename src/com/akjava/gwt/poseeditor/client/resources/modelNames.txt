@@ -1,2 +1,3 @@
-female1.json,-1
-female2.json,-2
+female001.json,-1
+female001a.json,-2
+male001.json,-3
