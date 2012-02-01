@@ -1450,10 +1450,10 @@ HorizontalPanel h1=new HorizontalPanel();
 				//log(baseGeometry.getBones());
 				
 				doRePose(0);
-				
-				if(poseEditorDatas.size()==0){//initial new list
 				initialPoseFrameData=snapCurrentFrameData();
-				doNewFile();
+				//log("snapped");
+				if(poseEditorDatas.size()==0){//initial new list
+					doNewFile();
 				}
 			}
 		});
@@ -1844,6 +1844,17 @@ HorizontalPanel h1=new HorizontalPanel();
 
 	
 	PoseFrameData clipboard;
+	private boolean availIk(IKData ik){
+		if(ab.getBoneIndex(ik.getLastBoneName())==-1){
+			return false;
+		}
+		for(String name:ik.getBones()){
+			if(ab.getBoneIndex(name)==-1){
+				return false;
+			}
+		}
+		return true;
+	}
 	protected void doCopy() {
 		// TODO Auto-generated method stub
 		clipboard=snapCurrentFrameData();
@@ -1871,6 +1882,9 @@ HorizontalPanel h1=new HorizontalPanel();
 		List<String> names=new ArrayList<String>();
 		
 		for(IKData ikdata:ikdatas){
+			if(!availIk(ikdata)){//check ik 
+				continue;
+			}
 			Vector3 pos=ikdata.getTargetPos().clone();
 			pos.subSelf(ab.getBonePosition(ikdata.getLastBoneName()));//relative path
 			targets.add(pos);
@@ -1983,6 +1997,9 @@ HorizontalPanel h1=new HorizontalPanel();
 		//update
 		
 		for(int i=0;i<ikdatas.size();i++){
+			if(!availIk(ikdatas.get(i))){
+				continue;
+			}
 			Vector3 vec=pfd.getIkTargetPositions().get(i).clone();
 			vec.addSelf(ab.getBonePosition(ikdatas.get(i).getLastBoneName()));//relative path
 			
@@ -2211,7 +2228,9 @@ private List<String> boneList=new ArrayList<String>();
 		bones=bo;
 		AnimationDataConverter dataConverter=new AnimationDataConverter();
 		dataConverter.setSkipFirst(false);
+		
 		animationData = dataConverter.convertJsonAnimation(bones,bvh);//use for first pose
+		
 		boneList.clear();
 		for(int i=0;i<bones.length();i++){
 			boneList.add(bones.get(i).getName());

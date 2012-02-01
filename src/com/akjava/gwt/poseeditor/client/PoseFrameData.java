@@ -36,9 +36,17 @@ public List<AngleAndPosition> getAngleAndMatrixs() {
 public void setAngleAndMatrixs(List<AngleAndPosition> matrixs) {
 	this.matrixs = matrixs;
 }
+/**
+ * @deprecated must be name base
+ * @return
+ */
 public List<Vector3> getIkTargetPositions() {
 	return ikTargetPositions;
 }
+/**
+ * @deprecated must be name base
+ * @return
+ */
 public void setIkTargetPositions(List<Vector3> targetPositions) {
 	this.ikTargetPositions = targetPositions;
 }
