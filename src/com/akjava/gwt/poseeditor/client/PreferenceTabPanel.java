@@ -59,7 +59,22 @@ public class PreferenceTabPanel extends VerticalPanel {
 
 	private void createModelControl(){
 
-		add(new Label("Model"));
+		HorizontalPanel mPanel=new HorizontalPanel();
+		
+		add(mPanel);
+		Label modelLabel=new Label("Model");
+		modelLabel.setWidth("150px");
+		mPanel.add(modelLabel);
+		Button modelUpdateBt=new Button("Update");
+		
+		mPanel.add(modelUpdateBt);
+		modelUpdateBt.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				updateModelList();
+			}
+		});
+		
 		final FileUploadForm modelUpload=new FileUploadForm();
 		add(modelUpload);
 		modelUpload.getFileUpload().addChangeHandler(new ChangeHandler() {
@@ -90,6 +105,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 						loadModel(new HeaderAndValue(id, file.getFileName(), text));
 						modelListBox.addItem(file.getFileName(),""+id);
 						modelListBox.setSelectedIndex(modelListBox.getItemCount()-1);
+						updateModelButtons();
 						controler.setValue(KEY_MODEL_SELECTION, modelListBox.getItemCount()-1);
 						}catch(Exception e){
 							Window.alert("Error:"+e.getMessage());
@@ -105,21 +121,10 @@ public class PreferenceTabPanel extends VerticalPanel {
 		add(modelSelection);
 
 		modelListBox = new ListBox();
-		modelListBox.setWidth("200px");
+		modelListBox.setWidth("300px");
 		add(modelListBox);
 		modelListBox.setVisibleItemCount(5);
-		// read from
-		String modelText = PoseEditorBundles.INSTANCE.modelNames().getText();
-		String[][] mapV = ValueUtils.csvToArray(modelText);
-		for (int i = 0; i < mapV.length; i++) {
-			if (mapV[i].length == 2) {
-				String filePath = mapV[i][0];
-				String id = mapV[i][1];
-				String fileName = getFileNameWithoutExtension(filePath);
-				presetModelMap.put(Integer.parseInt(id), filePath);
-				modelListBox.addItem(fileName, id);
-			}
-		}
+		
 
 		modelListBox.addChangeHandler(new ChangeHandler() {
 
@@ -131,19 +136,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 		
 		
 
-		List<HeaderAndValue> models=modelControler.getDataList();
-		for(int i=0;i<models.size();i++){
-			modelListBox.addItem(models.get(i).getHeader(),""+models.get(i).getId());
-		}
-		
-		int listBoxSelection=controler.getValue(KEY_MODEL_SELECTION, 0);//default bone
-		
-		if(listBoxSelection>=modelListBox.getItemCount()){
-			LogUtils.log("warn model index is invalid:"+listBoxSelection);
-			listBoxSelection=0;
-		}
-		modelListBox.setSelectedIndex(listBoxSelection);
-		
+		updateModelList();
 		
 		HorizontalPanel buttons = new HorizontalPanel();
 		add(buttons);
@@ -167,6 +160,8 @@ public class PreferenceTabPanel extends VerticalPanel {
 						.getSelectedIndex());
 			}
 		});
+		
+		
 	}
 	
 	String[] imageExtensions={".jpg",".png",".jpeg"};
@@ -215,7 +210,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 						loadTexture(new HeaderAndValue(id, file.getFileName(), text));
 						textureListBox.addItem(file.getFileName(),""+id);
 						textureListBox.setSelectedIndex(textureListBox.getItemCount()-1);
-						
+						updateTextureButtons();
 						controler.setValue(KEY_TEXTURE_SELECTION, textureListBox.getItemCount()-1);
 						}catch(Exception e){
 							
@@ -232,7 +227,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 		add(textureSelection);
 
 		textureListBox = new ListBox();
-		textureListBox.setWidth("200px");
+		textureListBox.setWidth("300px");
 		add(textureListBox);
 		textureListBox.setVisibleItemCount(5);
 		// read from
@@ -295,6 +290,38 @@ public class PreferenceTabPanel extends VerticalPanel {
 			}
 		});
 	}
+	
+	private void updateModelList(){
+		modelListBox.clear();
+		// read from resource
+				String modelText = PoseEditorBundles.INSTANCE.modelNames().getText();
+				String[][] mapV = ValueUtils.csvToArray(modelText);
+				for (int i = 0; i < mapV.length; i++) {
+					if (mapV[i].length == 2) {
+						String filePath = mapV[i][0];
+						String id = mapV[i][1];
+						String fileName = getFileNameWithoutExtension(filePath);
+						presetModelMap.put(Integer.parseInt(id), filePath);
+						modelListBox.addItem(fileName, id);
+					}
+				}
+				
+				
+				//update from storage
+				List<HeaderAndValue> models=modelControler.getDataList();
+				for(int i=0;i<models.size();i++){
+					modelListBox.addItem(models.get(i).getHeader(),""+models.get(i).getId());
+				}
+				
+				int listBoxSelection=controler.getValue(KEY_MODEL_SELECTION, 0);//default bone
+				
+				if(listBoxSelection>=modelListBox.getItemCount()){
+					LogUtils.log("warn model index is invalid:"+listBoxSelection);
+					listBoxSelection=0;
+				}
+				modelListBox.setSelectedIndex(listBoxSelection);
+	}
+	
 	public PreferenceTabPanel(StorageControler cs,
 			PreferenceListener listener) {
 		this.controler = cs;

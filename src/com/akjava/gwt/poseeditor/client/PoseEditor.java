@@ -824,7 +824,8 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				if(event.isShiftKeyDown()){//slow
 					doPoseIkk(0,false,1,getCurrentIkData(),1);
 				}else if(event.isAltKeyDown()){//rapid
-					doPoseIkk(0,true,1,getCurrentIkData(),1);
+					//doPoseIkk(0,true,1,getCurrentIkData(),1);
+					doPoseByMatrix(ab);
 				}else{
 					doPoseIkk(0,true,1,getCurrentIkData(),5);
 				}
@@ -909,7 +910,8 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			if(event.isShiftKeyDown()){//slow
 				doPoseIkk(0,false,1,getCurrentIkData(),1);
 			}else if(event.isAltKeyDown()){//rapid
-				doPoseIkk(0,true,1,getCurrentIkData(),1);
+				//doPoseIkk(0,true,1,getCurrentIkData(),1);
+				doPoseByMatrix(ab);
 			}else{
 				doPoseIkk(0,true,1,getCurrentIkData(),5);
 			}
@@ -1479,6 +1481,7 @@ HorizontalPanel h1=new HorizontalPanel();
 				
 				doRePose(0);
 				initialPoseFrameData=snapCurrentFrameData();
+				
 				//log("snapped");
 				if(poseEditorDatas.size()==0){//initial new list
 					doNewFile();
@@ -3293,6 +3296,7 @@ private Button saveButton;
 	public void modelChanged(HeaderAndValue model) {
 		log("model-load:"+model.getData());
 		LoadJsonModel(model.getData());
+		selectFrameData(currentFrameRange.getValue());//re pose
 	}
 
 	@Override
