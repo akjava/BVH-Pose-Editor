@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,9 +15,11 @@ import com.akjava.bvh.client.BVHNode;
 import com.akjava.bvh.client.BVHParser;
 import com.akjava.bvh.client.BVHParser.ParserListener;
 import com.akjava.bvh.client.BVHWriter;
-import com.akjava.bvh.client.threejs.AnimationBoneConverter;
-import com.akjava.bvh.client.threejs.AnimationDataConverter;
-import com.akjava.bvh.client.threejs.BVHConverter;
+import com.akjava.gwt.bvh.client.poseframe.PoseEditorData;
+import com.akjava.gwt.bvh.client.poseframe.PoseFrameData;
+import com.akjava.gwt.bvh.client.threejs.AnimationBoneConverter;
+import com.akjava.gwt.bvh.client.threejs.AnimationDataConverter;
+import com.akjava.gwt.bvh.client.threejs.BVHConverter;
 import com.akjava.gwt.html5.client.HTML5InputRange;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
 import com.akjava.gwt.html5.client.file.File;
@@ -83,7 +86,6 @@ import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.json.client.JSONValue;
-import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
@@ -286,10 +288,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		//manual
 		
 		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 140, -10, 10));
-		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-120, 60, -91, 91, -70, 120));
+		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-120, 60, -75, 91, -70, 120));
 		
 		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -140, 0, -10, 10));
-		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-120, 60, -91, 91, -120, 70));
+		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-120, 60, -91, 75, -120, 70));
 
 		
 		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
@@ -1919,19 +1921,23 @@ HorizontalPanel h1=new HorizontalPanel();
 		List<Vector3> targets=new ArrayList<Vector3>();
 		List<String> names=new ArrayList<String>();
 		
+		
+		
+		 Map<String,Vector3> ikDataMap=new LinkedHashMap<String,Vector3>();
+			
+			
 		for(IKData ikdata:ikdatas){
 			if(!availIk(ikdata)){//check ik 
 				continue;
 			}
 			Vector3 pos=ikdata.getTargetPos().clone();
 			pos.subSelf(ab.getBonePosition(ikdata.getLastBoneName()));//relative path
-			targets.add(pos);
-			names.add(ikdata.getName());
+			ikDataMap.put(ikdata.getName(), pos);
 		}
 		
 		
 		
-		PoseFrameData ps=new PoseFrameData(matrixs, targets,names);
+		PoseFrameData ps=new PoseFrameData(matrixs, ikDataMap);
 		ps.setAngles(angles);
 		ps.setPositions(positions);
 		return ps;
@@ -2038,10 +2044,16 @@ HorizontalPanel h1=new HorizontalPanel();
 			if(!availIk(ikdatas.get(i))){
 				continue;
 			}
-			Vector3 vec=pfd.getIkTargetPositions().get(i).clone();
-			vec.addSelf(ab.getBonePosition(ikdatas.get(i).getLastBoneName()));//relative path
+			String ikName=ikdatas.get(i).getName();
+			Vector3 vec=pfd.getIkTargetPosition(ikName);
 			
-			ikdatas.get(i).getTargetPos().set(vec.getX(), vec.getY(), vec.getZ());
+			//TODO auto generate
+			
+			if(vec!=null){
+				vec=vec.clone();
+				vec.addSelf(ab.getBonePosition(ikdatas.get(i).getLastBoneName()));//relative path
+				ikdatas.get(i).getTargetPos().set(vec.getX(), vec.getY(), vec.getZ());
+			}
 		}
 		
 		if(isSelectedIk()){
@@ -2164,7 +2176,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	
 	private Material bodyMaterial;
-	private String textureUrl="female_texture1.png";
+	private String textureUrl="female001_texture1.png";//default
 	protected void updateMaterial() {
 		
 		Material material=null;
