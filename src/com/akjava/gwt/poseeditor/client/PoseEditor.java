@@ -25,6 +25,7 @@ import com.akjava.gwt.html5.client.extra.HTML5Builder;
 import com.akjava.gwt.html5.client.file.File;
 import com.akjava.gwt.html5.client.file.FileHandler;
 import com.akjava.gwt.html5.client.file.FileReader;
+import com.akjava.gwt.html5.client.file.FileUploadForm;
 import com.akjava.gwt.html5.client.file.FileUtils;
 import com.akjava.gwt.lib.client.StorageControler;
 import com.akjava.gwt.lib.client.StorageDataList.HeaderAndValue;
@@ -89,8 +90,6 @@ import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
-import com.google.gwt.user.client.ui.FileUpload;
-import com.google.gwt.user.client.ui.FormPanel;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
@@ -481,7 +480,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		datasPanel = new VerticalPanel();
 		
-		datasPanel.setStyleName("debug");
+		//datasPanel.setStyleName("debug");
 		ScrollPanel scroll=new ScrollPanel(datasPanel);
 		scroll.setSize("550px", "500px");
 		datasRoot.add(scroll);
@@ -1401,11 +1400,11 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		
 		parent.add(new Label("Texture Image"));
-		final FormPanel fp=new FormPanel();//for reset file
-		FileUpload textureUpload=new FileUpload();
-		parent.add(fp);
-		fp.add(textureUpload);
-		textureUpload.addChangeHandler(new ChangeHandler() {
+		
+		final FileUploadForm textureUpload=new FileUploadForm();
+		parent.add(textureUpload);
+
+		textureUpload.getFileUpload().addChangeHandler(new ChangeHandler() {
 			
 			@Override
 			public void onChange(ChangeEvent event) {
@@ -1419,10 +1418,11 @@ HorizontalPanel h1=new HorizontalPanel();
 						//GWT.log(reader.getResultAsString());
 						textureUrl=reader.getResultAsString();
 						updateMaterial();
-						fp.reset();
+						
 					}
 				});
 				reader.readAsDataURL(files.get(0));
+				textureUpload.reset();
 			}
 		});
 		
