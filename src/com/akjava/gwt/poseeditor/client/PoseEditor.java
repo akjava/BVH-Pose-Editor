@@ -45,6 +45,7 @@ import com.akjava.gwt.three.client.extras.ImageUtils;
 import com.akjava.gwt.three.client.extras.loaders.JSONLoader.LoadHandler;
 import com.akjava.gwt.three.client.gwt.GWTGeometryUtils;
 import com.akjava.gwt.three.client.gwt.GWTThreeUtils;
+import com.akjava.gwt.three.client.gwt.Object3DUtils;
 import com.akjava.gwt.three.client.gwt.ThreeLog;
 import com.akjava.gwt.three.client.gwt.animation.AngleAndPosition;
 import com.akjava.gwt.three.client.gwt.animation.AnimationBone;
@@ -492,11 +493,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		//about
 		String html="";
-		html+="<br/>"+"[Howto]<br/>Select Nothing:Mouse Drag=Rotatation-XY,Mouse Wheel= Zoom, +ALT Move-XY Camera";
-		html+="<br/>"+"Select IK(Green Box):Mouse Drag=Move IK-XY,Mouse Wheel=Move IK-Z +Shift=smoth-change +Alt=Rapid-change";
-		html+="<br/>"+"Select Bone(Red Box):Mouse Drag=Rotate-XY,Mouse Wheel=Rotate-Z";
-		html+="<br/>"+"Select Root(Red Large Box):Mouse Drag=Rotate-XY,Mouse Wheel=Rotate-Z +Shift=Follow IK +Alt=Move Position";
-		html+="<br/>"+"yello box means under Y:0,orange box means near Y:0";
+		html+="<br/>"+"[Howto Move]<br/><b>Select Nothing:</b><br/>Mouse Drag=Rotatation-XY<br/>Mouse Wheel= Zoom<br/> +ALT Move-XY Camera";
+		html+="<br/><br/>"+"<b>Select IK(Green Box):</b><br/>Mouse Drag=Move IK-XY <br/>Mouse Wheel=Move IK-Z <br/>+Shift=smoth-change <br/>+Alt=Move Only<br/>+ALT+Shift Follow other IK";
+		html+="<br/><br/>"+"<b>Select Bone(Red Box):</b><br/>Mouse Drag=Rotate-XY<br/>Mouse Wheel=Rotate-Z";
+		html+="<br/><br/>"+"<b>Select Root(Red Large Box):</b><br/>Mouse Drag=Rotate-XY<br/>Mouse Wheel=Rotate-Z +Shift=Follow IK +Alt=Move Position";
+		html+="<br/><br/>"+"yello box means under Y:0,orange box means near Y:0";
+		html+="<br/>On IK-Moving switching normal & +Shift(Smooth) is good tactics.";
 		html+="<br/>"+"<a href='http://webgl.akjava.com'>More info at webgl.akjava.com</a>";
 		HTML htmlP=new HTML(html);
 		VerticalPanel aboutRoot=new VerticalPanel();
@@ -747,10 +749,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 
 	@Override
 	public void onMouseDown(MouseDownEvent event) {
+		
 		mouseDown=true;
 		mouseDownX=event.getX();
 		mouseDownY=event.getY();
-		
+		//log(mouseDownX+","+mouseDownY+":"+screenWidth+"x"+screenHeight);
 		
 
 		//log("mouse-click:"+event.getX()+"x"+event.getY());
@@ -791,7 +794,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				
 			}
 		}
-		
+		//log("no-selection");
 		selectedBone=null;
 		selectionMesh.setVisible(false);
 		switchSelectionIk(null);
@@ -927,9 +930,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 							}
 						}	
 					}else{
-				doPoseIkk(0,false,1,getCurrentIkData(),1);
+				doPoseIkk(0,false,1,getCurrentIkData(),10);
 					}
-			}else if(event.isAltKeyDown()){//rapid
+			}else if(event.isAltKeyDown()){//move only
 				//doPoseIkk(0,true,1,getCurrentIkData(),1);
 				doPoseByMatrix(ab);
 			}else{
@@ -1003,6 +1006,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	private CheckBox ylockCheck;
 	private CheckBox xlockCheck;
 	private List<String> ikLocks=new ArrayList<String>();
+	private CheckBox showBonesCheck;
 	@Override
 	public void createControl(Panel parent) {
 HorizontalPanel h1=new HorizontalPanel();
@@ -1116,6 +1120,18 @@ HorizontalPanel h1=new HorizontalPanel();
 				updateMaterial();
 			}
 		});
+		
+		showBonesCheck = new CheckBox();
+		parent.add(showBonesCheck);
+		showBonesCheck.setText("Show Bones");
+		showBonesCheck.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				updateBonesVisible();
+			}
+		});
+		showBonesCheck.setValue(true);
 		
 		//dont need now
 		/*
@@ -1417,7 +1433,7 @@ HorizontalPanel h1=new HorizontalPanel();
 				Window.open(url, "newwin", null);
 			}
 		});
-		
+		/*
 		parent.add(new Label("Texture Image"));
 		
 		final FileUploadForm textureUpload=new FileUploadForm();
@@ -1444,7 +1460,7 @@ HorizontalPanel h1=new HorizontalPanel();
 				textureUpload.reset();
 			}
 		});
-		
+		*/
 		
 		
 		
@@ -1458,6 +1474,12 @@ HorizontalPanel h1=new HorizontalPanel();
 		showControl();
 		
 	}
+	protected void updateBonesVisible() {
+		if(bone3D!=null){
+			Object3DUtils.setVisibleAll(bone3D, showBonesCheck.getValue());
+		}
+	}
+
 	protected String getMirroredName(String name) {
 		if(name.indexOf("Right")!=-1){
 			return name.replace("Right", "Left");
@@ -1799,12 +1821,27 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			tabPanel.selectTab(1);//datas
 			}catch(Exception e){
-				Window.alert("Error:"+e.getMessage());
+				alert(e.getMessage());
 			}
 		}
 		
 		
 	}
+	
+	
+	public static void alert(String message){
+		log(message);
+		if(message.indexOf("(QUOTA_EXCEEDED_ERR)")!=-1){
+		String title="QUOTA EXCEEDED_ERR\n";
+		title+="over internal HTML5 storage capacity.\n";
+		title+="please remove unused textures or models from Preference Tab";
+		Window.alert(title);
+		}else{
+		Window.alert("Error:"+message);
+		}
+	}
+	
+	
 	protected void doSaveFile() {
 		
 		
@@ -1819,7 +1856,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			updateSaveButtons();
 			updateDatasPanel();//
 			}catch(Exception e){
-				Window.alert("Error:"+e.getMessage());
+				alert(e.getMessage());
 			}
 		}else{
 			doSaveAsFile(pdata);
@@ -2304,7 +2341,7 @@ private List<String> boneList=new ArrayList<String>();
 		boneList.clear();
 		for(int i=0;i<bones.length();i++){
 			boneList.add(bones.get(i).getName());
-			log(bones.get(i).getName()+","+ThreeLog.get(GWTThreeUtils.jsArrayToVector3(bones.get(i).getPos())));
+			//log(bones.get(i).getName()+","+ThreeLog.get(GWTThreeUtils.jsArrayToVector3(bones.get(i).getPos())));
 		}
 	}
 	
@@ -2625,7 +2662,7 @@ private Vector3 findNextStep(int boneIndex,int lastBoneIndex,Vector3 targetPos){
 }
 
 private boolean doLimit=true;
-private boolean ignorePerLimit=true;
+private boolean ignorePerLimit=false;
 
 private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 
@@ -2896,6 +2933,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		bone3D=THREE.Object3D();
 		root.add(bone3D);
 		
+		
 		//selection
 		
 		//test ikk
@@ -3004,6 +3042,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			
 			bonePositions.add(pos);
 		}
+		bone3D.setVisible(showBonesCheck.getValue());
 		
 		//Geometry geo=GeometryUtils.clone(baseGeometry);
 		
@@ -3363,7 +3402,7 @@ private Button saveButton;
 
 	@Override
 	public void modelChanged(HeaderAndValue model) {
-		log("model-load:"+model.getData());
+		//log("model-load:"+model.getData());
 		LoadJsonModel(model.getData());
 		selectFrameData(currentFrameRange.getValue());//re pose
 	}

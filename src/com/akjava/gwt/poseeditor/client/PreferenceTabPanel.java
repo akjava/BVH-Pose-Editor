@@ -108,7 +108,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 						updateModelButtons();
 						controler.setValue(KEY_MODEL_SELECTION, modelListBox.getItemCount()-1);
 						}catch(Exception e){
-							Window.alert("Error:"+e.getMessage());
+							PoseEditor.alert(e.getMessage());
 						}
 					}
 				});
@@ -214,7 +214,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 						controler.setValue(KEY_TEXTURE_SELECTION, textureListBox.getItemCount()-1);
 						}catch(Exception e){
 							
-							Window.alert("Error:"+e.getMessage());
+							PoseEditor.alert(e.getMessage());
 						}
 					}
 				});
@@ -230,6 +230,13 @@ public class PreferenceTabPanel extends VerticalPanel {
 		textureListBox.setWidth("300px");
 		add(textureListBox);
 		textureListBox.setVisibleItemCount(5);
+		
+		List<HeaderAndValue> textures=textureControler.getDataList();
+		for(int i=0;i<textures.size();i++){
+			textureListBox.addItem(textures.get(i).getHeader(),""+textures.get(i).getId());
+		}
+		
+		
 		// read from
 		String textureText = PoseEditorBundles.INSTANCE.textureNames().getText();
 		String[][] mapV = ValueUtils.csvToArray(textureText);
@@ -253,10 +260,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 		
 		
 
-		List<HeaderAndValue> textures=textureControler.getDataList();
-		for(int i=0;i<textures.size();i++){
-			textureListBox.addItem(textures.get(i).getHeader(),""+textures.get(i).getId());
-		}
+		
 		
 		int listBoxSelection=controler.getValue(KEY_TEXTURE_SELECTION, 0);//default bone
 		
@@ -294,6 +298,14 @@ public class PreferenceTabPanel extends VerticalPanel {
 	private void updateModelList(){
 		modelListBox.clear();
 		// read from resource
+		
+			//update from storage
+			List<HeaderAndValue> models=modelControler.getDataList();
+			for(int i=0;i<models.size();i++){
+				modelListBox.addItem(models.get(i).getHeader(),""+models.get(i).getId());
+			}
+		
+		
 				String modelText = PoseEditorBundles.INSTANCE.modelNames().getText();
 				String[][] mapV = ValueUtils.csvToArray(modelText);
 				for (int i = 0; i < mapV.length; i++) {
@@ -307,11 +319,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 				}
 				
 				
-				//update from storage
-				List<HeaderAndValue> models=modelControler.getDataList();
-				for(int i=0;i<models.size();i++){
-					modelListBox.addItem(models.get(i).getHeader(),""+models.get(i).getId());
-				}
+				
 				
 				int listBoxSelection=controler.getValue(KEY_MODEL_SELECTION, 0);//default bone
 				
