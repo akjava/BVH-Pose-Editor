@@ -516,8 +516,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	private void updateIkLabels(){
 		//log(""+boneNamesBox);
 		boneNamesBox.clear();
-		if(currentSelectionName!=null){
-			setEnableBoneRanges(true,false);//no root
+		if(currentSelectionIkName!=null){
+			setEnableBoneRanges(false,false);//no root
+			boneNamesBox.addItem("");
 		for(int i=0;i<getCurrentIkData().getBones().size();i++){
 			boneNamesBox.addItem(getCurrentIkData().getBones().get(i));
 		}
@@ -545,7 +546,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	int ikdataIndex=1;
 	List<IKData> ikdatas=new ArrayList<IKData>();
 
-	private String currentSelectionName;
+	private String currentSelectionIkName;
 	Mesh selectionMesh;
 	final Projector projector=THREE.Projector();
 	@Override
@@ -562,21 +563,21 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	}
 	
 	private boolean isSelectedIk(){
-		return currentSelectionName!=null;
+		return currentSelectionIkName!=null;
 	}
 	
 	private void switchSelectionIk(String name){
-		currentSelectionName=name;
+		currentSelectionIkName=name;
 		currentMatrixs=AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs());
 		
-		if(currentSelectionName!=null){
+		if(currentSelectionIkName!=null){
 		List<List<NameAndVector3>> result=createBases(getCurrentIkData());
 		//log("switchd:"+result.size());
 		
 		List<NameAndVector3> tmp=result.get(result.size()-1);
 		
 		for(NameAndVector3 value:tmp){
-			log(value.getName()+":"+ThreeLog.get(value.getVector3()));
+		//	log(value.getName()+":"+ThreeLog.get(value.getVector3()));
 		}
 		
 		
@@ -773,7 +774,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 							selectionMesh.setPosition(target.getPosition());
 							selectionMesh.getMaterial().getColor().setHex(0x00ff00);
 							
-							if(!bname.equals(currentSelectionName)){
+							if(!bname.equals(currentSelectionIkName)){
 								switchSelectionIk(bname);
 							}
 							selectedBone=null;
@@ -1203,26 +1204,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		mirror.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				String name=getSelectedBoneName();
-				if(name==null){
-					return;
-				}
-					//h mirror
-					String targetName=getMirroredName(name);
-					log("mirror:"+targetName);
-					if(targetName==null){
-						return;
-					}
-					
-					int index=ab.getBoneIndex(targetName);
-					if(index!=-1){
-						log("mirror:"+index);
-						Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
-						rotationBoneXRange.setValue((int) angle.getX());
-						rotationBoneYRange.setValue((int) angle.getY()*-1);
-						rotationBoneZRange.setValue((int) angle.getZ()*-1);
-						rotToBone();
-					}
+				doMirror();
 				
 			}
 		});
@@ -1232,32 +1214,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		swap.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				String name=getSelectedBoneName();
-				if(name==null){
-					return;
-				}
-					//h mirror
-					String targetName=getMirroredName(name);
-					
-					if(targetName==null){
-						return;
-					}
-					
-					int index=ab.getBoneIndex(targetName);
-					if(index!=-1){
-						
-						Vector3 targetAngle=ab.getBoneAngleAndMatrix(index).getAngle();
-						double x=rotationBoneXRange.getValue();
-						double y=rotationBoneYRange.getValue()*-1;
-						double z=rotationBoneZRange.getValue()*-1;
-						
-						
-						rotationBoneXRange.setValue((int) targetAngle.getX());
-						rotationBoneYRange.setValue((int) targetAngle.getY()*-1);
-						rotationBoneZRange.setValue((int) targetAngle.getZ()*-1);
-						rotToBone(targetName,x,y,z);
-						rotToBone();
-					}
+				doSwap();
 				
 			}
 		});
@@ -1510,6 +1467,134 @@ HorizontalPanel h1=new HorizontalPanel();
 		showControl();
 		
 	}
+	
+	protected void doSwap() {
+		if(isSelectedIk() && getSelectedBoneName().isEmpty()){
+			IKData ik=getCurrentIkData();
+			for(String name:ik.getBones()){
+				String targetName=getMirroredName(name);
+				if(targetName==null){
+					continue;
+				}
+				int index=ab.getBoneIndex(targetName);
+				int srcIndex=ab.getBoneIndex(name);
+				if(index!=-1 && srcIndex!=-1){
+					Vector3 angle1=ab.getBoneAngleAndMatrix(srcIndex).getAngle();
+					
+					Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
+					rotToBone(name, angle.getX(), -angle.getY(), -angle.getZ());
+					
+					rotToBone(targetName, angle1.getX(), -angle1.getY(), -angle1.getZ());
+				}
+			}
+			//move ik pos
+			IKData targetIk=getIk(getMirroredName(ik.getName()));
+			if(targetIk!=null){
+					Vector3 root=ab.getBonePosition(0);
+					
+					Vector3 targetPos=targetIk.getTargetPos().clone().subSelf(root);
+					targetPos.setX(targetPos.getX()*-1);
+					targetPos.addSelf(root);
+					
+					Vector3 srcPos=ik.getTargetPos().clone().subSelf(root);
+					srcPos.setX(srcPos.getX()*-1);
+					srcPos.addSelf(root);
+					
+					ik.getTargetPos().set(targetPos.getX(),targetPos.getY(),targetPos.getZ());
+					targetIk.getTargetPos().set(srcPos.getX(),srcPos.getY(),srcPos.getZ());
+					doPoseByMatrix(ab);
+			}
+			
+			
+		}else{
+		String name=getSelectedBoneName();
+		if(name==null){
+			return;
+		}
+			//h mirror
+			String targetName=getMirroredName(name);
+			
+			if(targetName==null){
+				return;
+			}
+			
+			int index=ab.getBoneIndex(targetName);
+			if(index!=-1){
+				
+				Vector3 targetAngle=ab.getBoneAngleAndMatrix(index).getAngle();
+				double x=rotationBoneXRange.getValue();
+				double y=rotationBoneYRange.getValue()*-1;
+				double z=rotationBoneZRange.getValue()*-1;
+				
+				
+				rotationBoneXRange.setValue((int) targetAngle.getX());
+				rotationBoneYRange.setValue((int) targetAngle.getY()*-1);
+				rotationBoneZRange.setValue((int) targetAngle.getZ()*-1);
+				rotToBone(targetName,x,y,z);
+				rotToBone();
+			}
+		}
+	}
+
+	private IKData getIk(String name){
+		for(IKData ik:ikdatas){
+			if(ik.getName().equals(name)){
+				return ik;
+			}
+		}
+		return null;
+	}
+	protected void doMirror() {
+		if(isSelectedIk() && getSelectedBoneName().isEmpty()){
+			IKData ik=getCurrentIkData();
+			for(String name:ik.getBones()){
+				String targetName=getMirroredName(name);
+				if(targetName==null){
+					continue;
+				}
+				int index=ab.getBoneIndex(targetName);
+				if(index!=-1){
+					Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
+					rotToBone(name, angle.getX(), -angle.getY(), -angle.getZ());
+				}
+			}
+			//move ik pos
+			IKData targetIk=getIk(getMirroredName(ik.getName()));
+			if(targetIk!=null){
+					Vector3 root=ab.getBonePosition(0);
+					Vector3 targetPos=targetIk.getTargetPos().clone().subSelf(root);
+					targetPos.setX(targetPos.getX()*-1);
+					
+					targetPos.addSelf(root);
+					ik.getTargetPos().set(targetPos.getX(),targetPos.getY(),targetPos.getZ());
+					doPoseByMatrix(ab);
+			}
+			
+			
+		}else{//single bone
+		String name=getSelectedBoneName();
+		if(name==null){
+			return;
+		}
+			//h mirror
+			String targetName=getMirroredName(name);
+			log("mirror:"+targetName);
+			if(targetName==null){
+				return;
+			}
+			
+			int index=ab.getBoneIndex(targetName);
+			if(index!=-1){
+				log("mirror:"+index);
+				Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
+				rotationBoneXRange.setValue((int) angle.getX());
+				rotationBoneYRange.setValue((int) angle.getY()*-1);
+				rotationBoneZRange.setValue((int) angle.getZ()*-1);
+				rotToBone();
+			}
+		}
+	}
+
 	protected void updateBonesVisible() {
 		if(bone3D!=null){
 			Object3DUtils.setVisibleAll(bone3D, showBonesCheck.getValue());
@@ -2213,6 +2298,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	private void updateBoneRotationRanges(){
 		if(boneNamesBox.getSelectedIndex()==-1){
+			setEnableBoneRanges(false,false);//no root
 			return;
 		}
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
