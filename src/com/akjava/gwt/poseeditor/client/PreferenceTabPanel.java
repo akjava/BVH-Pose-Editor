@@ -231,10 +231,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 		add(textureListBox);
 		textureListBox.setVisibleItemCount(5);
 		
-		List<HeaderAndValue> textures=textureControler.getDataList();
-		for(int i=0;i<textures.size();i++){
-			textureListBox.addItem(textures.get(i).getHeader(),""+textures.get(i).getId());
-		}
+		
 		
 		
 		// read from
@@ -248,6 +245,11 @@ public class PreferenceTabPanel extends VerticalPanel {
 				presetTextureMap.put(Integer.parseInt(id), filePath);
 				textureListBox.addItem(fileName, id);
 			}
+		}
+		
+		List<HeaderAndValue> textures=textureControler.getDataList();
+		for(int i=0;i<textures.size();i++){
+			textureListBox.addItem(textures.get(i).getHeader(),""+textures.get(i).getId());
 		}
 
 		textureListBox.addChangeHandler(new ChangeHandler() {
@@ -299,11 +301,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 		modelListBox.clear();
 		// read from resource
 		
-			//update from storage
-			List<HeaderAndValue> models=modelControler.getDataList();
-			for(int i=0;i<models.size();i++){
-				modelListBox.addItem(models.get(i).getHeader(),""+models.get(i).getId());
-			}
+			
 		
 		
 				String modelText = PoseEditorBundles.INSTANCE.modelNames().getText();
@@ -318,6 +316,11 @@ public class PreferenceTabPanel extends VerticalPanel {
 					}
 				}
 				
+				//update from storage
+				List<HeaderAndValue> models=modelControler.getDataList();
+				for(int i=0;i<models.size();i++){
+					modelListBox.addItem(models.get(i).getHeader(),""+models.get(i).getId());
+				}
 				
 				
 				

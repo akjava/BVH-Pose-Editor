@@ -1198,6 +1198,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		
 		//mirror
+		HorizontalPanel mButtons=new HorizontalPanel();
 		Button mirror=new Button("do Mirror");
 		mirror.addClickHandler(new ClickHandler() {
 			@Override
@@ -1225,7 +1226,42 @@ HorizontalPanel h1=new HorizontalPanel();
 				
 			}
 		});
-		parent.add(mirror);
+		parent.add(mButtons);
+		mButtons.add(mirror);
+		Button swap=new Button("do Swap");
+		swap.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				String name=getSelectedBoneName();
+				if(name==null){
+					return;
+				}
+					//h mirror
+					String targetName=getMirroredName(name);
+					
+					if(targetName==null){
+						return;
+					}
+					
+					int index=ab.getBoneIndex(targetName);
+					if(index!=-1){
+						
+						Vector3 targetAngle=ab.getBoneAngleAndMatrix(index).getAngle();
+						double x=rotationBoneXRange.getValue();
+						double y=rotationBoneYRange.getValue()*-1;
+						double z=rotationBoneZRange.getValue()*-1;
+						
+						
+						rotationBoneXRange.setValue((int) targetAngle.getX());
+						rotationBoneYRange.setValue((int) targetAngle.getY()*-1);
+						rotationBoneZRange.setValue((int) targetAngle.getZ()*-1);
+						rotToBone(targetName,x,y,z);
+						rotToBone();
+					}
+				
+			}
+		});
+		mButtons.add(swap);
 		
 		
 		
@@ -2121,6 +2157,30 @@ HorizontalPanel h1=new HorizontalPanel();
 		updateBoneRanges();
 	}
 
+	private void rotToBone(String name,double x,double y,double z){
+		int index=ab.getBoneIndex(name);
+		//Matrix4 mx=ab.getBoneMatrix(name);
+		Vector3 degAngles=THREE.Vector3(x,y,z);
+		Vector3 angles=GWTThreeUtils.degreeToRagiant(degAngles);
+		//log("set-angle:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
+		//mx.setRotationFromEuler(angles, "XYZ");
+		
+		
+		Vector3 pos=GWTThreeUtils.toPositionVec(ab.getBoneAngleAndMatrix(index).getMatrix());
+		//log("pos:"+ThreeLog.get(pos));
+		Matrix4 posMx=GWTThreeUtils.translateToMatrix4(pos);
+		
+		Matrix4 rotMx=GWTThreeUtils.rotationToMatrix4(angles);
+		rotMx.multiply(posMx,rotMx);
+		
+		//log("bone-pos:"+ThreeLog.get(bones.get(index).getPos()));
+		
+		ab.getBoneAngleAndMatrix(index).setMatrix(rotMx);
+		ab.getBoneAngleAndMatrix(index).setAngle(degAngles);
+	
+		doPoseByMatrix(ab);
+	}
+	
 	private void rotToBone(){
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
 		int index=ab.getBoneIndex(name);
@@ -2232,7 +2292,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	
 	private Material bodyMaterial;
-	private String textureUrl="female001_texture1.png";//default
+	private String textureUrl="female001_texture1.jpg";//default
 	protected void updateMaterial() {
 		
 		Material material=null;
