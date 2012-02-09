@@ -22,6 +22,7 @@ import com.akjava.gwt.bvh.client.threejs.AnimationDataConverter;
 import com.akjava.gwt.bvh.client.threejs.BVHConverter;
 import com.akjava.gwt.html5.client.HTML5InputRange;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
+import com.akjava.gwt.lib.client.ExportUtils;
 import com.akjava.gwt.lib.client.StorageControler;
 import com.akjava.gwt.lib.client.StorageDataList.HeaderAndValue;
 import com.akjava.gwt.poseeditor.client.PreferenceTabPanel.PreferenceListener;
@@ -86,7 +87,6 @@ import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.json.client.JSONValue;
-import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
@@ -110,7 +110,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="1.1";
+	private String version="1.1.1";
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
@@ -312,7 +312,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		//for initialize texture
 		texture=ImageUtils.loadTexture("female001_texture1.jpg");//initial one
-		generateTexture();
+		//generateTexture();
 		
 		parseInitialBVHAndLoadModels(PoseEditorBundles.INSTANCE.pose().getText());
 		
@@ -1432,9 +1432,25 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			@Override
 			public void onClick(ClickEvent event) {
+				//better screen shot
+				
+				//Keep before setting
+				//change setting if
+				//re render
+				//back to setting
+				
+				
 				String url=renderer.gwtPngDataUrl();
+				
 				log(url);
-				Window.open(url, "newwin", null);
+				String text="<img style='position:absolute;top:0;left:0' src='"+url+"'>";
+				//ExportUtils.openTabHtml(text, "screenshot"+screenShotIndex);
+				ExportUtils.openTabImage(url, "screenshot"+screenShotIndex);
+				screenShotIndex++;
+				
+				
+				//Window.open(url, "newwin"+screenShotIndex, null); sometime crash and kill owner
+				screenShotIndex++;
 			}
 		});
 		/*
@@ -1477,6 +1493,8 @@ HorizontalPanel h1=new HorizontalPanel();
 		showControl();
 		
 	}
+	private int screenShotIndex;
+	
 	
 	protected void doSwap() {
 		if(isSelectedIk() && getSelectedBoneName().isEmpty()){
@@ -1823,6 +1841,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			public void onClick(ClickEvent event) {
 				
 				doPaste();
+				getSelectedPoseEditorData().setModified(true);
 			}
 		});
 		
@@ -2186,16 +2205,13 @@ HorizontalPanel h1=new HorizontalPanel();
 		String bvhText=writer.writeToString(exportBVH);
 		
 		//log(bvhText);
-		exportTextChrome(bvhText,"poseeditor"+exportIndex);
+		ExportUtils.exportTextChrome(bvhText,"poseeditor"+exportIndex);
 		exportIndex++;
 		
 		
 		
 	}
-	public native final void exportTextChrome(String text,String wname)/*-{
-	win = $wnd.open("", wname)
-	win.document.body.innerText =""+text+"";
-	}-*/;
+	
 
 	
 	private int exportIndex=0;
