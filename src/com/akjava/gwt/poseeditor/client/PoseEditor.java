@@ -112,7 +112,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="1.1.3";
+	private String version="1.1.4";
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
@@ -1953,28 +1953,39 @@ HorizontalPanel h1=new HorizontalPanel();
 			//TODO
 			if(!storageControler.isAvailable()){
 				//TODO just export
+				Window.alert("not saved because your browser not supoort HTML5 storage");
 				return;
 			}
 			
-			
+		//	Window.alert("hello");
 			//save database
 			int dataIndex=storageControler.getValue(KEY_INDEX, 0);
 			
 			
 			//TODO method?
 			Canvas canvas=Canvas.createIfSupported();
+			
 			int thumbW=32;
 			int thumbH=32;
 			canvas.setSize(thumbW+"px", thumbH+"px");
 			canvas.setCoordinateSpaceWidth(thumbW);
 			canvas.setCoordinateSpaceHeight(thumbH);
-			canvas.getContext2d().drawImage(renderer.gwtCanvas(),0,0,screenWidth,screenHeight,0,0,thumbW,thumbH);
+			//log(renderer.gwtCanvas());
+			//now stop write image.
+			//canvas.getContext2d().drawImage(renderer.gwtCanvas(),0,0,screenWidth,screenHeight,0,0,thumbW,thumbH);
+			
 			String thumbnail=canvas.toDataUrl();
+			log(thumbnail);
+		//	Window.alert("hello1");
+			//Window.alert("hello1");
 			//Window.open(thumbnail, "tmp", null);
 			try{
 			storageControler.setValue(KEY_DATA+dataIndex, data.toString());
+		//	Window.alert("hello2");
 			storageControler.setValue(KEY_IMAGE+dataIndex, thumbnail);
 			storageControler.setValue(KEY_HEAD+dataIndex, pdata.getName()+"\t"+pdata.getCdate());
+			
+		//	Window.alert("hello3:"+dataIndex);
 			pdata.setFileId(dataIndex);
 			
 			//increment
@@ -2022,6 +2033,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			try{
 			storageControler.setValue(KEY_DATA+fileId, data.toString());
 			pdata.setModified(false);
+			
 			updateSaveButtons();
 			updateDatasPanel();//
 			}catch(Exception e){
