@@ -112,7 +112,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="1.1.2";
+	private String version="1.1.3";
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
@@ -1435,7 +1435,10 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		
-		
+		/*
+		 * crash so oftern if you use don't forget add
+		 * THREE.WebGLRenderer(GWTRenderObject.create().preserveDrawingBuffer()); 
+		 * 
 		Button test=new Button("screen-shot");
 		parent.add(test);
 		test.addClickHandler(new ClickHandler() {
@@ -1452,8 +1455,8 @@ HorizontalPanel h1=new HorizontalPanel();
 				
 				String url=renderer.gwtPngDataUrl();
 				
-				log(url);
-				String text="<img style='position:absolute;top:0;left:0' src='"+url+"'>";
+				//log(url);
+				//String text="<img style='position:absolute;top:0;left:0' src='"+url+"'>";
 				//ExportUtils.openTabHtml(text, "screenshot"+screenShotIndex);
 				ExportUtils.openTabImage(url, "screenshot"+screenShotIndex);
 				screenShotIndex++;
@@ -1463,6 +1466,7 @@ HorizontalPanel h1=new HorizontalPanel();
 				screenShotIndex++;
 			}
 		});
+		*/
 		/*
 		parent.add(new Label("Texture Image"));
 		
