@@ -98,15 +98,25 @@ public class PreferenceTabPanel extends VerticalPanel {
 							Window.alert("invalid model");
 							return;
 						}
-						
+						LogUtils.log("preferenceDebug:1");
 						modelControler.setDataValue(file.getFileName(), text);
+						LogUtils.log("preferenceDebug:2");
 						int id=modelControler.incrementId();
+						LogUtils.log("preferenceDebug:3"+id);
 						
 						loadModel(new HeaderAndValue(id, file.getFileName(), text));
+						LogUtils.log("preferenceDebug:4");
+						
 						modelListBox.addItem(file.getFileName(),""+id);
+						LogUtils.log("preferenceDebug:5"+id);
+						LogUtils.log("preferenceDebug:6"+(modelListBox.getItemCount()-1));
 						modelListBox.setSelectedIndex(modelListBox.getItemCount()-1);
+						LogUtils.log("preferenceDebug:7"+id);
 						updateModelButtons();
+						
+						
 						controler.setValue(KEY_MODEL_SELECTION, modelListBox.getItemCount()-1);
+						LogUtils.log("preferenceDebug:8"+id);
 						}catch(Exception e){
 							PoseEditor.alert(e.getMessage());
 						}
@@ -345,7 +355,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 		//preset cant remove
 		String id = modelListBox.getValue(modelListBox.getSelectedIndex());
 		final int idIndex = Integer.parseInt(id);
-		if(idIndex<0){
+		if(idIndex<0){//preset cant delate
 			removeBt.setEnabled(false);
 		}else{
 			removeBt.setEnabled(true);

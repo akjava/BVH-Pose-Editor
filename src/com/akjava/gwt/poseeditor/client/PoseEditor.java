@@ -22,11 +22,6 @@ import com.akjava.gwt.bvh.client.threejs.AnimationDataConverter;
 import com.akjava.gwt.bvh.client.threejs.BVHConverter;
 import com.akjava.gwt.html5.client.HTML5InputRange;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
-import com.akjava.gwt.html5.client.file.File;
-import com.akjava.gwt.html5.client.file.FileHandler;
-import com.akjava.gwt.html5.client.file.FileReader;
-import com.akjava.gwt.html5.client.file.FileUploadForm;
-import com.akjava.gwt.html5.client.file.FileUtils;
 import com.akjava.gwt.lib.client.StorageControler;
 import com.akjava.gwt.lib.client.StorageDataList.HeaderAndValue;
 import com.akjava.gwt.poseeditor.client.PreferenceTabPanel.PreferenceListener;
@@ -63,12 +58,15 @@ import com.akjava.gwt.three.client.lights.Light;
 import com.akjava.gwt.three.client.materials.Material;
 import com.akjava.gwt.three.client.objects.Mesh;
 import com.akjava.gwt.three.client.renderers.WebGLRenderer;
+import com.akjava.gwt.three.client.textures.Texture;
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.core.client.JsArray;
+import com.google.gwt.dom.client.ImageElement;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.LoadEvent;
 import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseMoveEvent;
 import com.google.gwt.event.dom.client.MouseOutEvent;
@@ -88,6 +86,7 @@ import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.json.client.JSONValue;
+import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
@@ -98,6 +97,7 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.PopupPanel;
+import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 
@@ -110,6 +110,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
+	private String version="1.1";
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
@@ -122,7 +123,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 
 	@Override
 	public void resized(int width, int height) {
-		log("resized:"+width+"x"+height);
+
 		super.resized(width, height);
 		leftBottom(bottomPanel);
 	}
@@ -308,11 +309,21 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		boneLimits.put("Neck",BoneLimit.createBoneLimit(-29, 29, -29, 29, -29, 29));
 		boneLimits.put("Neck1",BoneLimit.createBoneLimit(-5, 5, -5, 5, -5, 5));
 		
+		
+		//for initialize texture
+		texture=ImageUtils.loadTexture("female001_texture1.jpg");//initial one
+		generateTexture();
+		
+		parseInitialBVHAndLoadModels(PoseEditorBundles.INSTANCE.pose().getText());
+		
+		
+		
+		
 		createTabs();
 		
 		updateDatasPanel();
 		
-		parseInitialBVH(PoseEditorBundles.INSTANCE.pose().getText());
+		
 	}
 	
 	private void updateDatasPanel(){
@@ -1459,7 +1470,6 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		
-		updateMaterial();
 		positionYRange.setValue(-140);//for test
 		
 		updateIkLabels();
@@ -1648,6 +1658,7 @@ HorizontalPanel h1=new HorizontalPanel();
 				
 				//log("snapped");
 				if(poseEditorDatas.size()==0){//initial new list
+					updateMaterial();
 					doNewFile();
 				}
 			}
@@ -1707,10 +1718,10 @@ HorizontalPanel h1=new HorizontalPanel();
 	private void createBottomPanel(){
 		bottomPanel = new PopupPanel();
 		bottomPanel.setVisible(true);
-		bottomPanel.setSize("650px", "40px");
+		bottomPanel.setSize("650px", "96px");
 		VerticalPanel main=new VerticalPanel();
 		bottomPanel.add(main);
-		bottomPanel.show();
+		
 		
 		
 		//upper
@@ -1890,6 +1901,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
+		bottomPanel.show();
 		super.leftBottom(bottomPanel);
 	}
 	
@@ -2379,6 +2391,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	
 	private Material bodyMaterial;
 	private String textureUrl="female001_texture1.jpg";//default
+	private Texture texture;
 	protected void updateMaterial() {
 		
 		Material material=null;
@@ -2387,12 +2400,19 @@ HorizontalPanel h1=new HorizontalPanel();
 		if(transparent){
 			opacity=0.75;
 		}
-		if(basicMaterialCheck.getValue()){
-			material=THREE.MeshBasicMaterial().map(ImageUtils.loadTexture(textureUrl)).transparent(transparent).opacity(opacity).build();
+		if(texture==null){//some case happend
+			material=THREE.MeshBasicMaterial().transparent(transparent).opacity(opacity).build();
+			//only initial happend
 			
 		}else{
-			material=THREE.MeshLambertMaterial().map(ImageUtils.loadTexture(textureUrl)).transparent(transparent).opacity(opacity).build();
+			if(basicMaterialCheck.getValue()){
+				material=THREE.MeshBasicMaterial().map(texture).transparent(transparent).opacity(opacity).build();
+				
+			}else{
+				material=THREE.MeshLambertMaterial().map(texture).transparent(transparent).opacity(opacity).build();
+			}
 		}
+		
 		bodyMaterial=material;
 		
 		if(bodyMesh!=null){
@@ -2411,7 +2431,7 @@ HorizontalPanel h1=new HorizontalPanel();
 					@Override
 					public void onResponseReceived(Request request, Response response) {
 						String bvhText=response.getText();
-						parseInitialBVH(bvhText);
+						parseInitialBVHAndLoadModels(bvhText);
 
 					}
 					
@@ -2433,7 +2453,7 @@ public void onError(Request request, Throwable exception) {
 	private Geometry baseGeometry;
 	
 private List<String> boneList=new ArrayList<String>();
-	protected void parseInitialBVH(String bvhText) {
+	protected void parseInitialBVHAndLoadModels(String bvhText) {
 		final BVHParser parser=new BVHParser();
 		
 		parser.parseAsync(bvhText, new ParserListener() {
@@ -2603,12 +2623,14 @@ private List<String> boneList=new ArrayList<String>();
 	private CheckBox basicMaterialCheck;
 
 	
+	
 	/**
 	 * called after load
 	 * @param index
 	 */
+	/*
 	private void doPose(int index){
-		
+	
 		//initial bone names
 		log(bones);
 		for(int i=0;i<bones.length();i++){
@@ -2637,7 +2659,7 @@ private List<String> boneList=new ArrayList<String>();
 	}
 	*/
 	
-	}
+	//}
 	
 	//for after loading
 private void doRePose(int index){
@@ -3536,7 +3558,7 @@ private Button saveButton;
 		}	
 	@Override
 	public String getHtml(){
-	String html=super.getHtml();
+	String html="Pose Editor ver."+version+" "+super.getHtml();
 
 	return html;	
 	}
@@ -3554,8 +3576,39 @@ private Button saveButton;
 	}
 
 	@Override
-	public void textureChanged(HeaderAndValue texture) {
-		textureUrl=texture.getData();
-		updateMaterial();
+	public void textureChanged(HeaderAndValue textureValue) {
+		textureUrl=textureValue.getData();
+		
+		generateTexture();
+		
+	}
+	
+	
+	
+	
+	private void generateTexture(){
+		final Image img=new Image(textureUrl);
+		img.setVisible(false);
+		RootPanel.get().add(img);
+		
+		img.addLoadHandler(new com.google.gwt.event.dom.client.LoadHandler() {
+			
+			@Override
+			public void onLoad(LoadEvent event) {
+				Canvas canvas=Canvas.createIfSupported();
+				canvas.setCoordinateSpaceWidth(img.getWidth());
+				canvas.setCoordinateSpaceHeight(img.getHeight());
+				canvas.getContext2d().drawImage(ImageElement.as(img.getElement()),0,0);
+				texture=THREE.Texture(canvas.getCanvasElement());
+				texture.setNeedsUpdate(true);
+				
+				img.removeFromParent();
+				log("generate-texture");
+				updateMaterial();
+			}
+		});
+		
+		
+		
 	}
 }
