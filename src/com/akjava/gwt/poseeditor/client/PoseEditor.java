@@ -849,8 +849,11 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				getCurrentIkData().getTargetPos().incrementY(diffY);
 				if(event.isShiftKeyDown()){//slow
 					if(event.isAltKeyDown()){
+					log("shift+alt");
 					doPoseIkk(0,false,1,getCurrentIkData(),1);
+					log("pik");
 						for(IKData ik:ikdatas){
+							//log("ik:"+ik.getName());
 							if(ik!=getCurrentIkData()){
 							doPoseIkk(0,false,5,ik,1);
 							}
@@ -2343,7 +2346,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	
 	}
 	private void updateBoneRotationRanges(){
-		if(boneNamesBox.getSelectedIndex()==-1){
+		if(isSelectEmptyBoneListBox()){
 			setEnableBoneRanges(false,false);//no root
 			return;
 		}
@@ -2403,8 +2406,11 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 	}
 	
+	private boolean isSelectEmptyBoneListBox(){
+	return boneNamesBox.getSelectedIndex()==-1 || boneNamesBox.getItemText(boneNamesBox.getSelectedIndex()).isEmpty();	
+	}
 	private void updateBonePositionRanges(){
-		if(boneNamesBox.getSelectedIndex()==-1){
+		if(isSelectEmptyBoneListBox()){
 			return;
 		}
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
@@ -3066,7 +3072,10 @@ private void doPoseIkk(int index,boolean resetMatrix,int perLimit,IKData ikdata,
 	initializeAnimationData(index,resetMatrix);
 	stepCDDIk(perLimit,ikdata,cddLoop);	
 	doPoseByMatrix(ab);
+	
+	
 	updateBoneRanges();
+	
 	
 	}
 private List<AngleAndPosition> findStartMatrix(String boneName,Vector3 targetPos) {
