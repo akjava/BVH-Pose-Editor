@@ -21,6 +21,7 @@ import com.akjava.gwt.bvh.client.threejs.AnimationBoneConverter;
 import com.akjava.gwt.bvh.client.threejs.AnimationDataConverter;
 import com.akjava.gwt.bvh.client.threejs.BVHConverter;
 import com.akjava.gwt.html5.client.HTML5InputRange;
+import com.akjava.gwt.html5.client.download.HTML5Download;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
 import com.akjava.gwt.lib.client.ExportUtils;
 import com.akjava.gwt.lib.client.StorageControler;
@@ -88,6 +89,7 @@ import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.HTML;
@@ -110,7 +112,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="1.1.1";
+	private String version="1.1.2";
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
@@ -351,7 +353,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			this.index=ind;
 			Image img=new Image();
 			img.setUrl(base64);
-			
+			this.setVerticalAlignment(ALIGN_MIDDLE);
 			
 			String name_cdate[]=head.split("\t");
 			name=name_cdate[0];
@@ -438,10 +440,18 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			add(exportBt);
 			exportBt.addClickHandler(new ClickHandler() {
 				
+				private Anchor anchor;
+
 				@Override
 				public void onClick(ClickEvent event) {
 					PoseEditorData ped=PoseEditorData.readData(json);
-					doExport(ped);
+					String bvhText=convertBVHText(ped);
+					if(anchor!=null){
+						anchor.removeFromParent();
+					}
+					anchor = HTML5Download.generateTextDownloadLink(bvhText, nameLabel.getText()+".bvh", "Click to download",true);
+					add(anchor);
+					
 				}
 			});
 			
@@ -494,7 +504,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		//datasPanel.setStyleName("debug");
 		ScrollPanel scroll=new ScrollPanel(datasPanel);
-		scroll.setSize("550px", "500px");
+		scroll.setSize("720px", "500px");
 		datasRoot.add(scroll);
 		
 		log("selection:"+storageControler.getValue(PreferenceTabPanel.KEY_MODEL_SELECTION, 0));
@@ -2176,7 +2186,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 	}
 
-	protected void doExport(PoseEditorData ped) {
+	protected String convertBVHText(PoseEditorData ped) {
 		ped.updateMatrix(ab);//current-bone
 		
 		BVH exportBVH=new BVH();
@@ -2204,10 +2214,14 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		String bvhText=writer.writeToString(exportBVH);
 		
-		//log(bvhText);
-		ExportUtils.exportTextChrome(bvhText,"poseeditor"+exportIndex);
-		exportIndex++;
+		return bvhText;
 		
+		/*
+		//log(bvhText);
+		ExportUtils.exportTextAsDownloadDataUrl(bvhText, "UTF-8", "poseeditor"+exportIndex);
+		//ExportUtils.openTabTextChrome(bvhText,"poseeditor"+exportIndex);//
+		exportIndex++;
+		*/
 		
 		
 	}
