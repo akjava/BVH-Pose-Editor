@@ -64,6 +64,7 @@ import com.akjava.gwt.three.client.textures.Texture;
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.dom.client.ImageElement;
+import com.google.gwt.dom.client.NativeEvent;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -88,6 +89,7 @@ import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.json.client.JSONValue;
+import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
@@ -97,6 +99,7 @@ import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
+import com.google.gwt.user.client.ui.MenuBar;
 import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.RootPanel;
@@ -112,14 +115,14 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="1.1.4";
+	private String version="1.1.5";
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
 			
 			root.setPosition((double)positionXRange.getValue()/10, (double)positionYRange.getValue()/10, (double)positionZRange.getValue()/10);
 			
-			root.getRotation().set(Math.toRadians(rotationRange.getValue()),Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()));
+			root.getRotation().set(Math.toRadians(rotationXRange.getValue()),Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()));
 			}
 	}
 
@@ -768,6 +771,100 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		return new ArrayList<NameAndVector3>(patterns);
 	}
+	
+	
+	PopupPanel contextMenu;
+	private void showContextMenu(int left,int top){
+		if(contextMenu==null){
+			initializeContextMenu();
+		}
+		contextMenu.setPopupPosition(left, top);
+		contextMenu.show();
+	}
+	private void hideContextMenu(){
+		if(contextMenu!=null){
+			contextMenu.hide();
+		}
+	}
+	private void initializeContextMenu(){
+		contextMenu=new PopupPanel();
+		MenuBar rootBar=new MenuBar(true);
+		MenuBar cameraBar=new MenuBar(true);
+		rootBar.addItem("Camera",cameraBar);
+		rootBar.setAutoOpen(true);
+		contextMenu.add(rootBar);
+		cameraBar.addItem("Front", new Command(){
+			@Override
+			public void execute() {
+				rotationXRange.setValue(0);
+				rotationYRange.setValue(0);
+				rotationZRange.setValue(0);
+				positionXRange.setValue(0);
+				positionYRange.setValue(-140);
+				hideContextMenu();
+			}});
+		cameraBar.addItem("Back", new Command(){
+			@Override
+			public void execute() {
+				rotationXRange.setValue(0);
+				rotationYRange.setValue(180);
+				rotationZRange.setValue(0);
+				positionXRange.setValue(0);
+				positionYRange.setValue(-140);
+				hideContextMenu();
+			}});
+		cameraBar.addItem("Quoter", new Command(){
+			@Override
+			public void execute() {
+				rotationXRange.setValue(45);
+				rotationYRange.setValue(45);
+				rotationZRange.setValue(0);
+				positionXRange.setValue(0);
+				positionYRange.setValue(-140);
+				hideContextMenu();
+			}});
+		cameraBar.addItem("Top", new Command(){
+			@Override
+			public void execute() {
+				rotationXRange.setValue(90);
+				rotationYRange.setValue(0);
+				rotationZRange.setValue(0);
+				positionXRange.setValue(0);
+				positionYRange.setValue(0);
+				hideContextMenu();
+			}});
+		cameraBar.addItem("Bottom", new Command(){
+			@Override
+			public void execute() {
+				rotationXRange.setValue(-90);
+				rotationYRange.setValue(0);
+				rotationZRange.setValue(0);
+				positionXRange.setValue(0);
+				positionYRange.setValue(0);
+				hideContextMenu();
+			}});
+		cameraBar.addItem("Right", new Command(){
+			@Override
+			public void execute() {
+				rotationXRange.setValue(0);
+				rotationYRange.setValue(90);
+				rotationZRange.setValue(0);
+				positionXRange.setValue(0);
+				positionYRange.setValue(-140);
+				hideContextMenu();
+			}});
+		cameraBar.addItem("Left", new Command(){
+			@Override
+			public void execute() {
+				rotationXRange.setValue(0);
+				rotationYRange.setValue(-90);
+				rotationZRange.setValue(0);
+				positionXRange.setValue(0);
+				positionYRange.setValue(-140);
+				hideContextMenu();
+			}});
+		
+	}
 
 	@Override
 	public void onMouseDown(MouseDownEvent event) {
@@ -775,6 +872,13 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		mouseDown=true;
 		mouseDownX=event.getX();
 		mouseDownY=event.getY();
+		
+		if(event.getNativeButton()==NativeEvent.BUTTON_MIDDLE){
+			showContextMenu(mouseDownX, mouseDownY);
+		}else{
+			hideContextMenu();
+		}
+		
 		//log(mouseDownX+","+mouseDownY+":"+screenWidth+"x"+screenHeight);
 		
 
@@ -924,7 +1028,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				positionXRange.setValue(positionXRange.getValue()+diffX);
 				positionYRange.setValue(positionYRange.getValue()-diffY);
 			}else{//rotate
-				rotationRange.setValue(rotationRange.getValue()+diffY);
+				rotationXRange.setValue(rotationXRange.getValue()+diffY);
 				rotationYRange.setValue(rotationYRange.getValue()+diffX);
 			}
 			
@@ -1016,7 +1120,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	private HTML5InputRange positionZRange;
 	//private HTML5InputRange frameRange;
 	
-	private HTML5InputRange rotationRange;
+	private HTML5InputRange rotationXRange;
 	private HTML5InputRange rotationYRange;
 	private HTML5InputRange rotationZRange;
 	private HTML5InputRange rotationBoneXRange;
@@ -1036,15 +1140,15 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	public void createControl(Panel parent) {
 HorizontalPanel h1=new HorizontalPanel();
 		
-		rotationRange = new HTML5InputRange(-180,180,0);
-		parent.add(HTML5Builder.createRangeLabel("X-Rotate:", rotationRange));
+		rotationXRange = new HTML5InputRange(-180,180,0);
+		parent.add(HTML5Builder.createRangeLabel("X-Rotate:", rotationXRange));
 		parent.add(h1);
-		h1.add(rotationRange);
+		h1.add(rotationXRange);
 		Button reset=new Button("Reset");
 		reset.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				rotationRange.setValue(0);
+				rotationXRange.setValue(0);
 			}
 		});
 		h1.add(reset);
