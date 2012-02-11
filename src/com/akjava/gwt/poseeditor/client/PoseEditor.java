@@ -23,7 +23,6 @@ import com.akjava.gwt.bvh.client.threejs.BVHConverter;
 import com.akjava.gwt.html5.client.HTML5InputRange;
 import com.akjava.gwt.html5.client.download.HTML5Download;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
-import com.akjava.gwt.lib.client.ExportUtils;
 import com.akjava.gwt.lib.client.StorageControler;
 import com.akjava.gwt.lib.client.StorageDataList.HeaderAndValue;
 import com.akjava.gwt.poseeditor.client.PreferenceTabPanel.PreferenceListener;
@@ -69,6 +68,8 @@ import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.ContextMenuEvent;
+import com.google.gwt.event.dom.client.ContextMenuHandler;
 import com.google.gwt.event.dom.client.LoadEvent;
 import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseMoveEvent;
@@ -100,8 +101,10 @@ import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.MenuBar;
+import com.google.gwt.user.client.ui.MenuItem;
 import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.PopupPanel;
+import com.google.gwt.user.client.ui.RootLayoutPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
@@ -115,7 +118,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="1.1.5";
+	private String version="1.2";
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
@@ -141,8 +144,22 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	public static final String KEY_IMAGE="DATA_IMAGE";
 	public static final String KEY_HEAD="DATA_HEAD";
 	
+	public class ContextMenu implements ContextMenuHandler{
+
+		@Override
+		public void onContextMenu(ContextMenuEvent event) {
+			 event.preventDefault();
+			 event.stopPropagation();
+			 showContextMenu(event.getNativeEvent().getClientX(), event.getNativeEvent().getClientY());
+		}
+		
+	}
+	
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
+		this.renderer=renderer;
+		
+		canvas.addDomHandler(new ContextMenu(), ContextMenuEvent.getType());
 		
 		storageControler = new StorageControler();
 		
@@ -555,6 +572,21 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		}else{
 			setEnableBoneRanges(false,false);
 		}
+		
+		
+		if(boneNamesBox.getItemCount()==0){
+			rotateAndPosList.setEnabled(false);
+			boneRotationsPanel.setVisible(false);
+			bonePositionsPanel.setVisible(false);
+		}else{
+			rotateAndPosList.setEnabled(true);
+			if(rotateAndPosList.getSelectedIndex()==0){
+				boneRotationsPanel.setVisible(true);
+			}else{
+				bonePositionsPanel.setVisible(true);
+			}
+			
+		}
 	}
 	
 	private void setEnableBoneRanges(boolean rotate,boolean pos){
@@ -627,6 +659,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			index++;
 		}
 		}else{
+			
 		//	log("null selected");
 		}
 		
@@ -774,10 +807,15 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 	
 	PopupPanel contextMenu;
+	
+	
 	private void showContextMenu(int left,int top){
 		if(contextMenu==null){
-			initializeContextMenu();
+			createContextMenu();
 		}
+		
+	
+		
 		contextMenu.setPopupPosition(left, top);
 		contextMenu.show();
 	}
@@ -786,13 +824,15 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			contextMenu.hide();
 		}
 	}
-	private void initializeContextMenu(){
+	private void createContextMenu(){
 		contextMenu=new PopupPanel();
 		MenuBar rootBar=new MenuBar(true);
+		contextMenu.add(rootBar);
+		rootBar.setAutoOpen(true);
+		
 		MenuBar cameraBar=new MenuBar(true);
 		rootBar.addItem("Camera",cameraBar);
-		rootBar.setAutoOpen(true);
-		contextMenu.add(rootBar);
+		
 		cameraBar.addItem("Front", new Command(){
 			@Override
 			public void execute() {
@@ -864,6 +904,327 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				hideContextMenu();
 			}});
 		
+		MenuBar ikBar=new MenuBar(true);
+		rootBar.addItem("Ik",ikBar);
+		
+		
+		ikBar.addItem("Exec", new Command(){
+			@Override
+			public void execute() {
+				for(IKData ik:ikdatas){
+					doPoseIkk(0,false,45,ik,10);
+				}
+				hideContextMenu();
+			}});
+		
+		ikBar.addItem("Follow", new Command(){
+			@Override
+			public void execute() {
+				for(IKData ik:ikdatas){
+					String name=ik.getLastBoneName();
+					Vector3 pos=ab.getBonePosition(name);
+					ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
+					doPoseByMatrix(ab);
+					hideContextMenu();
+				}
+			}});
+		ikBar.addItem("Y-Zero", new Command(){
+			@Override
+			public void execute() {
+				for(IKData ik:ikdatas){
+					String name=ik.getLastBoneName();
+					Vector3 pos=ab.getBonePosition(name);
+					ik.getTargetPos().setY(0);
+					doPoseByMatrix(ab);
+					hideContextMenu();
+				}
+			}});
+		ikBar.addItem("Move to First-IK-XZ", new Command(){
+			@Override
+			public void execute() {
+				for(IKData ik:ikdatas){
+					String name=ik.getBones().get(0);
+					Vector3 pos=ab.getBonePosition(name);
+					ik.getTargetPos().setX(pos.getX());
+					ik.getTargetPos().setZ(pos.getZ());
+					doPoseByMatrix(ab);
+					hideContextMenu();
+				}
+			}});
+		ikBar.addItem("Move to Last-IK-XZ", new Command(){
+			@Override
+			public void execute() {
+				for(IKData ik:ikdatas){
+					String name=ik.getBones().get(ik.getBones().size()-1);
+					Vector3 pos=ab.getBonePosition(name);
+					ik.getTargetPos().setX(pos.getX());
+					ik.getTargetPos().setZ(pos.getZ());
+					doPoseByMatrix(ab);
+					hideContextMenu();
+				}
+			}});
+		
+		
+		MenuBar rootBoneBar=new MenuBar(true);
+		rootBar.addItem("Root",rootBoneBar);
+		
+		rootBoneBar.addItem("Move to selection IK", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				Vector3 target=getCurrentIkData().getTargetPos();
+				Vector3 rootPos=ab.getBonePosition(0);
+				Vector3 diff=target.clone().subSelf(rootPos);
+				
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+				/*
+				for(IKData ik:ikdatas){
+					ik.getTargetPos().addSelf(diff);
+					doPoseByMatrix(ab);
+					hideContextMenu();
+				}
+				*/
+			}});
+		rootBoneBar.addItem("Move to selection IK-X", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				Vector3 target=getCurrentIkData().getTargetPos();
+				Vector3 rootPos=ab.getBonePosition(0);
+				Vector3 diff=target.clone().subSelf(rootPos);
+				diff.setY(0);
+				diff.setZ(0);
+				
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+			}});
+		rootBoneBar.addItem("Move to selection IK-Y", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				Vector3 target=getCurrentIkData().getTargetPos();
+				Vector3 rootPos=ab.getBonePosition(0);
+				Vector3 diff=target.clone().subSelf(rootPos);
+				diff.setX(0);
+				diff.setZ(0);
+				
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+			}});
+		rootBoneBar.addItem("Move to selection IK-Z", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				Vector3 target=getCurrentIkData().getTargetPos();
+				Vector3 rootPos=ab.getBonePosition(0);
+				Vector3 diff=target.clone().subSelf(rootPos);
+				diff.setY(0);
+				diff.setX(0);
+				
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+			}});
+		rootBoneBar.addItem("initial Position", new Command(){
+			@Override
+			public void execute() {
+				ab.getBoneAngleAndMatrix(0).setPosition(getInitialPoseFrameData().getPositions().get(0).clone());
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+		
+			}});
+		rootBoneBar.addItem("touch ground(Y-0)", new Command(){
+			@Override
+			public void execute() {
+				bodyMesh.getGeometry().computeBoundingBox();
+				log(bodyMesh);
+				
+				ab.getBoneAngleAndMatrix(0).setPosition(getInitialPoseFrameData().getPositions().get(0).clone());
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+		
+			}});
+		rootBoneBar.addItem("180 to -180", new Command(){
+			@Override
+			public void execute() {
+				Vector3 angle=ab.getBoneAngleAndMatrix(0).getAngle();
+				log(ThreeLog.get(angle));
+				if(angle.getX()==180){
+					angle.setX(-180);
+				}else if(angle.getX()==-180){
+					angle.setX(180);
+				}
+				if(angle.getY()==180){
+					angle.setY(-180);
+				}else if(angle.getY()==-180){
+					angle.setY(180);
+				}
+				if(angle.getZ()==180){
+					angle.setZ(-180);
+				}else if(angle.getZ()==-180){
+					angle.setZ(180);
+				}
+				//ab.getBoneAngleAndMatrix(0).setPosition(getInitialPoseFrameData().getPositions().get(0).clone());
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				updateBoneRotationRanges();
+				hideContextMenu();
+		
+			}});
+
+		MenuBar boneLimitBar=new MenuBar(true);
+		MenuItem boneLimitMenuItem = new MenuItem("Bone Limit",boneLimitBar);//menu item can change label dynamic
+		
+		
+		rootBar.addItem(boneLimitMenuItem);
+		
+		boneLimitBar.addItem("Change bones'limit to none", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				IKData ik=getCurrentIkData();
+				for(String boneName:ik.getBones()){
+					boneLock.clearX(boneName);
+					boneLock.clearY(boneName);
+					boneLock.clearZ(boneName);
+					
+				}
+				updateBoneRotationRanges();
+				hideContextMenu();
+			}});
+		boneLimitBar.addItem("Change bones'limit to X", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				IKData ik=getCurrentIkData();
+				for(String boneName:ik.getBones()){
+					boneLock.clearY(boneName);
+					boneLock.clearZ(boneName);
+					boneLock.setX(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getX());
+					
+				}
+				updateBoneRotationRanges();
+				hideContextMenu();
+			}});
+		boneLimitBar.addItem("Change bones'limit to Y", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				IKData ik=getCurrentIkData();
+				for(String boneName:ik.getBones()){
+					boneLock.clearX(boneName);
+					boneLock.clearZ(boneName);
+					boneLock.setY(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getY());
+					
+				}
+				updateBoneRotationRanges();
+				hideContextMenu();
+			}});
+		boneLimitBar.addItem("Change bones'limit to Z", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				IKData ik=getCurrentIkData();
+				for(String boneName:ik.getBones()){
+					boneLock.clearZ(boneName);
+					boneLock.clearZ(boneName);
+					boneLock.setZ(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getZ());
+					
+				}
+				updateBoneRotationRanges();
+				hideContextMenu();
+			}});
+		
+		boneLimitBar.addItem("Change bones'limit to Y,Z", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				IKData ik=getCurrentIkData();
+				for(String boneName:ik.getBones()){
+					boneLock.clearX(boneName);
+					boneLock.setY(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getY());
+					boneLock.setZ(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getZ());
+					
+				}
+				updateBoneRotationRanges();
+				hideContextMenu();
+			}});
+		
+		boneLimitBar.addItem("Change bones'limit to X,Z", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				IKData ik=getCurrentIkData();
+				for(String boneName:ik.getBones()){
+					boneLock.clearY(boneName);
+					boneLock.setX(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getX());
+					boneLock.setZ(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getZ());
+					
+				}
+				updateBoneRotationRanges();
+				hideContextMenu();
+			}});
+		boneLimitBar.addItem("Change bones'limit to Y,X", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				IKData ik=getCurrentIkData();
+				for(String boneName:ik.getBones()){
+					boneLock.clearZ(boneName);
+					boneLock.setY(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getY());
+					boneLock.setX(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getX());
+					
+				}
+				updateBoneRotationRanges();
+				hideContextMenu();
+			}});
+		
+	}
+	private PoseFrameData getInitialPoseFrameData(){
+		return initialPoseFrameData;
 	}
 
 	@Override
@@ -873,8 +1234,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		mouseDownX=event.getX();
 		mouseDownY=event.getY();
 		
-		if(event.getNativeButton()==NativeEvent.BUTTON_MIDDLE){
-			showContextMenu(mouseDownX, mouseDownY);
+		if(event.getNativeButton()==NativeEvent.BUTTON_RIGHT){
+		//	showContextMenu(mouseDownX, mouseDownY);
+			return;
 		}else{
 			hideContextMenu();
 		}
@@ -908,7 +1270,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					}
 				}else{
 					//maybe bone or root
-					log("select:"+target.getName());
+					//log("select:"+target.getName());
 					selectedBone=target.getName();
 					selectionMesh.setVisible(true);
 					selectionMesh.setPosition(target.getPosition());
@@ -966,7 +1328,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					//not work correctly
 					doPoseIkk(0,false,1,getCurrentIkData(),10);
 					}
-				}else if(event.isAltKeyDown()){//rapid
+				}else if(event.isAltKeyDown()){//move only
 					//doPoseIkk(0,true,1,getCurrentIkData(),1);
 					doPoseByMatrix(ab);
 				}else{
@@ -1349,10 +1711,14 @@ HorizontalPanel h1=new HorizontalPanel();
 		mButtons.add(swap);
 		
 		
+		bonePostionAndRotationContainer = new VerticalPanel();
+		bonePostionAndRotationContainer.setSize("210px", "150px");
+		bonePostionAndRotationContainer.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		parent.add(bonePostionAndRotationContainer);
 		
 		//positions
 		bonePositionsPanel = new VerticalPanel();
-		parent.add(bonePositionsPanel);
+		bonePostionAndRotationContainer.add(bonePositionsPanel);
 		bonePositionsPanel.setVisible(false);
 		
 		HorizontalPanel h1bpos=new HorizontalPanel();
@@ -1422,8 +1788,10 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		
+		
+		
 		boneRotationsPanel = new VerticalPanel();
-		parent.add(boneRotationsPanel);
+		bonePostionAndRotationContainer.add(boneRotationsPanel);
 		
 		HorizontalPanel h1b=new HorizontalPanel();
 		
@@ -1793,10 +2161,11 @@ HorizontalPanel h1=new HorizontalPanel();
 				//log(baseGeometry.getBones());
 				
 				doRePose(0);
-				initialPoseFrameData=snapCurrentFrameData();
+				
 				
 				//log("snapped");
 				if(poseEditorDatas.size()==0){//initial new list
+					initialPoseFrameData=snapCurrentFrameData();//get invalid pose
 					updateMaterial();
 					doNewFile();
 				}
@@ -3543,6 +3912,8 @@ private ListBox fileNames;
 private StorageControler storageControler;
 private VerticalPanel datasPanel;
 private Button saveButton;
+private VerticalPanel bonePostionAndRotationContainer;
+;
 
 /**
  * @deprecated

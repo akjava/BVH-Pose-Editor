@@ -9,12 +9,14 @@ import com.akjava.gwt.html5.client.file.FileHandler;
 import com.akjava.gwt.html5.client.file.FileReader;
 import com.akjava.gwt.html5.client.file.FileUploadForm;
 import com.akjava.gwt.html5.client.file.FileUtils;
+import com.akjava.gwt.lib.client.ExportUtils;
 import com.akjava.gwt.lib.client.LogUtils;
 import com.akjava.gwt.lib.client.StorageControler;
 import com.akjava.gwt.lib.client.StorageDataList;
 import com.akjava.gwt.lib.client.StorageDataList.HeaderAndValue;
 import com.akjava.gwt.lib.client.ValueUtils;
 import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
@@ -170,6 +172,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 						.getSelectedIndex());
 			}
 		});
+	
 		
 		
 	}
@@ -302,6 +305,17 @@ public class PreferenceTabPanel extends VerticalPanel {
 			public void onClick(ClickEvent event) {
 				
 				removeTextureByListIndex(textureListBox
+						.getSelectedIndex());
+			}
+		});
+		
+		Button exportBt = new Button("Export");
+		buttons.add(exportBt);
+		exportBt.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				
+				exportTextureByListIndex(textureListBox
 						.getSelectedIndex());
 			}
 		});
@@ -489,6 +503,32 @@ public class PreferenceTabPanel extends VerticalPanel {
 			
 			loadTexture(hv);
 			controler.setValue(KEY_TEXTURE_SELECTION, index);
+		}
+	}
+	private void exportTextureByListIndex(final int index) {
+		String id = textureListBox.getValue(index);
+		final String textureName=textureListBox.getItemText(index);
+		
+		LogUtils.log(id+","+textureName);
+		final int idIndex = Integer.parseInt(id);
+		if (idIndex < 0) {
+			String path = presetTextureMap.get(idIndex);
+			if (path != null) {
+				//becareful app mode cant export iamge because of app has secret url
+				//blank uimage must be absolute path,or data url
+				//ExportUtils.openTabDataURLImage(GWT.getHostPageBaseURL()+path, textureName);
+				Window.open(path, textureName,null);
+			} else {
+				LogUtils.log("preset model not found" + idIndex);
+			}
+		} else {
+			// load from cache
+			HeaderAndValue hv=textureControler.getDataValue(idIndex);
+			
+			//LogUtils.log("texture:"+hv.getData());
+			//Window.open(hv.getData(), textureName, null);
+			ExportUtils.openTabAbsoluteURLImage(hv.getData(), textureName);
+			
 		}
 	}
 	
