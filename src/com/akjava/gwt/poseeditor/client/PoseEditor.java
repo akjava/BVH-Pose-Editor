@@ -181,7 +181,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		root=THREE.Object3D();
 		scene.add(root);
 		
-		Geometry geo=THREE.PlaneGeometry(100, 100,10,10);
+		Geometry geo=THREE.PlaneGeometry(100, 100,20,20);
 		Mesh mesh=THREE.Mesh(geo, THREE.MeshBasicMaterial().color(0xaaaaaa).wireFrame().build());
 		mesh.setRotation(Math.toRadians(-90), 0, 0);
 		root.add(mesh);
@@ -1072,7 +1072,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				ab.getBoneAngleAndMatrix(0).getPosition().setY(currentRoot.getY());
 				ab.getBoneAngleAndMatrix(0).updateMatrix();
 				
-				log(ThreeLog.get(ab.getBoneAngleAndMatrix(0).getPosition()));
+				
+				
+				
 				doPoseByMatrix(ab);
 				hideContextMenu();
 		
@@ -2199,18 +2201,25 @@ HorizontalPanel h1=new HorizontalPanel();
 			return;
 		}
 
-		Vector3 angles=GWTThreeUtils.rotationToVector3(ab.getBoneAngleAndMatrix(index).getMatrix());
-				
-		
 		Vector3 pos=THREE.Vector3(positionXBoneRange.getValue(),
 				positionYBoneRange.getValue()
 				, positionZBoneRange.getValue()).multiplyScalar(0.1);
+		
+		/*
+		Vector3 angles=GWTThreeUtils.rotationToVector3(ab.getBoneAngleAndMatrix(index).getMatrix());
+				
+		
+		
 		
 		Matrix4 posMx=GWTThreeUtils.translateToMatrix4(pos);
 		Matrix4 rotMx=GWTThreeUtils.rotationToMatrix4(angles);
 		rotMx.multiply(posMx,rotMx);
 		ab.getBoneAngleAndMatrix(index).setMatrix(rotMx);
-		//ab.setBoneAngleAndMatrix(index, rotMx);
+		*/
+		
+		ab.getBoneAngleAndMatrix(index).setPosition(pos);
+		ab.getBoneAngleAndMatrix(index).updateMatrix();
+		
 		doPoseByMatrix(ab);
 		
 		if( isSelectedBone()){
@@ -3630,6 +3639,9 @@ CDDIK cddIk=new CDDIK();
 	
 private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
+	if(isSelectedBone()){
+		selectionMesh.setPosition(ab.getBoneAngleAndMatrix(selectedBone).getPosition());
+	}
 		
 	List<AngleAndPosition> boneMatrix=animationBonesData.getBonesAngleAndMatrixs();
 		
