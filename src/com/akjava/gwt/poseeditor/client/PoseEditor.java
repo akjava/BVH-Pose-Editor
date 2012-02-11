@@ -119,7 +119,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="1.2.1";
+	private String version="1.2.2" +
+			"";
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
@@ -3761,7 +3762,10 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			
 			bonePositions.add(pos);
 		}
-		bone3D.setVisible(showBonesCheck.getValue());
+		
+		//dont work
+		Object3DUtils.setVisibleAll(bone3D, showBonesCheck.getValue());
+		//bone3D.setVisible(showBonesCheck.getValue());
 		
 		//Geometry geo=GeometryUtils.clone(baseGeometry);
 		
