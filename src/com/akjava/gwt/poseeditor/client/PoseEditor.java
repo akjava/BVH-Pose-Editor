@@ -3678,8 +3678,8 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			Vector3 pos=THREE.Vector3();
 			pos.setPositionFromMatrix(boneMatrix.get(i).getMatrix());
 			
-			Vector3 rot=GWTThreeUtils.rotationToVector3(GWTThreeUtils.jsArrayToQuaternion(bones.get(i).getRotq()));
-			
+			//Vector3 rot=GWTThreeUtils.rotationToVector3(GWTThreeUtils.jsArrayToQuaternion(bones.get(i).getRotq()));
+			Vector3 rot=GWTThreeUtils.degreeToRagiant(ab.getBoneAngleAndMatrix(i).getAngle());
 			List<Integer> path=bonePath.get(i);
 			String boneName=bones.get(i).getName();
 			//log(boneName);
