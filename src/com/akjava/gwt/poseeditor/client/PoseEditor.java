@@ -54,6 +54,7 @@ import com.akjava.gwt.three.client.gwt.animation.NameAndVector3;
 import com.akjava.gwt.three.client.gwt.animation.WeightBuilder;
 import com.akjava.gwt.three.client.gwt.animation.ik.CDDIK;
 import com.akjava.gwt.three.client.gwt.animation.ik.IKData;
+import com.akjava.gwt.three.client.gwt.core.BoundingBox;
 import com.akjava.gwt.three.client.gwt.ui.SimpleTabDemoEntryPoint;
 import com.akjava.gwt.three.client.lights.Light;
 import com.akjava.gwt.three.client.materials.Material;
@@ -118,7 +119,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="1.2";
+	private String version="1.2.1";
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
@@ -310,11 +311,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		//manual
 		
-		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 140, -10, 10));
-		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-120, 60, -75, 91, -70, 115));
+		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 140, -30, 10));
+		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -75, 91, -70, 115));
 		
-		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -140, 0, -10, 10));
-		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-120, 60, -91, 75, -115, 70));
+		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -140, 0, -10, 30));
+		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-80, 60, -91, 75, -115, 70));
 
 		
 		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
@@ -1057,11 +1058,21 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		rootBoneBar.addItem("touch ground(Y-0)", new Command(){
 			@Override
 			public void execute() {
-				bodyMesh.getGeometry().computeBoundingBox();
-				log(bodyMesh);
 				
-				ab.getBoneAngleAndMatrix(0).setPosition(getInitialPoseFrameData().getPositions().get(0).clone());
+				bodyMesh.getGeometry().computeBoundingBox();
+				log(bodyMesh.getGeometry());
+				BoundingBox box=bodyMesh.getGeometry().getBoundingBox();
+				
+				
+				Vector3 currentRoot=ab.getBonePosition(0);
+				currentRoot.setY(currentRoot.getY()-box.getMin().getY());
+				
+				log("min:"+ThreeLog.get(box.getMin()));
+				log("max:"+ThreeLog.get(box.getMax()));
+				ab.getBoneAngleAndMatrix(0).getPosition().setY(currentRoot.getY());
 				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				
+				log(ThreeLog.get(ab.getBoneAngleAndMatrix(0).getPosition()));
 				doPoseByMatrix(ab);
 				hideContextMenu();
 		
