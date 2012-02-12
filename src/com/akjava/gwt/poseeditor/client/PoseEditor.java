@@ -120,7 +120,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="1.2.3";
+	private String version="2.0";
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
@@ -837,7 +837,17 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		rootBar.addItem("Ik",ikBar);
 		
 	
-		ikBar.addItem("Follow", new Command(){
+		ikBar.addItem("Exec", new Command(){
+			@Override
+			public void execute() {
+				for(IKData ik:ikdatas){
+					doPoseIkk(0,false,45,ik,10);
+				}
+				hideContextMenu();
+			}});
+		
+		
+		ikBar.addItem("Follow target", new Command(){
 			@Override
 			public void execute() {
 				for(IKData ik:ikdatas){
@@ -849,15 +859,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				}
 			}});
 		
-		ikBar.addItem("Exec", new Command(){
-			@Override
-			public void execute() {
-				for(IKData ik:ikdatas){
-					doPoseIkk(0,false,45,ik,10);
-				}
-				hideContextMenu();
-			}});
-		
+
 	
 		ikBar.addItem("Y-Zero", new Command(){
 			@Override
@@ -1298,6 +1300,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			hideContextMenu();
 		}
 		
+		//middle cant select anything
+		if(event.getNativeButton()==NativeEvent.BUTTON_MIDDLE){
+			return;
+		}
+		
+		
 		//log(mouseDownX+","+mouseDownY+":"+screenWidth+"x"+screenHeight);
 		
 
@@ -1358,20 +1366,30 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	
 	@Override
 	public void onMouseMove(MouseMoveEvent event) {
+
+		double diffX=event.getX()-mouseDownX;
+		double diffY=event.getY()-mouseDownY;
+		mouseDownX=event.getX();
+		mouseDownY=event.getY();
+		
+		
+		if(event.getNativeEvent().getButton()==NativeEvent.BUTTON_MIDDLE){
+		changeCamera((int)diffX,(int)diffY,event.isShiftKeyDown(),event.isAltKeyDown(),event.isControlKeyDown());
+		return;
+		}
+		
+		
 		
 		if(mouseDown){
 			if(isSelectedIk()){
-				double diffX=event.getX()-mouseDownX;
-				double diffY=event.getY()-mouseDownY;
-				mouseDownX=event.getX();
-				mouseDownY=event.getY();
+			
 				
 				diffX*=0.1;
 				diffY*=-0.1;
 				getCurrentIkData().getTargetPos().incrementX(diffX);
 				getCurrentIkData().getTargetPos().incrementY(diffY);
-				if(event.isShiftKeyDown()){//slow
-					if(event.isAltKeyDown()){
+				if(event.isAltKeyDown()){//slow
+					if(event.isShiftKeyDown()){
 					log("shift+alt");
 					doPoseIkk(0,false,1,getCurrentIkData(),1);
 					log("pik");
@@ -1385,7 +1403,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					//not work correctly
 					doPoseIkk(0,false,1,getCurrentIkData(),10);
 					}
-				}else if(event.isAltKeyDown()){//move only
+				}else if(event.isShiftKeyDown()){//move only
 					//doPoseIkk(0,true,1,getCurrentIkData(),1);
 					doPoseByMatrix(ab);
 				}else{
@@ -1394,91 +1412,113 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				
 				
 			}else if(isSelectedBone()){
-				if(event.isAltKeyDown()){
-					int diffX=event.getX()-mouseDownX;
-					int diffY=event.getY()-mouseDownY;
-					mouseDownX=event.getX();
-					mouseDownY=event.getY();
+				if(event.isShiftKeyDown()){//move position
 					
-					positionXBoneRange.setValue(positionXBoneRange.getValue()+diffX);
-					positionYBoneRange.setValue(positionYBoneRange.getValue()-diffY);
+					int boneIndex=ab.getBoneIndex(selectedBone);
+					Vector3 pos=null;
+					if(boneIndex==0){//this version support moving root only
+						pos=ab.getBonePosition(boneIndex);
+					}
+					
+					positionXBoneRange.setValue(positionXBoneRange.getValue()+(int)diffX);
+					positionYBoneRange.setValue(positionYBoneRange.getValue()-(int)diffY);
 					positionToBone();
-					if(event.isShiftKeyDown()){
+					
+					if(event.isAltKeyDown()){//not follow ik
 					//	switchSelectionIk(null);
 					//effect-ik
 					for(IKData ik:ikdatas){
 						
 						doPoseIkk(0,false,5,ik,1);
 						}
+					}else{ //follow ik
+						if(boneIndex==0){
+						Vector3 movedPos=ab.getBonePosition(boneIndex);
+						movedPos.subSelf(pos);
+						
+						for(IKData ik:ikdatas){
+							ik.getTargetPos().addSelf(movedPos);
+							}
+						doPoseByMatrix(ab);//redraw
+						}
 					}
 				}else{
 				
+				Vector3 angle=ab.getBoneAngleAndMatrix(selectedBone).getAngle();
 				
-				int diffX=event.getX()-mouseDownX;
-				int diffY=event.getY()-mouseDownY;
-				mouseDownX=event.getX();
-				mouseDownY=event.getY();
+				rotationBoneXRange.setValue(getRotationRangeValue(rotationBoneXRange.getValue(),(int)diffY));
+				rotationBoneYRange.setValue(getRotationRangeValue(rotationBoneYRange.getValue(),(int)diffX));
 				
-				rotationBoneXRange.setValue(rotationBoneXRange.getValue()+diffY);
-				rotationBoneYRange.setValue(rotationBoneYRange.getValue()+diffX);
+				//rotationBoneXRange.setValue(rotationBoneXRange.getValue()+diffY);
+				//rotationBoneYRange.setValue(rotationBoneYRange.getValue()+diffX);
 				
 				rotToBone();
-				if(event.isShiftKeyDown()){
+				if(event.isAltKeyDown()){
 				//	switchSelectionIk(null);
 				//effect-ik
 				for(IKData ik:ikdatas){
 					
 					doPoseIkk(0,false,5,ik,1);
 					}
+				}else{
+					Vector3 rootPos=ab.getBonePosition(0);
+					Vector3 movedAngle=ab.getBoneAngleAndMatrix(selectedBone).getAngle().clone();
+					movedAngle.subSelf(angle);
+					log("before:"+ThreeLog.get(angle)+" moved:"+ThreeLog.get(movedAngle));
+					Matrix4 mx=GWTThreeUtils.degitRotationToMatrix4(movedAngle);
+					
+					
+					
+					for(IKData ik:ikdatas){
+						/*
+						Vector3 ikpos=ik.getTargetPos().clone().subSelf(rootPos);
+						mx.multiplyVector3(ikpos);
+						ik.setTargetPos(ikpos.addSelf(rootPos));
+						*/
+						String name=ik.getLastBoneName();
+						Vector3 pos=ab.getBonePosition(name);
+						ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
+						
+						}
+					doPoseByMatrix(ab);//redraw
 				}
+				
+				
 				}
 			}
 			else{//global
 			
-			int diffX=event.getX()-mouseDownX;
-			int diffY=event.getY()-mouseDownY;
-			mouseDownX=event.getX();
-			mouseDownY=event.getY();
 			
-			if(event.isShiftKeyDown()){
-				//do rotate Z?
-				
-			}else if(event.isAltKeyDown()){//pos
-				
-				
-				positionXRange.setValue(positionXRange.getValue()+diffX);
-				positionYRange.setValue(positionYRange.getValue()-diffY);
-			}else{//rotate
-				
-				int angleY=rotationYRange.getValue()+diffX;
-				if(angleY>180){
-					int over=angleY-180;
-					angleY=-180+over;
-				}
-				if(angleY<-180){
-					int under=angleY+180;
-					angleY=180+under;
-				}
-				
-				int angleX=rotationXRange.getValue()+diffY;
-				if(angleX>180){
-					int over=angleX-180;
-					angleX=-180+over;
-				}
-				if(angleX<-180){
-					int under=angleX+180;
-					angleX=180+under;
-				}
-				
-				rotationXRange.setValue(angleX);
-				rotationYRange.setValue(angleY);
-			}
+			changeCamera((int)diffX,(int)diffY,event.isShiftKeyDown(),event.isAltKeyDown(),event.isControlKeyDown());
 			
 			}
-			
-		
 		}
 	}
+	
+	private void changeCamera(int diffX,int diffY,boolean shiftKey,boolean AltKey,boolean ctrlKey){
+		if(shiftKey){
+			positionXRange.setValue(positionXRange.getValue()+diffX);
+			positionYRange.setValue(positionYRange.getValue()-diffY);
+		}else{
+			rotationXRange.setValue(getRotationRangeValue(rotationXRange.getValue(),diffY));
+			rotationYRange.setValue(getRotationRangeValue(rotationYRange.getValue(),diffX));
+		}
+	}
+	
+	
+	private int getRotationRangeValue(int oldValue,int diffValue){
+		int angle=oldValue+diffValue;
+		if(angle>180){
+			int over=angle-180;
+			angle=-180+over;
+		}
+		if(angle<-180){
+			int under=angle+180;
+			angle=180+under;
+		}
+		return angle;
+	}
+	
 	private boolean isSelectedBone(){
 		return !isSelectedIk() && selectedBone!=null;
 	}
@@ -1492,8 +1532,8 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			double dy=event.getDeltaY()*0.2;
 			getCurrentIkData().getTargetPos().incrementZ(dy);
 			
-			if(event.isShiftKeyDown()){//slow
-				if(event.isAltKeyDown()){
+			if(event.isAltKeyDown()){//slow
+				if(event.isShiftKeyDown()){
 					doPoseIkk(0,false,1,getCurrentIkData(),1);
 						for(IKData ik:ikdatas){
 							if(ik!=getCurrentIkData()){
@@ -1503,7 +1543,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					}else{
 				doPoseIkk(0,false,1,getCurrentIkData(),10);
 					}
-			}else if(event.isAltKeyDown()){//move only
+			}else if(event.isShiftKeyDown()){//move only
 				//doPoseIkk(0,true,1,getCurrentIkData(),1);
 				doPoseByMatrix(ab);
 			}else{
@@ -1511,29 +1551,70 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			}
 			
 		}else if(isSelectedBone()){
-			if(event.isAltKeyDown()){
+			if(event.isShiftKeyDown()){//move
 			int diff=event.getDeltaY();
+			
+			int boneIndex=ab.getBoneIndex(selectedBone);
+			Vector3 pos=null;
+			if(boneIndex==0){//this version support moving root only
+				pos=ab.getBonePosition(boneIndex);
+			}
+			
+			
 			positionZBoneRange.setValue(positionZBoneRange.getValue()+diff);
 			positionToBone();
-			if(event.isShiftKeyDown()){
+			if(event.isAltKeyDown()){
 				//switchSelectionIk(null);
 				//effect-ik
 				for(IKData ik:ikdatas){
 					doPoseIkk(0,false,5,ik,1);
 					}
+				}else{//follow
+					if(boneIndex==0){
+					Vector3 moved=ab.getBonePosition(boneIndex);
+					moved.subSelf(pos);
+					for(IKData ik:ikdatas){
+						ik.getTargetPos().addSelf(moved);
+						}
+					}
+					
 				}
 			
 			}else{
 			int diff=event.getDeltaY();
-			rotationBoneZRange.setValue(rotationBoneZRange.getValue()+diff);
+			
+			Vector3 angle=ab.getBoneAngleAndMatrix(selectedBone).getAngle();
+			rotationBoneZRange.setValue(getRotationRangeValue(rotationBoneZRange.getValue(),diff));
+			//rotationBoneZRange.setValue(rotationBoneZRange.getValue()+diff);
 			rotToBone();
-				if(event.isShiftKeyDown()){
+				if(event.isAltKeyDown()){
 				//	switchSelectionIk(null);
 				//effect-ik
 				for(IKData ik:ikdatas){
 					
 					doPoseIkk(0,false,5,ik,1);
 					}
+				}else{
+					Vector3 rootPos=ab.getBonePosition(0);
+					Vector3 movedAngle=ab.getBoneAngleAndMatrix(selectedBone).getAngle().clone();
+					movedAngle.subSelf(angle);
+					log("before:"+ThreeLog.get(angle)+" moved:"+ThreeLog.get(movedAngle));
+					Matrix4 mx=GWTThreeUtils.degitRotationToMatrix4(movedAngle);
+					for(IKData ik:ikdatas){
+						/*
+						 * i faild turn 
+						Vector3 ikpos=ik.getTargetPos().clone().subSelf(rootPos);
+						mx.multiplyVector3(ikpos);
+						ik.setTargetPos(ikpos.addSelf(rootPos));
+						*/
+						
+						String name=ik.getLastBoneName();
+						Vector3 pos=ab.getBonePosition(name);
+						ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
+						
+						}
+					
+					doPoseByMatrix(ab);//redraw
 				}
 			}
 		}
@@ -2909,7 +2990,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		ab.getBoneAngleAndMatrix(index).setMatrix(rotMx);
 		ab.getBoneAngleAndMatrix(index).setAngle(degAngles);
-	
+		log("set angle:"+ThreeLog.get(degAngles));
 		doPoseByMatrix(ab);
 	}
 	
