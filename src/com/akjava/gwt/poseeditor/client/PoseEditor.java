@@ -91,6 +91,7 @@ import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.json.client.JSONValue;
+import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Anchor;
@@ -119,8 +120,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="1.2.2" +
-			"";
+	private String version="1.2.3";
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
@@ -832,93 +832,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		contextMenu.add(rootBar);
 		rootBar.setAutoOpen(true);
 		
-		MenuBar cameraBar=new MenuBar(true);
-		rootBar.addItem("Camera",cameraBar);
-		
-		cameraBar.addItem("Front", new Command(){
-			@Override
-			public void execute() {
-				rotationXRange.setValue(0);
-				rotationYRange.setValue(0);
-				rotationZRange.setValue(0);
-				positionXRange.setValue(0);
-				positionYRange.setValue(-140);
-				hideContextMenu();
-			}});
-		cameraBar.addItem("Back", new Command(){
-			@Override
-			public void execute() {
-				rotationXRange.setValue(0);
-				rotationYRange.setValue(180);
-				rotationZRange.setValue(0);
-				positionXRange.setValue(0);
-				positionYRange.setValue(-140);
-				hideContextMenu();
-			}});
-		cameraBar.addItem("Quoter", new Command(){
-			@Override
-			public void execute() {
-				rotationXRange.setValue(45);
-				rotationYRange.setValue(45);
-				rotationZRange.setValue(0);
-				positionXRange.setValue(0);
-				positionYRange.setValue(-140);
-				hideContextMenu();
-			}});
-		cameraBar.addItem("Top", new Command(){
-			@Override
-			public void execute() {
-				rotationXRange.setValue(90);
-				rotationYRange.setValue(0);
-				rotationZRange.setValue(0);
-				positionXRange.setValue(0);
-				positionYRange.setValue(0);
-				hideContextMenu();
-			}});
-		cameraBar.addItem("Bottom", new Command(){
-			@Override
-			public void execute() {
-				rotationXRange.setValue(-90);
-				rotationYRange.setValue(0);
-				rotationZRange.setValue(0);
-				positionXRange.setValue(0);
-				positionYRange.setValue(0);
-				hideContextMenu();
-			}});
-		cameraBar.addItem("Right", new Command(){
-			@Override
-			public void execute() {
-				rotationXRange.setValue(0);
-				rotationYRange.setValue(90);
-				rotationZRange.setValue(0);
-				positionXRange.setValue(0);
-				positionYRange.setValue(-140);
-				hideContextMenu();
-			}});
-		cameraBar.addItem("Left", new Command(){
-			@Override
-			public void execute() {
-				rotationXRange.setValue(0);
-				rotationYRange.setValue(-90);
-				rotationZRange.setValue(0);
-				positionXRange.setValue(0);
-				positionYRange.setValue(-140);
-				hideContextMenu();
-			}});
 		
 		MenuBar ikBar=new MenuBar(true);
 		rootBar.addItem("Ik",ikBar);
 		
-		
-		ikBar.addItem("Exec", new Command(){
-			@Override
-			public void execute() {
-				for(IKData ik:ikdatas){
-					doPoseIkk(0,false,45,ik,10);
-				}
-				hideContextMenu();
-			}});
-		
+	
 		ikBar.addItem("Follow", new Command(){
 			@Override
 			public void execute() {
@@ -930,6 +848,17 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 					hideContextMenu();
 				}
 			}});
+		
+		ikBar.addItem("Exec", new Command(){
+			@Override
+			public void execute() {
+				for(IKData ik:ikdatas){
+					doPoseIkk(0,false,45,ik,10);
+				}
+				hideContextMenu();
+			}});
+		
+	
 		ikBar.addItem("Y-Zero", new Command(){
 			@Override
 			public void execute() {
@@ -967,146 +896,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			}});
 		
 		
-		MenuBar rootBoneBar=new MenuBar(true);
-		rootBar.addItem("Root",rootBoneBar);
-		
-		rootBoneBar.addItem("Move to selection IK", new Command(){
-			@Override
-			public void execute() {
-				if(!isSelectedIk()){
-					hideContextMenu();
-					return;
-				}
-				Vector3 target=getCurrentIkData().getTargetPos();
-				Vector3 rootPos=ab.getBonePosition(0);
-				Vector3 diff=target.clone().subSelf(rootPos);
-				
-				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
-				ab.getBoneAngleAndMatrix(0).updateMatrix();
-				doPoseByMatrix(ab);
-				hideContextMenu();
-				/*
-				for(IKData ik:ikdatas){
-					ik.getTargetPos().addSelf(diff);
-					doPoseByMatrix(ab);
-					hideContextMenu();
-				}
-				*/
-			}});
-		rootBoneBar.addItem("Move to selection IK-X", new Command(){
-			@Override
-			public void execute() {
-				if(!isSelectedIk()){
-					hideContextMenu();
-					return;
-				}
-				Vector3 target=getCurrentIkData().getTargetPos();
-				Vector3 rootPos=ab.getBonePosition(0);
-				Vector3 diff=target.clone().subSelf(rootPos);
-				diff.setY(0);
-				diff.setZ(0);
-				
-				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
-				ab.getBoneAngleAndMatrix(0).updateMatrix();
-				doPoseByMatrix(ab);
-				hideContextMenu();
-			}});
-		rootBoneBar.addItem("Move to selection IK-Y", new Command(){
-			@Override
-			public void execute() {
-				if(!isSelectedIk()){
-					hideContextMenu();
-					return;
-				}
-				Vector3 target=getCurrentIkData().getTargetPos();
-				Vector3 rootPos=ab.getBonePosition(0);
-				Vector3 diff=target.clone().subSelf(rootPos);
-				diff.setX(0);
-				diff.setZ(0);
-				
-				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
-				ab.getBoneAngleAndMatrix(0).updateMatrix();
-				doPoseByMatrix(ab);
-				hideContextMenu();
-			}});
-		rootBoneBar.addItem("Move to selection IK-Z", new Command(){
-			@Override
-			public void execute() {
-				if(!isSelectedIk()){
-					hideContextMenu();
-					return;
-				}
-				Vector3 target=getCurrentIkData().getTargetPos();
-				Vector3 rootPos=ab.getBonePosition(0);
-				Vector3 diff=target.clone().subSelf(rootPos);
-				diff.setY(0);
-				diff.setX(0);
-				
-				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
-				ab.getBoneAngleAndMatrix(0).updateMatrix();
-				doPoseByMatrix(ab);
-				hideContextMenu();
-			}});
-		rootBoneBar.addItem("initial Position", new Command(){
-			@Override
-			public void execute() {
-				ab.getBoneAngleAndMatrix(0).setPosition(getInitialPoseFrameData().getPositions().get(0).clone());
-				ab.getBoneAngleAndMatrix(0).updateMatrix();
-				doPoseByMatrix(ab);
-				hideContextMenu();
-		
-			}});
-		rootBoneBar.addItem("touch ground(Y-0)", new Command(){
-			@Override
-			public void execute() {
-				
-				bodyMesh.getGeometry().computeBoundingBox();
-				log(bodyMesh.getGeometry());
-				BoundingBox box=bodyMesh.getGeometry().getBoundingBox();
-				
-				
-				Vector3 currentRoot=ab.getBonePosition(0);
-				currentRoot.setY(currentRoot.getY()-box.getMin().getY());
-				
-				log("min:"+ThreeLog.get(box.getMin()));
-				log("max:"+ThreeLog.get(box.getMax()));
-				ab.getBoneAngleAndMatrix(0).getPosition().setY(currentRoot.getY());
-				ab.getBoneAngleAndMatrix(0).updateMatrix();
-				
-				
-				
-				
-				doPoseByMatrix(ab);
-				hideContextMenu();
-		
-			}});
-		rootBoneBar.addItem("180 to -180", new Command(){
-			@Override
-			public void execute() {
-				Vector3 angle=ab.getBoneAngleAndMatrix(0).getAngle();
-				log(ThreeLog.get(angle));
-				if(angle.getX()==180){
-					angle.setX(-180);
-				}else if(angle.getX()==-180){
-					angle.setX(180);
-				}
-				if(angle.getY()==180){
-					angle.setY(-180);
-				}else if(angle.getY()==-180){
-					angle.setY(180);
-				}
-				if(angle.getZ()==180){
-					angle.setZ(-180);
-				}else if(angle.getZ()==-180){
-					angle.setZ(180);
-				}
-				//ab.getBoneAngleAndMatrix(0).setPosition(getInitialPoseFrameData().getPositions().get(0).clone());
-				ab.getBoneAngleAndMatrix(0).updateMatrix();
-				doPoseByMatrix(ab);
-				updateBoneRotationRanges();
-				hideContextMenu();
-		
-			}});
+		createContextMenuRoot(rootBar);
 
 		MenuBar boneLimitBar=new MenuBar(true);
 		MenuItem boneLimitMenuItem = new MenuItem("Bone Limit",boneLimitBar);//menu item can change label dynamic
@@ -1236,7 +1026,260 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				hideContextMenu();
 			}});
 		
+		
+		//createContextMenuFrames(rootBar);
+		
+	
+		
+		MenuBar cameraBar=new MenuBar(true);
+		rootBar.addItem("Camera",cameraBar);
+		
+		cameraBar.addItem("Front", new Command(){
+			@Override
+			public void execute() {
+				rotationXRange.setValue(0);
+				rotationYRange.setValue(0);
+				rotationZRange.setValue(0);
+				positionXRange.setValue(0);
+				positionYRange.setValue(-140);
+				hideContextMenu();
+			}});
+		cameraBar.addItem("Back", new Command(){
+			@Override
+			public void execute() {
+				rotationXRange.setValue(0);
+				rotationYRange.setValue(180);
+				rotationZRange.setValue(0);
+				positionXRange.setValue(0);
+				positionYRange.setValue(-140);
+				hideContextMenu();
+			}});
+		cameraBar.addItem("Quoter", new Command(){
+			@Override
+			public void execute() {
+				rotationXRange.setValue(45);
+				rotationYRange.setValue(45);
+				rotationZRange.setValue(0);
+				positionXRange.setValue(0);
+				positionYRange.setValue(-140);
+				hideContextMenu();
+			}});
+		cameraBar.addItem("Top", new Command(){
+			@Override
+			public void execute() {
+				rotationXRange.setValue(90);
+				rotationYRange.setValue(0);
+				rotationZRange.setValue(0);
+				positionXRange.setValue(0);
+				positionYRange.setValue(0);
+				hideContextMenu();
+			}});
+		cameraBar.addItem("Bottom", new Command(){
+			@Override
+			public void execute() {
+				rotationXRange.setValue(-90);
+				rotationYRange.setValue(0);
+				rotationZRange.setValue(0);
+				positionXRange.setValue(0);
+				positionYRange.setValue(0);
+				hideContextMenu();
+			}});
+		cameraBar.addItem("Right", new Command(){
+			@Override
+			public void execute() {
+				rotationXRange.setValue(0);
+				rotationYRange.setValue(90);
+				rotationZRange.setValue(0);
+				positionXRange.setValue(0);
+				positionYRange.setValue(-140);
+				hideContextMenu();
+			}});
+		cameraBar.addItem("Left", new Command(){
+			@Override
+			public void execute() {
+				rotationXRange.setValue(0);
+				rotationYRange.setValue(-90);
+				rotationZRange.setValue(0);
+				positionXRange.setValue(0);
+				positionYRange.setValue(-140);
+				hideContextMenu();
+			}});
+		
 	}
+	private void createContextMenuRoot(MenuBar rootBar){
+		MenuBar rootBoneBar=new MenuBar(true);
+		rootBar.addItem("Root",rootBoneBar);
+		
+		rootBoneBar.addItem("touch ground(Y-0)", new Command(){
+			@Override
+			public void execute() {
+				
+				bodyMesh.getGeometry().computeBoundingBox();
+				log(bodyMesh.getGeometry());
+				BoundingBox box=bodyMesh.getGeometry().getBoundingBox();
+				
+				
+				Vector3 currentRoot=ab.getBonePosition(0);
+				currentRoot.setY(currentRoot.getY()-box.getMin().getY());
+				
+				log("min:"+ThreeLog.get(box.getMin()));
+				log("max:"+ThreeLog.get(box.getMax()));
+				ab.getBoneAngleAndMatrix(0).getPosition().setY(currentRoot.getY());
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				
+				
+				
+				
+				doPoseByMatrix(ab);
+				hideContextMenu();
+		
+			}});
+		
+		rootBoneBar.addItem("initial Position", new Command(){
+			@Override
+			public void execute() {
+				ab.getBoneAngleAndMatrix(0).setPosition(getInitialPoseFrameData().getPositions().get(0).clone());
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+		
+			}});
+
+		
+		
+
+		rootBoneBar.addItem("Move to selection IK-X", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				Vector3 target=getCurrentIkData().getTargetPos();
+				Vector3 rootPos=ab.getBonePosition(0);
+				Vector3 diff=target.clone().subSelf(rootPos);
+				diff.setY(0);
+				diff.setZ(0);
+				
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+			}});
+		rootBoneBar.addItem("Move to selection IK-Y", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				Vector3 target=getCurrentIkData().getTargetPos();
+				Vector3 rootPos=ab.getBonePosition(0);
+				Vector3 diff=target.clone().subSelf(rootPos);
+				diff.setX(0);
+				diff.setZ(0);
+				
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+			}});
+		rootBoneBar.addItem("Move to selection IK-Z", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				Vector3 target=getCurrentIkData().getTargetPos();
+				Vector3 rootPos=ab.getBonePosition(0);
+				Vector3 diff=target.clone().subSelf(rootPos);
+				diff.setY(0);
+				diff.setX(0);
+				
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+			}});
+		
+		rootBoneBar.addItem("Move to selection IK", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				Vector3 target=getCurrentIkData().getTargetPos();
+				Vector3 rootPos=ab.getBonePosition(0);
+				Vector3 diff=target.clone().subSelf(rootPos);
+				
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+				/*
+				for(IKData ik:ikdatas){
+					ik.getTargetPos().addSelf(diff);
+					doPoseByMatrix(ab);
+					hideContextMenu();
+				}
+				*/
+			}});
+		
+		rootBoneBar.addItem("180 to -180", new Command(){
+			@Override
+			public void execute() {
+				Vector3 angle=ab.getBoneAngleAndMatrix(0).getAngle();
+				log(ThreeLog.get(angle));
+				if(angle.getX()==180){
+					angle.setX(-180);
+				}else if(angle.getX()==-180){
+					angle.setX(180);
+				}
+				if(angle.getY()==180){
+					angle.setY(-180);
+				}else if(angle.getY()==-180){
+					angle.setY(180);
+				}
+				if(angle.getZ()==180){
+					angle.setZ(-180);
+				}else if(angle.getZ()==-180){
+					angle.setZ(180);
+				}
+				//ab.getBoneAngleAndMatrix(0).setPosition(getInitialPoseFrameData().getPositions().get(0).clone());
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				updateBoneRotationRanges();
+				hideContextMenu();
+		
+			}});
+	}
+	//TODO future
+	private boolean isShowPrevIk;
+	private void createContextMenuFrames(MenuBar rootBar){
+		MenuBar framesBar=new MenuBar(true);
+		contextMenuShowPrevFrame = new MenuItem("Show Prev Iks",true,new Command(){
+			@Override
+			public void execute() {
+				contextMenuShowPrevFrame.setHTML("<b>"+"Show Prev Iks"+"</b>");
+				contextMenuHidePrefIks.setHTML("Hide Prev Iks");
+				isShowPrevIk=true;
+				hideContextMenu();
+			}});
+		framesBar.addItem(contextMenuShowPrevFrame);
+		contextMenuHidePrefIks = new MenuItem("<b>"+"Hide Prev Iks"+"</b>",true,new Command(){
+			@Override
+			public void execute() {
+				contextMenuShowPrevFrame.setHTML(""+"Show Prev Iks"+"");
+				contextMenuHidePrefIks.setHTML("<b>"+"Hide Prev Iks"+"</b>");
+				isShowPrevIk=false;
+				hideContextMenu();
+			}});
+		framesBar.addItem(contextMenuHidePrefIks);
+		rootBar.addItem("Frames",framesBar);
+	}
+	
 	private PoseFrameData getInitialPoseFrameData(){
 		return initialPoseFrameData;
 	}
@@ -1401,11 +1444,34 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				//do rotate Z?
 				
 			}else if(event.isAltKeyDown()){//pos
+				
+				
 				positionXRange.setValue(positionXRange.getValue()+diffX);
 				positionYRange.setValue(positionYRange.getValue()-diffY);
 			}else{//rotate
-				rotationXRange.setValue(rotationXRange.getValue()+diffY);
-				rotationYRange.setValue(rotationYRange.getValue()+diffX);
+				
+				int angleY=rotationYRange.getValue()+diffX;
+				if(angleY>180){
+					int over=angleY-180;
+					angleY=-180+over;
+				}
+				if(angleY<-180){
+					int under=angleY+180;
+					angleY=180+under;
+				}
+				
+				int angleX=rotationXRange.getValue()+diffY;
+				if(angleX>180){
+					int over=angleX-180;
+					angleX=-180+over;
+				}
+				if(angleX<-180){
+					int under=angleX+180;
+					angleX=180+under;
+				}
+				
+				rotationXRange.setValue(angleX);
+				rotationYRange.setValue(angleY);
 			}
 			
 			}
@@ -2353,6 +2419,7 @@ HorizontalPanel h1=new HorizontalPanel();
 				
 				doPaste();
 				getSelectedPoseEditorData().setModified(true);
+				updateSaveButtons();
 			}
 		});
 		
@@ -3723,7 +3790,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			*/
 			
 			for(IKData ik:ikdatas){
-				if(ik.getLastBoneName().equals(boneName)){
+				if(ik.getLastBoneName().equals(boneName)){//valid ik
 					Mesh ikMesh=targetMeshs.get(boneName);
 					
 					if(ikMesh==null){//at first call this from non-ik stepped.
@@ -3940,6 +4007,8 @@ private StorageControler storageControler;
 private VerticalPanel datasPanel;
 private Button saveButton;
 private VerticalPanel bonePostionAndRotationContainer;
+private MenuItem contextMenuShowPrevFrame;
+private MenuItem contextMenuHidePrefIks;
 ;
 
 /**
