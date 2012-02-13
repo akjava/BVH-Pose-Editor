@@ -8,6 +8,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.akjava.bvh.client.BVH;
 import com.akjava.bvh.client.BVHMotion;
@@ -34,7 +36,6 @@ import com.akjava.gwt.three.client.core.Intersect;
 import com.akjava.gwt.three.client.core.Matrix4;
 import com.akjava.gwt.three.client.core.Object3D;
 import com.akjava.gwt.three.client.core.Projector;
-import com.akjava.gwt.three.client.core.Ray;
 import com.akjava.gwt.three.client.core.Vector3;
 import com.akjava.gwt.three.client.core.Vector4;
 import com.akjava.gwt.three.client.core.Vertex;
@@ -118,6 +119,7 @@ import com.google.gwt.user.client.ui.VerticalPanel;
  * Entry point classes define <code>onModuleLoad()</code>.
  */
 public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceListener{
+	public static Logger logger = Logger.getLogger(PoseEditor.class.getName());
 	private BVH bvh;
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
@@ -590,7 +592,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		scroll.setSize("720px", "500px");
 		datasRoot.add(scroll);
 		
-		log("selection:"+storageControler.getValue(PreferenceTabPanel.KEY_MODEL_SELECTION, 0));
+		logger.fine("selection:"+storageControler.getValue(PreferenceTabPanel.KEY_MODEL_SELECTION, 0));
 		//storageControler.setValue(PreferenceTabPanel.KEY_MODEL_SELECTION, 0);
 		preferencePanel=new PreferenceTabPanel(storageControler,this);
 		tabPanel.add(preferencePanel,"Preference");
@@ -861,7 +863,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		
 		if(patterns.size()==0){
-			log(name+":use zero base");
+			logger.fine(name+":use zero base");
 			patterns.add(new NameAndVector3(name,0,0,0));//empty not allowd
 		}
 		
@@ -1201,8 +1203,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				Vector3 currentRoot=ab.getBonePosition(0);
 				currentRoot.setY(currentRoot.getY()-box.getMin().getY());
 				
-				log("min:"+ThreeLog.get(box.getMin()));
-				log("max:"+ThreeLog.get(box.getMax()));
+				logger.fine("min:"+ThreeLog.get(box.getMin()));
+				logger.fine("max:"+ThreeLog.get(box.getMax()));
 				ab.getBoneAngleAndMatrix(0).getPosition().setY(currentRoot.getY());
 				ab.getBoneAngleAndMatrix(0).updateMatrix();
 				
@@ -1367,7 +1369,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 
 	@Override
 	public void onMouseDown(MouseDownEvent event) {
-		
+		logger.fine("onMouse down");
 		mouseDown=true;
 		mouseDownX=event.getX();
 		mouseDownY=event.getY();
@@ -1403,6 +1405,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			Object3D target=sect.getObject();
 			if(!target.getName().isEmpty()){
 				if(target.getName().startsWith("ik:")){
+					logger.fine("7 drag");
 					String bname=target.getName().substring(3);
 					for(int j=0;j<ikdatas.size();j++){
 						if(ikdatas.get(j).getLastBoneName().equals(bname)){
@@ -1420,10 +1423,11 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 							
 							dragObjectControler.selectObject(target, event.getX(), event.getY(), screenWidth, screenHeight, camera);
 							
-							
+							logger.fine("onMouse down-end3");
 							return;//ik selected
 						}
 					}
+					logger.fine("7b down");
 				}else{
 					//maybe bone or root
 					//log("select:"+target.getName());
@@ -1434,7 +1438,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					switchSelectionIk(null);
 					
 					dragObjectControler.selectObject(target, event.getX(), event.getY(), screenWidth, screenHeight, camera);
-					
+					logger.fine("onMouse down-end2");
 					return;
 				}
 				
@@ -1444,29 +1448,36 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 		selectedBone=null;
 		selectionMesh.setVisible(false);
 		switchSelectionIk(null);
+		logger.fine("onMouse down-end1");
 	}
 	private String selectedBone;
 
 	@Override
 	public void onMouseUp(MouseUpEvent event) {
+		logger.fine("onMouse up");
+		
 		mouseDown=false;
 		dragObjectControler.unselectObject();
+		logger.fine("6 drag");
 	}
 	
 	@Override
 	public void onMouseOut(MouseOutEvent event) {
 		mouseDown=false;
+		dragObjectControler.unselectObject();
 	}
 	
 	@Override
 	public void onMouseMove(MouseMoveEvent event) {
-
+		
 		double diffX=event.getX()-mouseDownX;
 		double diffY=event.getY()-mouseDownY;
 		mouseDownX=event.getX();
 		mouseDownY=event.getY();
 		double mouseMoved=(Math.abs(diffX)+Math.abs(diffY));
-		
+		if(mouseMoved==0){
+			return;
+		}
 		if(event.getNativeEvent().getButton()==NativeEvent.BUTTON_MIDDLE){
 		changeCamera((int)diffX,(int)diffY,event.isShiftKeyDown(),event.isAltKeyDown(),event.isControlKeyDown());
 		return;
@@ -1475,20 +1486,33 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 		
 		
 		if(mouseDown){
+			logger.fine("mouse move");
 			if(isSelectedIk()){
-				
+				logger.fine("selected ik");
 				
 				diffX*=0.1;
 				diffY*=-0.1;
 				
 				if(dragObjectControler.isSelected()){
+					logger.fine("selected dragObjectControler");
 					Vector3 newPos=dragObjectControler.moveSelectionPosition(event.getX(), event.getY(), screenWidth, screenHeight, camera);
+					logger.fine("newPos:"+newPos);
+					if(newPos==null){
+						logger.info("newPos-null:"+ThreeLog.get(dragObjectControler.getDraggableOffset()));
+						return;
+					}
 					double length=newPos.clone().subSelf(getCurrentIkData().getTargetPos()).length();
-					if(length<mouseMoved*5){
-						//log("diff-move:"+length+",mouse="+mouseMoved);
-						getCurrentIkData().getTargetPos().copy(newPos);	
+					if(length<mouseMoved*4 && mouseMoved!=0){
+						if(length>mouseMoved){
+							logger.finest("diff-move:"+length+",mouse:"+mouseMoved+",offset:"+ThreeLog.get(dragObjectControler.getDraggableOffset()));
+						}
+						
+						getCurrentIkData().getTargetPos().copy(newPos);
+						
 					}else{
-						log("diff-error:"+length+",mouse="+mouseMoved);
+						
+						logger.info("diff-error:"+length+",mouse:"+mouseMoved+",offset:"+ThreeLog.get(dragObjectControler.getDraggableOffset()));
+						
 					}
 					
 				}
@@ -1501,9 +1525,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				
 				if(event.isAltKeyDown()){//slow
 					if(event.isShiftKeyDown()){
-					log("shift+alt");
+					
 					doPoseIkk(0,false,1,getCurrentIkData(),1);
-					log("pik");
+					
 						for(IKData ik:ikdatas){
 							//log("ik:"+ik.getName());
 							if(ik!=getCurrentIkData()){
@@ -1523,6 +1547,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				
 				
 			}else if(isSelectedBone()){
+				logger.fine("selected bone");
 				if(event.isShiftKeyDown()){//move position
 					
 					int boneIndex=ab.getBoneIndex(selectedBone);
@@ -1544,9 +1569,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 							positionXBoneRange.setValue((int)(newPos.getX()*10));
 							positionYBoneRange.setValue((int)(newPos.getY()*10));
 							positionZBoneRange.setValue((int)(newPos.getZ()*10));
-							log("moved:"+length+",mouse="+mouseMoved);
+							logger.fine("moved:"+length+",mouse="+mouseMoved);
 						}else{
-							log("diff-error:"+length+",mouse="+mouseMoved);
+							logger.info("diff-error:"+length+",mouse="+mouseMoved);
 						}
 						
 					}
@@ -1578,6 +1603,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 						}
 					}
 				}else{
+					
 				
 				Vector3 angle=ab.getBoneAngleAndMatrix(selectedBone).getAngle();
 				
@@ -1599,7 +1625,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					Vector3 rootPos=ab.getBonePosition(0);
 					Vector3 movedAngle=ab.getBoneAngleAndMatrix(selectedBone).getAngle().clone();
 					movedAngle.subSelf(angle);
-					log("before:"+ThreeLog.get(angle)+" moved:"+ThreeLog.get(movedAngle));
+					//log("before:"+ThreeLog.get(angle)+" moved:"+ThreeLog.get(movedAngle));
 					Matrix4 mx=GWTThreeUtils.degitRotationToMatrix4(movedAngle);
 					
 					
@@ -1624,7 +1650,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				}
 			}
 			else{//global
-			
+				logger.fine("global");
 			
 			changeCamera((int)diffX,(int)diffY,event.isShiftKeyDown(),event.isAltKeyDown(),event.isControlKeyDown());
 			
@@ -1735,7 +1761,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					Vector3 rootPos=ab.getBonePosition(0);
 					Vector3 movedAngle=ab.getBoneAngleAndMatrix(selectedBone).getAngle().clone();
 					movedAngle.subSelf(angle);
-					log("before:"+ThreeLog.get(angle)+" moved:"+ThreeLog.get(movedAngle));
+					logger.fine("before:"+ThreeLog.get(angle)+" moved:"+ThreeLog.get(movedAngle));
 					Matrix4 mx=GWTThreeUtils.degitRotationToMatrix4(movedAngle);
 					for(IKData ik:ikdatas){
 						/*
@@ -2400,7 +2426,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			int index=ab.getBoneIndex(targetName);
 			if(index!=-1){
-				log("mirror:"+index);
+				logger.fine("mirror:"+index);
 				Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
 				rotationBoneXRange.setValue((int) angle.getX());
 				rotationBoneYRange.setValue((int) angle.getY()*-1);
@@ -2446,11 +2472,11 @@ HorizontalPanel h1=new HorizontalPanel();
 				baseGeometry=geometry;//change body mesh
 				
 				if(baseGeometry.getBones()!=null){
-					log("create-bone from geometry");
+					logger.fine("create-bone from geometry");
 					setBone(baseGeometry.getBones());
 					
 				}else{
-					log("bvh:"+bvh);
+					logger.fine("bvh:"+bvh);
 					//initialize default bone
 					AnimationBoneConverter converter=new AnimationBoneConverter();
 					setBone(converter.convertJsonBone(bvh));
@@ -2789,7 +2815,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	
 	
 	public static void alert(String message){
-		log(message);
+		logger.fine(message);
 		if(message.indexOf("(QUOTA_EXCEEDED_ERR)")!=-1){
 		String title="QUOTA EXCEEDED_ERR\n";
 		title+="over internal HTML5 storage capacity.\n";
@@ -3127,7 +3153,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		ab.getBoneAngleAndMatrix(index).setMatrix(rotMx);
 		ab.getBoneAngleAndMatrix(index).setAngle(degAngles);
-		log("set angle:"+ThreeLog.get(degAngles));
+		//log("set angle:"+ThreeLog.get(degAngles));
 		doPoseByMatrix(ab);
 	}
 	
