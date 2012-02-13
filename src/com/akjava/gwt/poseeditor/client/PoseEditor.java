@@ -34,13 +34,14 @@ import com.akjava.gwt.three.client.core.Intersect;
 import com.akjava.gwt.three.client.core.Matrix4;
 import com.akjava.gwt.three.client.core.Object3D;
 import com.akjava.gwt.three.client.core.Projector;
-import com.akjava.gwt.three.client.core.Quaternion;
+import com.akjava.gwt.three.client.core.Ray;
 import com.akjava.gwt.three.client.core.Vector3;
 import com.akjava.gwt.three.client.core.Vector4;
 import com.akjava.gwt.three.client.core.Vertex;
 import com.akjava.gwt.three.client.extras.GeometryUtils;
 import com.akjava.gwt.three.client.extras.ImageUtils;
 import com.akjava.gwt.three.client.extras.loaders.JSONLoader.LoadHandler;
+import com.akjava.gwt.three.client.gwt.DragObjectControler;
 import com.akjava.gwt.three.client.gwt.GWTGeometryUtils;
 import com.akjava.gwt.three.client.gwt.GWTThreeUtils;
 import com.akjava.gwt.three.client.gwt.Object3DUtils;
@@ -127,9 +128,15 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
 			
-			cameraHolder.setPosition((double)positionXRange.getValue()/10, (double)positionYRange.getValue()/10, (double)positionZRange.getValue()/10);
+			root.setPosition((double)positionXRange.getValue()/10, (double)positionYRange.getValue()/10, (double)positionZRange.getValue()/10);
+			root.getRotation().set(Math.toRadians(rotationXRange.getValue()),Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()));
 			
-			cameraHolder.getRotation().set(Math.toRadians(rotationXRange.getValue()),-Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()));
+			
+			//camera rotation style
+			//cameraHolder.setPosition((double)positionXRange.getValue()/10, (double)positionYRange.getValue()/10, (double)positionZRange.getValue()/10);
+			//cameraHolder.getRotation().set(Math.toRadians(rotationXRange.getValue()),-Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()));
+			//camera.lookAt(zero);
+			//camera.getPosition().set(cameraX, cameraY, cameraZ);
 			
 			/*
 			Vector3 newPos=THREE.Vector3(0, 0, 100);
@@ -150,8 +157,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			//newPos=GWTThreeUtils.degreeToRagiant(newPos);
 			
 			
-			camera.lookAt(zero);
-			camera.getPosition().set(cameraX, cameraY, cameraZ);
+			
 		}
 	}
 	
@@ -176,7 +182,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	@Override
 	public void update(WebGLRenderer renderer) {
 		beforeUpdate(renderer);
-		//camera.getPosition().set(cameraX, cameraY, cameraZ);
+		camera.getPosition().set(cameraX, cameraY, cameraZ);
 		//LogUtils.log("camera:"+ThreeLog.get(camera.getPosition()));
 		renderer.render(scene, camera);
 	}
@@ -190,6 +196,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 	
 	private WebGLRenderer renderer;
+	
 
 	public static final String KEY_INDEX="DATA_INDEX";
 	public static final String KEY_DATA="DATA_VALUE";
@@ -206,6 +213,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		}
 		
 	}
+	private DragObjectControler dragObjectControler;
 	
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
@@ -218,7 +226,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		this.renderer=renderer;
 		canvas.setClearColorHex(0x333333);
 	
-	
+		dragObjectControler=new DragObjectControler(scene,projector);
+		
+		
 		scene.add(THREE.AmbientLight(0xffffff));
 		
 		Light pointLight = THREE.DirectionalLight(0xffffff,1);
@@ -399,6 +409,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		
 	}
+	private int defaultOffSetY=-140;
 	
 	private void updateDatasPanel(){
 		datasPanel.clear();
@@ -897,7 +908,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			}});
 		
 		
-		ikBar.addItem("Follow target", new Command(){
+		
+		
+		ikBar.addItem("Fit target", new Command(){
 			@Override
 			public void execute() {
 				for(IKData ik:ikdatas){
@@ -906,8 +919,22 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 					ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
 					doPoseByMatrix(ab);
 					hideContextMenu();
+					
 				}
 			}});
+		
+		ikBar.addItem("Follow target", new Command(){
+			@Override
+			public void execute() {
+				for(IKData ik:ikdatas){
+				
+					ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(ik.getLastBoneName())));
+					doPoseByMatrix(ab);
+					hideContextMenu();
+					
+				}
+			}});
+		
 		
 
 	
@@ -1093,7 +1120,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				rotationYRange.setValue(0);
 				rotationZRange.setValue(0);
 				positionXRange.setValue(0);
-				positionYRange.setValue(140);
+				positionYRange.setValue(defaultOffSetY);
 				hideContextMenu();
 			}});
 		cameraBar.addItem("Back", new Command(){
@@ -1103,7 +1130,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				rotationYRange.setValue(180);
 				rotationZRange.setValue(0);
 				positionXRange.setValue(0);
-				positionYRange.setValue(140);
+				positionYRange.setValue(defaultOffSetY);
 				hideContextMenu();
 			}});
 		cameraBar.addItem("Quoter", new Command(){
@@ -1113,7 +1140,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				rotationYRange.setValue(45);
 				rotationZRange.setValue(0);
 				positionXRange.setValue(0);
-				positionYRange.setValue(140);
+				positionYRange.setValue(defaultOffSetY);
 				hideContextMenu();
 			}});
 		cameraBar.addItem("Top", new Command(){
@@ -1143,7 +1170,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				rotationYRange.setValue(90);
 				rotationZRange.setValue(0);
 				positionXRange.setValue(0);
-				positionYRange.setValue(140);
+				positionYRange.setValue(defaultOffSetY);
 				hideContextMenu();
 			}});
 		cameraBar.addItem("Left", new Command(){
@@ -1153,7 +1180,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				rotationYRange.setValue(-90);
 				rotationZRange.setValue(0);
 				positionXRange.setValue(0);
-				positionYRange.setValue(140);
+				positionYRange.setValue(defaultOffSetY);
 				hideContextMenu();
 			}});
 		
@@ -1309,6 +1336,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	}
 	//TODO future
 	private boolean isShowPrevIk;
+	
+	
 	private void createContextMenuFrames(MenuBar rootBar){
 		MenuBar framesBar=new MenuBar(true);
 		contextMenuShowPrevFrame = new MenuItem("Show Prev Iks",true,new Command(){
@@ -1359,11 +1388,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		//log(mouseDownX+","+mouseDownY+":"+screenWidth+"x"+screenHeight);
 		
 
-		
+		/*
 		log("wpos:"+ThreeLog.get(GWTThreeUtils.toPositionVec(camera.getMatrix())));
 		log("mpos:"+ThreeLog.get(GWTThreeUtils.toPositionVec(camera.getMatrixWorld())));
 		log("rpos:"+ThreeLog.get(GWTThreeUtils.toPositionVec(camera.getMatrixRotationWorld())));
 		log("pos:"+ThreeLog.get(camera.getPosition()));
+		*/
 		//log("mouse-click:"+event.getX()+"x"+event.getY());
 JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.getY(), screenWidth, screenHeight,camera, GWTThreeUtils.toPositionVec(camera.getMatrixWorld()),scene);
 		//log("intersects-length:"+intersects.length());
@@ -1385,6 +1415,12 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 								switchSelectionIk(bname);
 							}
 							selectedBone=null;
+							
+							
+							
+							dragObjectControler.selectObject(target, event.getX(), event.getY(), screenWidth, screenHeight, camera);
+							
+							
 							return;//ik selected
 						}
 					}
@@ -1396,6 +1432,8 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					selectionMesh.setPosition(target.getPosition());
 					selectionMesh.getMaterial().getColor().setHex(0xff0000);
 					switchSelectionIk(null);
+					
+					dragObjectControler.selectObject(target, event.getX(), event.getY(), screenWidth, screenHeight, camera);
 					
 					return;
 				}
@@ -1412,6 +1450,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	@Override
 	public void onMouseUp(MouseUpEvent event) {
 		mouseDown=false;
+		dragObjectControler.unselectObject();
 	}
 	
 	@Override
@@ -1426,7 +1465,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 		double diffY=event.getY()-mouseDownY;
 		mouseDownX=event.getX();
 		mouseDownY=event.getY();
-		
+		double mouseMoved=(Math.abs(diffX)+Math.abs(diffY));
 		
 		if(event.getNativeEvent().getButton()==NativeEvent.BUTTON_MIDDLE){
 		changeCamera((int)diffX,(int)diffY,event.isShiftKeyDown(),event.isAltKeyDown(),event.isControlKeyDown());
@@ -1437,12 +1476,29 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 		
 		if(mouseDown){
 			if(isSelectedIk()){
-			
+				
 				
 				diffX*=0.1;
 				diffY*=-0.1;
+				
+				if(dragObjectControler.isSelected()){
+					Vector3 newPos=dragObjectControler.moveSelectionPosition(event.getX(), event.getY(), screenWidth, screenHeight, camera);
+					double length=newPos.clone().subSelf(getCurrentIkData().getTargetPos()).length();
+					if(length<mouseMoved*5){
+						//log("diff-move:"+length+",mouse="+mouseMoved);
+						getCurrentIkData().getTargetPos().copy(newPos);	
+					}else{
+						log("diff-error:"+length+",mouse="+mouseMoved);
+					}
+					
+				}
+				
+				
+				/*
 				getCurrentIkData().getTargetPos().incrementX(diffX);
 				getCurrentIkData().getTargetPos().incrementY(diffY);
+				*/
+				
 				if(event.isAltKeyDown()){//slow
 					if(event.isShiftKeyDown()){
 					log("shift+alt");
@@ -1473,10 +1529,34 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					Vector3 pos=null;
 					if(boneIndex==0){//this version support moving root only
 						pos=ab.getBonePosition(boneIndex);
+					}else{
+						return;
 					}
 					
-					positionXBoneRange.setValue(positionXBoneRange.getValue()+(int)diffX);
-					positionYBoneRange.setValue(positionYBoneRange.getValue()-(int)diffY);
+					
+					if(dragObjectControler.isSelected()){
+						Vector3 newPos=dragObjectControler.moveSelectionPosition(event.getX(), event.getY(), screenWidth, screenHeight, camera);
+						double length=newPos.clone().length();
+						if(length<mouseMoved*50){
+							//log("diff-move:"+length+",mouse="+mouseMoved);
+							//getCurrentIkData().getTargetPos().copy(newPos);	
+							
+							positionXBoneRange.setValue((int)(newPos.getX()*10));
+							positionYBoneRange.setValue((int)(newPos.getY()*10));
+							positionZBoneRange.setValue((int)(newPos.getZ()*10));
+							log("moved:"+length+",mouse="+mouseMoved);
+						}else{
+							log("diff-error:"+length+",mouse="+mouseMoved);
+						}
+						
+					}
+					
+					
+					//positionXBoneRange.setValue(positionXBoneRange.getValue()+(int)diffX);
+					//positionYBoneRange.setValue(positionYBoneRange.getValue()-(int)diffY);
+					
+					
+					
 					positionToBone();
 					
 					if(event.isAltKeyDown()){//not follow ik
@@ -1532,7 +1612,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 						*/
 						String name=ik.getLastBoneName();
 						Vector3 pos=ab.getBonePosition(name);
-						ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
+						
+						ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
+						//ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
 						
 						}
 					doPoseByMatrix(ab);//redraw
@@ -1665,8 +1747,8 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 						
 						String name=ik.getLastBoneName();
 						Vector3 pos=ab.getBonePosition(name);
-						ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
-						
+						//ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
+						ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
 						}
 					
 					doPoseByMatrix(ab);//redraw
@@ -2191,7 +2273,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		
-		positionYRange.setValue(140);//for test
+		positionYRange.setValue(defaultOffSetY);//for test
 		
 		updateIkLabels();
 		createBottomPanel();
@@ -3348,6 +3430,19 @@ private List<String> boneList=new ArrayList<String>();
 	
 	private List<List<Integer>> bonePath;
 	
+	
+	private boolean hasChild(List<List<Integer>> paths,int target){
+		boolean ret=false;
+		for(List<Integer> path:paths){
+			for(int i=0;i<path.size()-1;i++){//exclude last
+				if(path.get(i)==target){
+					return true;
+				}
+			}
+		}
+		return ret;
+	}
+	
 	public static  List<List<Integer>> boneToPath(JsArray<AnimationBone> bones){
 		List<List<Integer>> data=new ArrayList<List<Integer>>();
 		for(int i=0;i<bones.length();i++){
@@ -3932,7 +4027,13 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 					if(ikMesh==null){//at first call this from non-ik stepped.
 						//log("xxx");
 						//initial
-						Vector3 ikpos=pos.clone().subSelf(ppos).multiplyScalar(1.5).addSelf(ppos);
+						
+						double ikLength=1.5;
+						if(!hasChild(bonePath,i)){
+							ikLength=2.5;
+						}
+						
+						Vector3 ikpos=pos.clone().subSelf(ppos).multiplyScalar(ikLength).addSelf(ppos);
 						//ikpos=pos.clone();
 						ikMesh=THREE.Mesh(THREE.CubeGeometry(1.5, 1.5, 1.5),THREE.MeshLambertMaterial().color(0x00ff00).build());
 						ikMesh.setPosition(ikpos);
@@ -4130,6 +4231,17 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		geo.computeTangents();
 		*/
 		}
+
+private Vector3 getDefaultIkPos(int index){
+	Vector3 pos=ab.getBonePosition(index);
+	Vector3 ppos=ab.getParentPosition(index);
+	double ikLength=1.5;
+	if(!hasChild(bonePath,index)){
+		ikLength=2.5;
+	}
+	
+	return pos.clone().subSelf(ppos).multiplyScalar(ikLength).addSelf(ppos);
+}
 
 
 private Map<String,Mesh> targetMeshs=new HashMap<String,Mesh>();
