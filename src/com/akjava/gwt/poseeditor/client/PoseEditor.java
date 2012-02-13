@@ -28,11 +28,13 @@ import com.akjava.gwt.lib.client.StorageDataList.HeaderAndValue;
 import com.akjava.gwt.poseeditor.client.PreferenceTabPanel.PreferenceListener;
 import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
 import com.akjava.gwt.three.client.THREE;
+import com.akjava.gwt.three.client.cameras.Camera;
 import com.akjava.gwt.three.client.core.Geometry;
 import com.akjava.gwt.three.client.core.Intersect;
 import com.akjava.gwt.three.client.core.Matrix4;
 import com.akjava.gwt.three.client.core.Object3D;
 import com.akjava.gwt.three.client.core.Projector;
+import com.akjava.gwt.three.client.core.Quaternion;
 import com.akjava.gwt.three.client.core.Vector3;
 import com.akjava.gwt.three.client.core.Vector4;
 import com.akjava.gwt.three.client.core.Vertex;
@@ -60,6 +62,7 @@ import com.akjava.gwt.three.client.lights.Light;
 import com.akjava.gwt.three.client.materials.Material;
 import com.akjava.gwt.three.client.objects.Mesh;
 import com.akjava.gwt.three.client.renderers.WebGLRenderer;
+import com.akjava.gwt.three.client.scenes.Scene;
 import com.akjava.gwt.three.client.textures.Texture;
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.core.client.JsArray;
@@ -91,7 +94,6 @@ import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.json.client.JSONValue;
-import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Anchor;
@@ -106,7 +108,6 @@ import com.google.gwt.user.client.ui.MenuBar;
 import com.google.gwt.user.client.ui.MenuItem;
 import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.PopupPanel;
-import com.google.gwt.user.client.ui.RootLayoutPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
@@ -121,14 +122,63 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
 	private String version="2.0";
+	private Vector3 zero=THREE.Vector3();
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
 			
-			root.setPosition((double)positionXRange.getValue()/10, (double)positionYRange.getValue()/10, (double)positionZRange.getValue()/10);
+			cameraHolder.setPosition((double)positionXRange.getValue()/10, (double)positionYRange.getValue()/10, (double)positionZRange.getValue()/10);
 			
-			root.getRotation().set(Math.toRadians(rotationXRange.getValue()),Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()));
-			}
+			cameraHolder.getRotation().set(Math.toRadians(rotationXRange.getValue()),-Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()));
+			
+			/*
+			Vector3 newPos=THREE.Vector3(0, 0, 100);
+			
+			Quaternion prev=GWTThreeUtils.degreeRotationQuaternion(THREE.Vector3(rotationXRange.getValue(),0,0));
+			Quaternion next=GWTThreeUtils.degreeRotationQuaternion(THREE.Vector3(rotationXRange.getValue(),180,0));
+			
+			Quaternion result=THREE.Quaternion();
+			double scale=1.0/360*rotationYRange.getValue() ;
+			//log("scale:"+scale);
+			THREE.Quaternion().slerp( prev, next, result, scale);
+			
+			Matrix4 mx=GWTThreeUtils.rotationToMatrix4(result);
+			//log("newangle:"+GWTThreeUtils.rotationToDegreeVector3(mx));
+			mx.multiplyVector3(newPos);
+			*/
+			//newPos=GWTThreeUtils.rotationToVector3(result);
+			//newPos=GWTThreeUtils.degreeToRagiant(newPos);
+			
+			
+			camera.lookAt(zero);
+			camera.getPosition().set(cameraX, cameraY, cameraZ);
+		}
+	}
+	
+	private Object3D cameraHolder;
+	@Override
+	protected void createCamera(Scene scene,int width,int height){
+		if(cameraHolder==null){
+			cameraHolder=THREE.Object3D();
+			scene.add(cameraHolder);
+		}
+		if(camera!=null){
+			//TODO find update way.
+			cameraHolder.remove(camera);
+			camera=null;
+		}
+		Camera camera = THREE.PerspectiveCamera(35,(double)width/height,1,6000);
+		//camera.getPosition().set(0, 0, cameraZ);
+		cameraHolder.add(camera); //some kind of trick.
+		this.camera=camera;
+	}
+	
+	@Override
+	public void update(WebGLRenderer renderer) {
+		beforeUpdate(renderer);
+		//camera.getPosition().set(cameraX, cameraY, cameraZ);
+		//LogUtils.log("camera:"+ThreeLog.get(camera.getPosition()));
+		renderer.render(scene, camera);
 	}
 
 	@Override
@@ -1043,7 +1093,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				rotationYRange.setValue(0);
 				rotationZRange.setValue(0);
 				positionXRange.setValue(0);
-				positionYRange.setValue(-140);
+				positionYRange.setValue(140);
 				hideContextMenu();
 			}});
 		cameraBar.addItem("Back", new Command(){
@@ -1053,7 +1103,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				rotationYRange.setValue(180);
 				rotationZRange.setValue(0);
 				positionXRange.setValue(0);
-				positionYRange.setValue(-140);
+				positionYRange.setValue(140);
 				hideContextMenu();
 			}});
 		cameraBar.addItem("Quoter", new Command(){
@@ -1063,7 +1113,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				rotationYRange.setValue(45);
 				rotationZRange.setValue(0);
 				positionXRange.setValue(0);
-				positionYRange.setValue(-140);
+				positionYRange.setValue(140);
 				hideContextMenu();
 			}});
 		cameraBar.addItem("Top", new Command(){
@@ -1093,7 +1143,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				rotationYRange.setValue(90);
 				rotationZRange.setValue(0);
 				positionXRange.setValue(0);
-				positionYRange.setValue(-140);
+				positionYRange.setValue(140);
 				hideContextMenu();
 			}});
 		cameraBar.addItem("Left", new Command(){
@@ -1103,7 +1153,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				rotationYRange.setValue(-90);
 				rotationZRange.setValue(0);
 				positionXRange.setValue(0);
-				positionYRange.setValue(-140);
+				positionYRange.setValue(140);
 				hideContextMenu();
 			}});
 		
@@ -1309,8 +1359,13 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		//log(mouseDownX+","+mouseDownY+":"+screenWidth+"x"+screenHeight);
 		
 
+		
+		log("wpos:"+ThreeLog.get(GWTThreeUtils.toPositionVec(camera.getMatrix())));
+		log("mpos:"+ThreeLog.get(GWTThreeUtils.toPositionVec(camera.getMatrixWorld())));
+		log("rpos:"+ThreeLog.get(GWTThreeUtils.toPositionVec(camera.getMatrixRotationWorld())));
+		log("pos:"+ThreeLog.get(camera.getPosition()));
 		//log("mouse-click:"+event.getX()+"x"+event.getY());
-JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.getY(), screenWidth, screenHeight, camera,scene);
+JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.getY(), screenWidth, screenHeight,camera, GWTThreeUtils.toPositionVec(camera.getMatrixWorld()),scene);
 		//log("intersects-length:"+intersects.length());
 		for(int i=0;i<intersects.length();i++){
 			Intersect sect=intersects.get(i);
@@ -1627,7 +1682,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				tmpZoom=defaultZoom;
 			}
 			//GWT.log("wheel:"+event.getDeltaY());
-			int tmp=cameraZ+event.getDeltaY()*tmpZoom;
+			int tmp=(int)cameraZ+event.getDeltaY()*tmpZoom;
 			tmp=Math.max(minCamera, tmp);
 			tmp=Math.min(4000, tmp);
 			cameraZ=tmp;
@@ -2136,7 +2191,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		
-		positionYRange.setValue(-140);//for test
+		positionYRange.setValue(140);//for test
 		
 		updateIkLabels();
 		createBottomPanel();
