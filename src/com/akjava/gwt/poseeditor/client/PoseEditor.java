@@ -183,6 +183,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 	@Override
 	public void update(WebGLRenderer renderer) {
+		if(doSync){
+			log("Synch return");
+		}
 		beforeUpdate(renderer);
 		camera.getPosition().set(cameraX, cameraY, cameraZ);
 		//LogUtils.log("camera:"+ThreeLog.get(camera.getPosition()));
@@ -1467,56 +1470,133 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 		dragObjectControler.unselectObject();
 	}
 	
+	
+	private boolean mouseMoving;
+	private double lastTime;
+	private Mesh debugMesh;
+	
+	private boolean doSync;
 	@Override
-	public void onMouseMove(MouseMoveEvent event) {
-		
+	public  void onMouseMove(MouseMoveEvent event) {
+		if(mouseMoving){
+			logger.info("conflict-move");
+			if(lastTime+1000<System.currentTimeMillis()){
+				logger.info("conflict-move-timeout");//never happen?
+			}else{
+			return;
+			}
+		}
+		mouseMoving=true;
+		lastTime=System.currentTimeMillis();
 		double diffX=event.getX()-mouseDownX;
 		double diffY=event.getY()-mouseDownY;
+		
+		int prevMouseDownX=mouseDownX;
+		int prevMouseDownY=mouseDownY;
+		
 		mouseDownX=event.getX();
 		mouseDownY=event.getY();
+		
+		
+		
 		double mouseMoved=(Math.abs(diffX)+Math.abs(diffY));
 		if(mouseMoved==0){
+			mouseMoving=false;
 			return;
 		}
 		if(event.getNativeEvent().getButton()==NativeEvent.BUTTON_MIDDLE){
 		changeCamera((int)diffX,(int)diffY,event.isShiftKeyDown(),event.isAltKeyDown(),event.isControlKeyDown());
+		mouseMoving=false;
 		return;
 		}
 		
 		
 		
 		if(mouseDown){
+			//log(diffX+","+diffY);
 			logger.fine("mouse move");
+			/*
+			 * useless
+			int limit=10;
+			int limitX=(int) diffX;
+			int limitY=(int) diffY;
+			if(diffX>limit){
+				limitX=limit;
+			}
+			if(diffY>limit){
+				limitY=limit;
+			}
+			if(diffX<-limit){
+				limitX=-limit;
+			}
+			if(diffY<-limit){
+				limitY=-limit;
+			}
+			*/
+			
 			if(isSelectedIk()){
 				logger.fine("selected ik");
 				
-				diffX*=0.1;
-				diffY*=-0.1;
-				
+				//diffX*=0.1;
+				//diffY*=-0.1;
+				Vector3 old=getCurrentIkData().getTargetPos().clone();
 				if(dragObjectControler.isSelected()){
+					//int eventX=prevMouseDownX+limitX;
+					//int eventY=prevMouseDownY+limitY;
+					int eventX=event.getX();
+					int eventY=event.getY();
+					
 					logger.fine("selected dragObjectControler");
-					Vector3 newPos=dragObjectControler.moveSelectionPosition(event.getX(), event.getY(), screenWidth, screenHeight, camera);
-					logger.fine("newPos:"+newPos);
+					doSync=true;
+					Vector3 newPos=dragObjectControler.moveSelectionPosition(eventX,eventY, screenWidth, screenHeight, camera);
+					doSync=false;
 					if(newPos==null){
 						logger.info("newPos-null:"+ThreeLog.get(dragObjectControler.getDraggableOffset()));
+						mouseMoving=false;
 						return;
 					}
 					double length=newPos.clone().subSelf(getCurrentIkData().getTargetPos()).length();
-					if(length<mouseMoved*4 && mouseMoved!=0){
-						if(length>mouseMoved){
-							logger.finest("diff-move:"+length+",mouse:"+mouseMoved+",offset:"+ThreeLog.get(dragObjectControler.getDraggableOffset()));
+					/*
+					if(newPos.getY()<8){
+						
+					log("error-newPos:"+ThreeLog.get(newPos));
+					log("error-mouse:"+eventX+","+eventY);
+					log("error-diff:"+diffX+","+diffY);
+					log("error-diff-move:"+length+",mouse:"+mouseMoved+",offset:"+ThreeLog.get(dragObjectControler.getDraggableOffset()));
+					
+					}else{
+						//arount 640,150
+						//logger.info(eventX+","+eventY);
+						log("newPos:"+ThreeLog.get(newPos));
+						log("mouse:"+eventX+","+eventY);
+						log("diff:"+diffX+","+diffY);
+						log("diff-move:"+length+",mouse:"+mouseMoved+",offset:"+ThreeLog.get(dragObjectControler.getDraggableOffset()));
+						
+					}*/
+					
+					if(length<mouseMoved*2 && mouseMoved!=0){
+						if(length>mouseMoved || length>5){
+							logger.fine("diff-move:"+length+",mouse:"+mouseMoved+",offset:"+ThreeLog.get(dragObjectControler.getDraggableOffset()));
+							logger.fine("mouseDown:"+mouseDownX+","+mouseDownY);
 						}
 						
-						getCurrentIkData().getTargetPos().copy(newPos);
+						//getCurrentIkData().getTargetPos().copy(newPos); // iguess 
+						getCurrentIkData().setTargetPos(newPos);
 						
-					}else{
+						}else{
 						
-						logger.info("diff-error:"+length+",mouse:"+mouseMoved+",offset:"+ThreeLog.get(dragObjectControler.getDraggableOffset()));
-						
+						logger.fine("diff-error:"+length+",mouse:"+mouseMoved+",offset:"+ThreeLog.get(dragObjectControler.getDraggableOffset()));
+						if(length>mouseMoved*10 && mouseMoved!=0){//invalid
+							//dragObjectControler.unselectObject();
+							//dragObjectControler.selectObject(dragObjectControler.getSelectedDraggablekObject(), event.getX(), event.getY(), screenWidth, screenHeight, camera);
+							
+						}
 					}
 					
 				}
 				
+				
+				//log("diff-moved:"+ThreeLog.get(old.subSelf(getCurrentIkData().getTargetPos())));
 				
 				/*
 				getCurrentIkData().getTargetPos().incrementX(diffX);
@@ -1541,6 +1621,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				}else if(event.isShiftKeyDown()){//move only
 					//doPoseIkk(0,true,1,getCurrentIkData(),1);
 					doPoseByMatrix(ab);
+					//doPoseIkk(0,false,1,getCurrentIkData(),0);
 				}else{
 					doPoseIkk(0,true,1,getCurrentIkData(),5);
 				}
@@ -1555,6 +1636,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					if(boneIndex==0){//this version support moving root only
 						pos=ab.getBonePosition(boneIndex);
 					}else{
+						mouseMoving=false;
 						return;
 					}
 					
@@ -1563,7 +1645,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 						Vector3 newPos=dragObjectControler.moveSelectionPosition(event.getX(), event.getY(), screenWidth, screenHeight, camera);
 						double length=newPos.clone().length();
 						if(length<mouseMoved*50){
-							//log("diff-move:"+length+",mouse="+mouseMoved);
+							if(length>mouseMoved*10){
+								logger.fine("diff-move:"+length+",mouse="+mouseMoved);
+							}
 							//getCurrentIkData().getTargetPos().copy(newPos);	
 							
 							positionXBoneRange.setValue((int)(newPos.getX()*10));
@@ -1655,7 +1739,28 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			changeCamera((int)diffX,(int)diffY,event.isShiftKeyDown(),event.isAltKeyDown(),event.isControlKeyDown());
 			
 			}
+		}else{
+			/*useless
+			if(!dragObjectControler.isSelected()){
+				JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.getY(), screenWidth, screenHeight,camera, GWTThreeUtils.toPositionVec(camera.getMatrixWorld()),scene);
+				//log("intersects-length:"+intersects.length());
+				for(int i=0;i<intersects.length();i++){
+					Intersect sect=intersects.get(i);
+					Object3D target=sect.getObject();
+					if(!target.getName().isEmpty()){
+						if(target.getName().startsWith("ik:")){
+							
+							if(target!=dragObjectControler.getIntersectedDraggablekObject()){
+								dragObjectControler.setIntersectedDraggablekObject(target);
+							}
+							//dragObjectControler.selectObject(target, event.getX(), event.getY(), screenWidth, screenHeight, camera);
+							
+						}
+					}
+				}
+			}*/
 		}
+		mouseMoving=false;
 	}
 	
 	private void changeCamera(int diffX,int diffY,boolean shiftKey,boolean AltKey,boolean ctrlKey){
