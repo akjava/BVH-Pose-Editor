@@ -8,7 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.akjava.bvh.client.BVH;
@@ -22,11 +21,15 @@ import com.akjava.gwt.bvh.client.poseframe.PoseFrameData;
 import com.akjava.gwt.bvh.client.threejs.AnimationBoneConverter;
 import com.akjava.gwt.bvh.client.threejs.AnimationDataConverter;
 import com.akjava.gwt.bvh.client.threejs.BVHConverter;
-import com.akjava.gwt.html5.client.HTML5InputRange;
+import com.akjava.gwt.html5.client.InputRangeWidget;
 import com.akjava.gwt.html5.client.download.HTML5Download;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
+import com.akjava.gwt.html5.client.file.ui.DropVerticalPanelBase;
+import com.akjava.gwt.lib.client.HeaderAndValue;
+import com.akjava.gwt.lib.client.IStorageControler;
+import com.akjava.gwt.lib.client.LogUtils;
 import com.akjava.gwt.lib.client.StorageControler;
-import com.akjava.gwt.lib.client.StorageDataList.HeaderAndValue;
+import com.akjava.gwt.lib.client.StorageException;
 import com.akjava.gwt.poseeditor.client.PreferenceTabPanel.PreferenceListener;
 import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
 import com.akjava.gwt.three.client.THREE;
@@ -38,11 +41,10 @@ import com.akjava.gwt.three.client.core.Object3D;
 import com.akjava.gwt.three.client.core.Projector;
 import com.akjava.gwt.three.client.core.Vector3;
 import com.akjava.gwt.three.client.core.Vector4;
-import com.akjava.gwt.three.client.core.Vertex;
 import com.akjava.gwt.three.client.extras.GeometryUtils;
 import com.akjava.gwt.three.client.extras.ImageUtils;
 import com.akjava.gwt.three.client.extras.loaders.JSONLoader.LoadHandler;
-import com.akjava.gwt.three.client.gwt.DragObjectControler;
+import com.akjava.gwt.three.client.gwt.GWTDragObjectControler;
 import com.akjava.gwt.three.client.gwt.GWTGeometryUtils;
 import com.akjava.gwt.three.client.gwt.GWTThreeUtils;
 import com.akjava.gwt.three.client.gwt.Object3DUtils;
@@ -108,7 +110,6 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.MenuBar;
 import com.google.gwt.user.client.ui.MenuItem;
-import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.ScrollPanel;
@@ -124,12 +125,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="2.0";
+	private String version="r3";
 	private Vector3 zero=THREE.Vector3();
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
-			
+
 			root.setPosition((double)positionXRange.getValue()/10, (double)positionYRange.getValue()/10, (double)positionZRange.getValue()/10);
 			root.getRotation().set(Math.toRadians(rotationXRange.getValue()),Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()));
 			
@@ -183,9 +184,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 	@Override
 	public void update(WebGLRenderer renderer) {
-		if(doSync){
-			log("Synch return");
-		}
+		
 		beforeUpdate(renderer);
 		camera.getPosition().set(cameraX, cameraY, cameraZ);
 		//LogUtils.log("camera:"+ThreeLog.get(camera.getPosition()));
@@ -218,7 +217,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		}
 		
 	}
-	private DragObjectControler dragObjectControler;
+	private GWTDragObjectControler dragObjectControler;
 	
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
@@ -231,7 +230,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		this.renderer=renderer;
 		canvas.setClearColorHex(0x333333);
 	
-		dragObjectControler=new DragObjectControler(scene,projector);
+		dragObjectControler=new GWTDragObjectControler(scene,projector);
 		
 		
 		scene.add(THREE.AmbientLight(0xffffff));
@@ -418,6 +417,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 	private void updateDatasPanel(){
 		datasPanel.clear();
+		try{
 		int index=storageControler.getValue(KEY_INDEX, 0);
 		for(int i=index;i>=0;i--){
 			String b64=storageControler.getValue(KEY_IMAGE+i,null);
@@ -428,6 +428,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			//dp.setSize("200px", "200px");
 			datasPanel.add(dp);
 			}
+		}
+		}catch (StorageException e) {
+			LogUtils.log("updateDatasPanel faild:"+e.getMessage());
 		}
 	}
 	
@@ -501,8 +504,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 						json=ped.toString();
 						nameLabel.setText(name);
 						//JSONObject data=PoseEditorData.writeData(ped);
+						try{
 						storageControler.setValue(KEY_DATA+index, json);
 						storageControler.setValue(KEY_HEAD+index, name+"\t"+cdate);
+						}catch (StorageException e) {
+							LogUtils.log("Edit name faild:"+e.getMessage());
+						}
 						//rewrite
 					}else{
 						//TODO error catch
@@ -537,7 +544,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 					if(anchor!=null){
 						anchor.removeFromParent();
 					}
-					anchor = HTML5Download.generateTextDownloadLink(bvhText, nameLabel.getText()+".bvh", "Click to download",true);
+					HTML5Download html5=new HTML5Download();
+					anchor = html5.generateTextDownloadLink(bvhText, nameLabel.getText()+".bvh", "Click to download",true);
 					add(anchor);
 					
 				}
@@ -557,9 +565,13 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	}
 	
 	private void doRemoveData(int index){
+		try{
 		storageControler.setValue(KEY_DATA+index, null);
 		storageControler.setValue(KEY_IMAGE+index, null);
 		storageControler.setValue(KEY_HEAD+index, null);
+	}catch (StorageException e) {
+		LogUtils.log("do remove data faild:"+e.getMessage());
+	}
 		updateDatasPanel();
 	}
 	
@@ -595,19 +607,23 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		scroll.setSize("720px", "500px");
 		datasRoot.add(scroll);
 		
-		logger.fine("selection:"+storageControler.getValue(PreferenceTabPanel.KEY_MODEL_SELECTION, 0));
+		try {
+			logger.fine("selection:"+storageControler.getValue(PreferenceTabPanel.KEY_MODEL_SELECTION, 0));
+		} catch (StorageException e) {
+			e.printStackTrace();
+		}
 		//storageControler.setValue(PreferenceTabPanel.KEY_MODEL_SELECTION, 0);
 		preferencePanel=new PreferenceTabPanel(storageControler,this);
 		tabPanel.add(preferencePanel,"Preference");
 		
 		//about
 		String html="";
-		html+="<br/>"+"[Howto Move]<br/><b>Select Nothing:</b><br/>Mouse Drag=Rotatation-XY<br/>Mouse Wheel= Zoom<br/> +ALT Move-XY Camera";
-		html+="<br/><br/>"+"<b>Select IK(Green Box):</b><br/>Mouse Drag=Move IK-XY <br/>Mouse Wheel=Move IK-Z <br/>+Shift=smoth-change <br/>+Alt=Move Only<br/>+ALT+Shift Follow other IK";
+		html+="<br/>"+"[Howto Move]<br/><b>Select Nothing:</b><br/>Mouse Drag=Cammera Rotatation-XY<br/>Mouse Wheel= Zoom<br/> +ALT Move-XY Camera";
+		html+="<br/><br/>"+"<b>Select IK(Green Box):</b><br/>Mouse Drag=Move IK-XYZ <br/>Mouse Wheel=Move IK-Z <br/>+ALT=smoth-change <br/>+Shift=Move Only<br/>+ALT+Shift Follow other IK";
 		html+="<br/><br/>"+"<b>Select Bone(Red Box):</b><br/>Mouse Drag=Rotate-XY<br/>Mouse Wheel=Rotate-Z";
-		html+="<br/><br/>"+"<b>Select Root(Red Large Box):</b><br/>Mouse Drag=Rotate-XY<br/>Mouse Wheel=Rotate-Z +Shift=Follow IK +Alt=Move Position";
+		html+="<br/><br/>"+"<b>Select Root(Red Large Box):</b><br/>Mouse Drag=Rotate-XYZ<br/>Mouse Wheel=Rotate-Z +ALT=Follow IK +Shift=Move Position";
 		html+="<br/><br/>"+"yello box means under Y:0,orange box means near Y:0";
-		html+="<br/>On IK-Moving switching normal & +Shift(Smooth) is good tactics.";
+		html+="<br/>On IK-Moving switching normal & +Alt(Smooth) is good tactics.";
 		html+="<br/>"+"<a href='http://webgl.akjava.com'>More info at webgl.akjava.com</a>";
 		HTML htmlP=new HTML(html);
 		VerticalPanel aboutRoot=new VerticalPanel();
@@ -1199,7 +1215,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			public void execute() {
 				
 				bodyMesh.getGeometry().computeBoundingBox();
-				log(bodyMesh.getGeometry());
+				LogUtils.log(bodyMesh.getGeometry());
 				BoundingBox box=bodyMesh.getGeometry().getBoundingBox();
 				
 				
@@ -1315,7 +1331,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			@Override
 			public void execute() {
 				Vector3 angle=ab.getBoneAngleAndMatrix(0).getAngle();
-				log(ThreeLog.get(angle));
+				LogUtils.log(ThreeLog.get(angle));
 				if(angle.getX()==180){
 					angle.setX(-180);
 				}else if(angle.getX()==-180){
@@ -1400,7 +1416,21 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		log("pos:"+ThreeLog.get(camera.getPosition()));
 		*/
 		//log("mouse-click:"+event.getX()+"x"+event.getY());
-JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.getY(), screenWidth, screenHeight,camera, GWTThreeUtils.toPositionVec(camera.getMatrixWorld()),scene);
+		
+		JsArray<Object3D> targets=(JsArray<Object3D>) JsArray.createArray();
+		JsArray<Object3D> childs=root.getChildren();
+		for(int i=0;i<childs.length();i++){
+			//LogUtils.log(childs.get(i).getName());
+			targets.push(childs.get(i));
+		}
+		JsArray<Object3D> bones=bone3D.getChildren();
+		for(int i=0;i<bones.length();i++){
+			//LogUtils.log(bones.get(i).getName());
+			targets.push(bones.get(i));
+		}
+		
+		
+JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.getY(), screenWidth, screenHeight,camera,targets);
 		//log("intersects-length:"+intersects.length());
 		for(int i=0;i<intersects.length();i++){
 			Intersect sect=intersects.get(i);
@@ -1475,7 +1505,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	private double lastTime;
 	private Mesh debugMesh;
 	
-	private boolean doSync;
+	//private boolean doSync; never catched
 	@Override
 	public  void onMouseMove(MouseMoveEvent event) {
 		if(mouseMoving){
@@ -1537,8 +1567,8 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			if(isSelectedIk()){
 				logger.fine("selected ik");
 				
-				//diffX*=0.1;
-				//diffY*=-0.1;
+				diffX*=0.1;
+				diffY*=-0.1;
 				Vector3 old=getCurrentIkData().getTargetPos().clone();
 				if(dragObjectControler.isSelected()){
 					//int eventX=prevMouseDownX+limitX;
@@ -1547,9 +1577,10 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					int eventY=event.getY();
 					
 					logger.fine("selected dragObjectControler");
-					doSync=true;
+					
+					scene.updateMatrixWorld(true);//very important.sometime selectedDraggablekObject.getParent().getMatrixWorld() return 0.
 					Vector3 newPos=dragObjectControler.moveSelectionPosition(eventX,eventY, screenWidth, screenHeight, camera);
-					doSync=false;
+					
 					if(newPos==null){
 						logger.info("newPos-null:"+ThreeLog.get(dragObjectControler.getDraggableOffset()));
 						mouseMoving=false;
@@ -1563,16 +1594,15 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					log("error-mouse:"+eventX+","+eventY);
 					log("error-diff:"+diffX+","+diffY);
 					log("error-diff-move:"+length+",mouse:"+mouseMoved+",offset:"+ThreeLog.get(dragObjectControler.getDraggableOffset()));
-					
+					log("error-log:"+dragObjectControler.getLog());
 					}else{
-						//arount 640,150
-						//logger.info(eventX+","+eventY);
 						log("newPos:"+ThreeLog.get(newPos));
 						log("mouse:"+eventX+","+eventY);
 						log("diff:"+diffX+","+diffY);
 						log("diff-move:"+length+",mouse:"+mouseMoved+",offset:"+ThreeLog.get(dragObjectControler.getDraggableOffset()));
-						
-					}*/
+						log("log:"+dragObjectControler.getLog());
+					}
+					*/
 					
 					if(length<mouseMoved*2 && mouseMoved!=0){
 						if(length>mouseMoved || length>5){
@@ -1686,7 +1716,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 						doPoseByMatrix(ab);//redraw
 						}
 					}
-				}else{
+				}else{//change angle
 					
 				
 				Vector3 angle=ab.getBoneAngleAndMatrix(selectedBone).getAngle();
@@ -1906,32 +1936,33 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	
 	
 
-	private HTML5InputRange positionXRange;
-	private HTML5InputRange positionYRange;
-	private HTML5InputRange positionZRange;
-	//private HTML5InputRange frameRange;
+	private InputRangeWidget positionXRange;
+	private InputRangeWidget positionYRange;
+	private InputRangeWidget positionZRange;
+	//private InputRangeWidget frameRange;
 	
-	private HTML5InputRange rotationXRange;
-	private HTML5InputRange rotationYRange;
-	private HTML5InputRange rotationZRange;
-	private HTML5InputRange rotationBoneXRange;
-	private HTML5InputRange rotationBoneYRange;
-	private HTML5InputRange rotationBoneZRange;
+	private InputRangeWidget rotationXRange;
+	private InputRangeWidget rotationYRange;
+	private InputRangeWidget rotationZRange;
+	private InputRangeWidget rotationBoneXRange;
+	private InputRangeWidget rotationBoneYRange;
+	private InputRangeWidget rotationBoneZRange;
 	private PopupPanel bottomPanel;
-	private HTML5InputRange currentFrameRange;
+	private InputRangeWidget currentFrameRange;
 	private Label currentFrameLabel;
-	private HTML5InputRange positionXBoneRange;
-	private HTML5InputRange positionYBoneRange;
-	private HTML5InputRange positionZBoneRange;
+	private InputRangeWidget positionXBoneRange;
+	private InputRangeWidget positionYBoneRange;
+	private InputRangeWidget positionZBoneRange;
 	private CheckBox ylockCheck;
 	private CheckBox xlockCheck;
 	private List<String> ikLocks=new ArrayList<String>();
 	private CheckBox showBonesCheck;
 	@Override
-	public void createControl(Panel parent) {
+	public void createControl(DropVerticalPanelBase parent) {
 HorizontalPanel h1=new HorizontalPanel();
 		
-		rotationXRange = new HTML5InputRange(-180,180,0);
+
+		rotationXRange = InputRangeWidget.createInputRange(-180,180,0);
 		parent.add(HTML5Builder.createRangeLabel("X-Rotate:", rotationXRange));
 		parent.add(h1);
 		h1.add(rotationXRange);
@@ -1946,7 +1977,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		HorizontalPanel h2=new HorizontalPanel();
 		
-		rotationYRange = new HTML5InputRange(-180,180,0);
+		rotationYRange = InputRangeWidget.createInputRange(-180,180,0);
 		parent.add(HTML5Builder.createRangeLabel("Y-Rotate:", rotationYRange));
 		parent.add(h2);
 		h2.add(rotationYRange);
@@ -1961,7 +1992,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		HorizontalPanel h3=new HorizontalPanel();
-		rotationZRange = new HTML5InputRange(-180,180,0);
+		rotationZRange = InputRangeWidget.createInputRange(-180,180,0);
 		parent.add(HTML5Builder.createRangeLabel("Z-Rotate:", rotationZRange));
 		parent.add(h3);
 		h3.add(rotationZRange);
@@ -1975,7 +2006,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		h3.add(reset3);
 		
 		HorizontalPanel h4=new HorizontalPanel();
-		positionXRange = new HTML5InputRange(-300,300,0);
+		positionXRange = InputRangeWidget.createInputRange(-300,300,0);
 		parent.add(HTML5Builder.createRangeLabel("X-Position:", positionXRange,10));
 		parent.add(h4);
 		h4.add(positionXRange);
@@ -1989,7 +2020,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		h4.add(reset4);
 		
 		HorizontalPanel h5=new HorizontalPanel();
-		positionYRange = new HTML5InputRange(-300,300,0);
+		positionYRange = InputRangeWidget.createInputRange(-300,300,0);
 		parent.add(HTML5Builder.createRangeLabel("Y-Position:", positionYRange,10));
 		parent.add(h5);
 		h5.add(positionYRange);
@@ -2004,7 +2035,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		//maybe z no need,there are whell-zoom
 		HorizontalPanel h6=new HorizontalPanel();
-		positionZRange = new HTML5InputRange(-300,300,0);
+		positionZRange = InputRangeWidget.createInputRange(-300,300,0);
 		//parent.add(HTML5Builder.createRangeLabel("Z-Position:", positionZRange,10));
 		//parent.add(h6);
 		h6.add(positionZRange);
@@ -2056,13 +2087,13 @@ HorizontalPanel h1=new HorizontalPanel();
 		//dont need now
 		/*
 		HorizontalPanel frames=new HorizontalPanel();
-		frameRange = new HTML5InputRange(0,1,0);
+		frameRange = InputRangeWidget.createInputRange(0,1,0);
 		parent.add(HTML5Builder.createRangeLabel("Frame:", frameRange));
 		//parent.add(frames);
 		frames.add(frameRange);
 		*/
 		/*
-		frameRange.addListener(new HTML5InputRangeListener() {
+		frameRange.addListener(InputRangeWidget.createInputRangeListener() {
 			
 			@Override
 			public void changed(int newValue) {
@@ -2151,7 +2182,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		bonePositionsPanel.setVisible(false);
 		
 		HorizontalPanel h1bpos=new HorizontalPanel();
-		positionXBoneRange = new HTML5InputRange(-300,300,0);
+		positionXBoneRange = InputRangeWidget.createInputRange(-300,300,0);
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("X-Pos:", positionXBoneRange,10));
 		bonePositionsPanel.add(h1bpos);
 		h1bpos.add(positionXBoneRange);
@@ -2173,7 +2204,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		HorizontalPanel h2bpos=new HorizontalPanel();
 		
-		positionYBoneRange = new HTML5InputRange(-300,300,0);
+		positionYBoneRange = InputRangeWidget.createInputRange(-300,300,0);
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Y-Pos:", positionYBoneRange,10));
 		bonePositionsPanel.add(h2bpos);
 		h2bpos.add(positionYBoneRange);
@@ -2195,7 +2226,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		HorizontalPanel h3bpos=new HorizontalPanel();
-		positionZBoneRange = new HTML5InputRange(-300,300,0);
+		positionZBoneRange = InputRangeWidget.createInputRange(-300,300,0);
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Z-Pos:", positionZBoneRange,10));
 		bonePositionsPanel.add(h3bpos);
 		h3bpos.add(positionZBoneRange);
@@ -2241,7 +2272,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
-		rotationBoneXRange = new HTML5InputRange(-180,180,0);
+		rotationBoneXRange = InputRangeWidget.createInputRange(-180,180,0);
 		boneRotationsPanel.add(HTML5Builder.createRangeLabel("X-Rotate:", rotationBoneXRange));
 		boneRotationsPanel.add(h1b);
 		h1b.add(rotationBoneXRange);
@@ -2279,7 +2310,7 @@ HorizontalPanel h1=new HorizontalPanel();
 				
 			}
 		});
-		rotationBoneYRange = new HTML5InputRange(-180,180,0);
+		rotationBoneYRange = InputRangeWidget.createInputRange(-180,180,0);
 		boneRotationsPanel.add(HTML5Builder.createRangeLabel("Y-Rotate:", rotationBoneYRange));
 		boneRotationsPanel.add(h2b);
 		h2b.add(rotationBoneYRange);
@@ -2317,7 +2348,7 @@ HorizontalPanel h1=new HorizontalPanel();
 				
 			}
 		});
-		rotationBoneZRange = new HTML5InputRange(-180,180,0);
+		rotationBoneZRange = InputRangeWidget.createInputRange(-180,180,0);
 		boneRotationsPanel.add(HTML5Builder.createRangeLabel("Z-Rotate:", rotationBoneZRange));
 		boneRotationsPanel.add(h3b);
 		h3b.add(rotationBoneZRange);
@@ -2524,7 +2555,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 			//h mirror
 			String targetName=getMirroredName(name);
-			log("mirror:"+targetName);
+			LogUtils.log("mirror:"+targetName);
 			if(targetName==null){
 				return;
 			}
@@ -2793,8 +2824,8 @@ HorizontalPanel h1=new HorizontalPanel();
 		main.add(pPanel);
 		pPanel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
 		
-		currentFrameRange = new HTML5InputRange(0,0,0);
-		currentFrameRange.setWidth("420px");
+		currentFrameRange = InputRangeWidget.createInputRange(0,0,0);
+		currentFrameRange.setWidth(420);
 		pPanel.add(currentFrameRange);
 		
 		currentFrameRange.addMouseUpHandler(new MouseUpHandler() {
@@ -2869,7 +2900,13 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 		//	Window.alert("hello");
 			//save database
-			int dataIndex=storageControler.getValue(KEY_INDEX, 0);
+			int dataIndex=0;
+			try {
+				dataIndex = storageControler.getValue(KEY_INDEX, 0);
+			} catch (StorageException e1) {
+				LogUtils.log("doSaveAsFile faild");
+				e1.printStackTrace();
+			}
 			
 			
 			//TODO method?
@@ -2885,7 +2922,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			//canvas.getContext2d().drawImage(renderer.gwtCanvas(),0,0,screenWidth,screenHeight,0,0,thumbW,thumbH);
 			
 			String thumbnail=canvas.toDataUrl();
-			log(thumbnail);
+			LogUtils.log(thumbnail);
 		//	Window.alert("hello1");
 			//Window.alert("hello1");
 			//Window.open(thumbnail, "tmp", null);
@@ -3406,7 +3443,7 @@ public void onError(Request request, Throwable exception) {
 }
 				});
 			} catch (RequestException e) {
-				log(e.getMessage());
+				LogUtils.log(e.getMessage());
 				e.printStackTrace();
 			}
 	}
@@ -3422,7 +3459,7 @@ private List<String> boneList=new ArrayList<String>();
 
 			@Override
 			public void onFaild(String message) {
-				log(message);
+				LogUtils.log(message);
 			}
 			@Override
 			public void onSuccess(BVH bv) {
@@ -3644,7 +3681,7 @@ private void doRePose(int index){
 	doPoseByMatrix(ab);
 	
 	updateBoneRanges();
-	log("update-bone-range");
+	LogUtils.log("update-bone-range");
 	}
 	
 	
@@ -3858,7 +3895,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	Matrix4 newMatrix=cddIk.getStepAngleMatrix(parentAngle,lastJointPos, jointPos, jointRot, ikData.getTargetPos());
 	beforeAngleLog=targetBoneName+","+"parent:"+ThreeLog.get(parentAngle)+",joint:"+ThreeLog.get(currentAngle);
 	if(newMatrix==null){//invalid value
-		log("null matrix");
+		LogUtils.log("null matrix");
 		continue;
 	}
 	
@@ -4105,7 +4142,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			bone3D.add(mesh);
 			
 			Vector3 pos=THREE.Vector3();
-			pos.setPositionFromMatrix(boneMatrix.get(i).getMatrix());
+			pos.getPositionFromMatrix(boneMatrix.get(i).getMatrix());
 			
 			//Vector3 rot=GWTThreeUtils.rotationToVector3(GWTThreeUtils.jsArrayToQuaternion(bones.get(i).getRotq()));
 			Vector3 rot=GWTThreeUtils.degreeToRagiant(ab.getBoneAngleAndMatrix(i).getAngle());
@@ -4212,7 +4249,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			bodyWeight = (JsArray<Vector4>) JsArray.createArray();
 			//geometry initialized 0 indices & weights
 			if(baseGeometry.getSkinIndices().length()!=0 && baseGeometry.getSkinWeight().length()!=0){
-				log("auto-weight from geometry:");
+				LogUtils.log("auto-weight from geometry:");
 				WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_FROM_GEOMETRY, bodyIndices, bodyWeight);
 			}else{
 				WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_NearParentAndChildren, bodyIndices, bodyWeight);
@@ -4227,11 +4264,11 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		//log("bi-length:"+bodyIndices.length());
 		
 		for(int i=0;i<baseGeometry.vertices().length();i++){
-			Vertex baseVertex=baseGeometry.vertices().get(i);
-			Vector3 vertexPosition=baseVertex.getPosition().clone();
+			Vector3 baseVertex=baseGeometry.vertices().get(i);
+			Vector3 vertexPosition=baseVertex.clone();
 			
 			
-			Vertex targetVertex=geo.vertices().get(i);
+			Vector3 targetVertex=geo.vertices().get(i);
 			
 			int boneIndex1=(int) bodyIndices.get(i).getX();
 			int boneIndex2=(int) bodyIndices.get(i).getY();
@@ -4271,7 +4308,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			if(boneIndex2!=boneIndex1){
 				Vector3 bonePos2=animationBonesData.getBaseBonePosition(boneIndex2);
 				Vector3 relatePos2=bonePos2.clone();
-				relatePos2.sub(baseVertex.getPosition(),bonePos2);
+				relatePos2.sub(baseVertex,bonePos2);
 				double length2=relatePos2.length();
 				moveMatrix.get(boneIndex2).multiplyVector3(relatePos2);
 				
@@ -4322,7 +4359,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			}
 			
 			
-			targetVertex.getPosition().set(relatePos.getX(), relatePos.getY(), relatePos.getZ());
+			targetVertex.set(relatePos.getX(), relatePos.getY(), relatePos.getZ());
 		}
 		
 		geo.computeFaceNormals();
@@ -4382,7 +4419,7 @@ private VerticalPanel boneRotationsPanel;
 private CheckBox zlockCheck;
 private CheckBox ikLockCheck;
 private ListBox fileNames;
-private StorageControler storageControler;
+private IStorageControler storageControler;
 private VerticalPanel datasPanel;
 private Button saveButton;
 private VerticalPanel bonePostionAndRotationContainer;
@@ -4424,7 +4461,7 @@ private MenuItem contextMenuHidePrefIks;
 			
 			Matrix4 tmpmx=boneMatrix.get(path.get(path.size()-1)).getMatrix();
 			Vector3 tmpp=THREE.Vector3();
-			tmpp.setPositionFromMatrix(tmpmx);
+			tmpp.getPositionFromMatrix(tmpmx);
 			//log(pos.getX()+","+pos.getY()+","+pos.getZ()+":"+tmpp.getX()+","+tmpp.getY()+","+tmpp.getZ());
 			
 			Matrix4 matrix=THREE.Matrix4();
@@ -4467,15 +4504,15 @@ private MenuItem contextMenuHidePrefIks;
 		
 		
 		for(int i=0;i<baseGeometry.vertices().length();i++){
-			Vertex baseVertex=baseGeometry.vertices().get(i);
-			Vertex targetVertex=geo.vertices().get(i);
+			Vector3 baseVertex=baseGeometry.vertices().get(i);
+			Vector3 targetVertex=geo.vertices().get(i);
 			
 			int boneIndex1=(int) bodyIndices.get(i).getX();
 			int boneIndex2=(int) bodyIndices.get(i).getY();
 			
 			Vector3 bonePos=boneMatrix.get(boneIndex1).getAbsolutePosition();
 			Vector3 relatePos=bonePos.clone();
-			relatePos.sub(baseVertex.getPosition(),bonePos);
+			relatePos.sub(baseVertex,bonePos);
 			double length=relatePos.length();
 			
 			moveMatrix.get(boneIndex1).multiplyVector3(relatePos);
@@ -4483,7 +4520,7 @@ private MenuItem contextMenuHidePrefIks;
 			if(boneIndex2!=boneIndex1){
 				Vector3 bonePos2=boneMatrix.get(boneIndex2).getAbsolutePosition();
 				Vector3 relatePos2=bonePos2.clone();
-				relatePos2.sub(baseVertex.getPosition(),bonePos2);
+				relatePos2.sub(baseVertex,bonePos2);
 				double length2=relatePos2.length();
 				moveMatrix.get(boneIndex2).multiplyVector3(relatePos2);
 				
@@ -4527,7 +4564,7 @@ private MenuItem contextMenuHidePrefIks;
 			}
 			
 			
-			targetVertex.getPosition().set(relatePos.getX(), relatePos.getY(), relatePos.getZ());
+			targetVertex.set(relatePos.getX(), relatePos.getY(), relatePos.getZ());
 		}
 		
 		geo.computeFaceNormals();
@@ -4608,7 +4645,7 @@ private MenuItem contextMenuHidePrefIks;
 				texture.setNeedsUpdate(true);
 				
 				img.removeFromParent();
-				log("generate-texture");
+				LogUtils.log("generate-texture");
 				updateMaterial();
 			}
 		});

@@ -10,13 +10,13 @@ import com.akjava.gwt.html5.client.file.FileReader;
 import com.akjava.gwt.html5.client.file.FileUploadForm;
 import com.akjava.gwt.html5.client.file.FileUtils;
 import com.akjava.gwt.lib.client.ExportUtils;
+import com.akjava.gwt.lib.client.HeaderAndValue;
+import com.akjava.gwt.lib.client.IStorageControler;
 import com.akjava.gwt.lib.client.LogUtils;
-import com.akjava.gwt.lib.client.StorageControler;
 import com.akjava.gwt.lib.client.StorageDataList;
-import com.akjava.gwt.lib.client.StorageDataList.HeaderAndValue;
+import com.akjava.gwt.lib.client.StorageException;
 import com.akjava.gwt.lib.client.ValueUtils;
 import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
@@ -40,7 +40,7 @@ import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 
 public class PreferenceTabPanel extends VerticalPanel {
-	private StorageControler controler;
+	private IStorageControler controler;
 	private PreferenceListener listener;
 	private Map<Integer, String> presetModelMap = new HashMap<Integer, String>();
 	private ListBox modelListBox;
@@ -277,13 +277,20 @@ public class PreferenceTabPanel extends VerticalPanel {
 
 		
 		
-		int listBoxSelection=controler.getValue(KEY_TEXTURE_SELECTION, 0);//default bone
+		int listBoxSelection;
+		try {
+			listBoxSelection = controler.getValue(KEY_TEXTURE_SELECTION, 0);
+			if(listBoxSelection>=textureListBox.getItemCount()){
+				LogUtils.log("warn texture index is invalid:"+listBoxSelection);
+				listBoxSelection=0;
+			}
+			
+			textureListBox.setSelectedIndex(listBoxSelection);
+		} catch (StorageException e) {
+			LogUtils.log("get key_texture_selection faild");
+		}//default bone
 		
-		if(listBoxSelection>=textureListBox.getItemCount()){
-			LogUtils.log("warn texture index is invalid:"+listBoxSelection);
-			listBoxSelection=0;
-		}
-		textureListBox.setSelectedIndex(listBoxSelection);
+		
 		
 		
 		HorizontalPanel buttons = new HorizontalPanel();
@@ -348,16 +355,23 @@ public class PreferenceTabPanel extends VerticalPanel {
 				
 				
 				
-				int listBoxSelection=controler.getValue(KEY_MODEL_SELECTION, 0);//default bone
+				int listBoxSelection;
+				try {
+					listBoxSelection = controler.getValue(KEY_MODEL_SELECTION, 0);
+					if(listBoxSelection>=modelListBox.getItemCount()){
+						LogUtils.log("warn model index is invalid:"+listBoxSelection);
+						listBoxSelection=0;
+					}
+					modelListBox.setSelectedIndex(listBoxSelection);
+				} catch (StorageException e) {
+					LogUtils.log("load model selection faild");
+					e.printStackTrace();
+				}//default bone
 				
-				if(listBoxSelection>=modelListBox.getItemCount()){
-					LogUtils.log("warn model index is invalid:"+listBoxSelection);
-					listBoxSelection=0;
-				}
-				modelListBox.setSelectedIndex(listBoxSelection);
+				
 	}
 	
-	public PreferenceTabPanel(StorageControler cs,
+	public PreferenceTabPanel(IStorageControler cs,
 			PreferenceListener listener) {
 		this.controler = cs;
 		this.listener = listener;
@@ -455,7 +469,12 @@ public class PreferenceTabPanel extends VerticalPanel {
 								Response response) {
 							
 							loadModel(new HeaderAndValue(idIndex, modelName, response.getText()));
-							controler.setValue(KEY_MODEL_SELECTION, index);
+							try {
+								controler.setValue(KEY_MODEL_SELECTION, index);
+							} catch (StorageException e) {
+								LogUtils.log("set KEY_MODEL_SELECTION faild");
+								e.printStackTrace();
+							}
 						}
 
 						@Override
@@ -477,7 +496,12 @@ public class PreferenceTabPanel extends VerticalPanel {
 			
 			
 			loadModel(hv);
-			controler.setValue(KEY_MODEL_SELECTION, index);
+			try {
+				controler.setValue(KEY_MODEL_SELECTION, index);
+			} catch (StorageException e) {
+				LogUtils.log("set KEY_MODEL_SELECTION faild");
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -491,7 +515,12 @@ public class PreferenceTabPanel extends VerticalPanel {
 			String path = presetTextureMap.get(idIndex);
 			if (path != null) {
 				loadTexture(new HeaderAndValue(idIndex, textureName, path));
-				controler.setValue(KEY_TEXTURE_SELECTION, index);
+				try {
+					controler.setValue(KEY_TEXTURE_SELECTION, index);
+				} catch (StorageException e) {
+					LogUtils.log("set KEY_TEXTURE_SELECTION faild");
+					e.printStackTrace();
+				}
 				
 			} else {
 				LogUtils.log("preset model not found" + idIndex);
@@ -502,7 +531,12 @@ public class PreferenceTabPanel extends VerticalPanel {
 			
 			
 			loadTexture(hv);
-			controler.setValue(KEY_TEXTURE_SELECTION, index);
+			try {
+				controler.setValue(KEY_TEXTURE_SELECTION, index);
+			} catch (StorageException e) {
+				LogUtils.log("set KEY_TEXTURE_SELECTION faild");
+				e.printStackTrace();
+			}
 		}
 	}
 	private void exportTextureByListIndex(final int index) {

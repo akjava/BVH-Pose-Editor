@@ -14,7 +14,7 @@
   <!-- Other module inherits                                      -->
 
   <!-- Specify the app entry point class.                         -->
-  <entry-point class='com.akjava.gwt.poseeditor.client.PoseEditor'/>
+
 
   <!-- Specify the paths for translatable code                    -->
   <source path='client'/>
@@ -39,7 +39,7 @@
   <set-property name="gwt.logging.logLevel" value="INFO"/>
   <set-property name="gwt.logging.consoleHandler" value="ENABLED"/>
  
-  
+    <entry-point class='com.akjava.gwt.poseeditor.client.PoseEditor'/>
   
 
 <set-property name="user.agent" value="safari"/>
