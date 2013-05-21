@@ -8,6 +8,6 @@
 	<classpathentry kind="lib" path="lib/akjavalibbvh_121208.jar"/>
 	<classpathentry kind="lib" path="lib/akjavalibgwt_121208.jar"/>
 	<classpathentry kind="lib" path="lib/akjavastatgwt_120820.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/threeTest"/>
+	<classpathentry kind="lib" path="lib/akjavathreegwt_130521.jar"/>
 	<classpathentry kind="output" path="war/WEB-INF/classes"/>
 </classpath>
