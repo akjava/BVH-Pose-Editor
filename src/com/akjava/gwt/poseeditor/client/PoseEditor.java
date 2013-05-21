@@ -125,7 +125,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="r3";
+	private String version="3.0";
 	private Vector3 zero=THREE.Vector3();
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
@@ -233,7 +233,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		dragObjectControler=new GWTDragObjectControler(scene,projector);
 		
 		
-		scene.add(THREE.AmbientLight(0xffffff));
+		//scene.add(THREE.AmbientLight(0xffffff));
 		
 		Light pointLight = THREE.DirectionalLight(0xffffff,1);
 		pointLight.setPosition(0, 10, 300);
@@ -3393,6 +3393,8 @@ HorizontalPanel h1=new HorizontalPanel();
 	private Texture texture;
 	protected void updateMaterial() {
 		
+		texture.setFlipY(false);//for temporary release
+		
 		Material material=null;
 		boolean transparent=transparentCheck.getValue();
 		double opacity=1;
@@ -4645,7 +4647,7 @@ private MenuItem contextMenuHidePrefIks;
 				texture.setNeedsUpdate(true);
 				
 				img.removeFromParent();
-				LogUtils.log("generate-texture");
+				//LogUtils.log("generate-texture");
 				updateMaterial();
 			}
 		});
