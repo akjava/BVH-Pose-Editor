@@ -1261,11 +1261,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				}
 				Vector3 target=getCurrentIkData().getTargetPos();
 				Vector3 rootPos=ab.getBonePosition(0);
-				Vector3 diff=target.clone().subSelf(rootPos);
+				Vector3 diff=target.clone().sub(rootPos);
 				diff.setY(0);
 				diff.setZ(0);
 				
-				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.add(diff));
 				ab.getBoneAngleAndMatrix(0).updateMatrix();
 				doPoseByMatrix(ab);
 				hideContextMenu();
@@ -1279,11 +1279,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				}
 				Vector3 target=getCurrentIkData().getTargetPos();
 				Vector3 rootPos=ab.getBonePosition(0);
-				Vector3 diff=target.clone().subSelf(rootPos);
+				Vector3 diff=target.clone().sub(rootPos);
 				diff.setX(0);
 				diff.setZ(0);
 				
-				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.add(diff));
 				ab.getBoneAngleAndMatrix(0).updateMatrix();
 				doPoseByMatrix(ab);
 				hideContextMenu();
@@ -1297,11 +1297,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				}
 				Vector3 target=getCurrentIkData().getTargetPos();
 				Vector3 rootPos=ab.getBonePosition(0);
-				Vector3 diff=target.clone().subSelf(rootPos);
+				Vector3 diff=target.clone().sub(rootPos);
 				diff.setY(0);
 				diff.setX(0);
 				
-				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.add(diff));
 				ab.getBoneAngleAndMatrix(0).updateMatrix();
 				doPoseByMatrix(ab);
 				hideContextMenu();
@@ -1316,9 +1316,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				}
 				Vector3 target=getCurrentIkData().getTargetPos();
 				Vector3 rootPos=ab.getBonePosition(0);
-				Vector3 diff=target.clone().subSelf(rootPos);
+				Vector3 diff=target.clone().sub(rootPos);
 				
-				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.addSelf(diff));
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.add(diff));
 				ab.getBoneAngleAndMatrix(0).updateMatrix();
 				doPoseByMatrix(ab);
 				hideContextMenu();
@@ -1590,7 +1590,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 						mouseMoving=false;
 						return;
 					}
-					double length=newPos.clone().subSelf(getCurrentIkData().getTargetPos()).length();
+					double length=newPos.clone().sub(getCurrentIkData().getTargetPos()).length();
 					/*
 					if(newPos.getY()<8){
 						
@@ -1712,10 +1712,10 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					}else{ //follow ik
 						if(boneIndex==0){
 						Vector3 movedPos=ab.getBonePosition(boneIndex);
-						movedPos.subSelf(pos);
+						movedPos.sub(pos);
 						
 						for(IKData ik:ikdatas){
-							ik.getTargetPos().addSelf(movedPos);
+							ik.getTargetPos().add(movedPos);
 							}
 						doPoseByMatrix(ab);//redraw
 						}
@@ -1742,7 +1742,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				}else{
 					Vector3 rootPos=ab.getBonePosition(0);
 					Vector3 movedAngle=ab.getBoneAngleAndMatrix(selectedBone).getAngle().clone();
-					movedAngle.subSelf(angle);
+					movedAngle.sub(angle);
 					//log("before:"+ThreeLog.get(angle)+" moved:"+ThreeLog.get(movedAngle));
 					Matrix4 mx=GWTThreeUtils.degitRotationToMatrix4(movedAngle);
 					
@@ -1874,9 +1874,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				}else{//follow
 					if(boneIndex==0){
 					Vector3 moved=ab.getBonePosition(boneIndex);
-					moved.subSelf(pos);
+					moved.sub(pos);
 					for(IKData ik:ikdatas){
-						ik.getTargetPos().addSelf(moved);
+						ik.getTargetPos().add(moved);
 						}
 					}
 					
@@ -1899,7 +1899,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				}else{
 					Vector3 rootPos=ab.getBonePosition(0);
 					Vector3 movedAngle=ab.getBoneAngleAndMatrix(selectedBone).getAngle().clone();
-					movedAngle.subSelf(angle);
+					movedAngle.sub(angle);
 					logger.fine("before:"+ThreeLog.get(angle)+" moved:"+ThreeLog.get(movedAngle));
 					Matrix4 mx=GWTThreeUtils.degitRotationToMatrix4(movedAngle);
 					for(IKData ik:ikdatas){
@@ -2473,13 +2473,13 @@ HorizontalPanel h1=new HorizontalPanel();
 			if(targetIk!=null){
 					Vector3 root=ab.getBonePosition(0);
 					
-					Vector3 targetPos=targetIk.getTargetPos().clone().subSelf(root);
+					Vector3 targetPos=targetIk.getTargetPos().clone().sub(root);
 					targetPos.setX(targetPos.getX()*-1);
-					targetPos.addSelf(root);
+					targetPos.add(root);
 					
-					Vector3 srcPos=ik.getTargetPos().clone().subSelf(root);
+					Vector3 srcPos=ik.getTargetPos().clone().sub(root);
 					srcPos.setX(srcPos.getX()*-1);
-					srcPos.addSelf(root);
+					srcPos.add(root);
 					
 					ik.getTargetPos().set(targetPos.getX(),targetPos.getY(),targetPos.getZ());
 					targetIk.getTargetPos().set(srcPos.getX(),srcPos.getY(),srcPos.getZ());
@@ -3100,7 +3100,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			angles.add(angle);
 			
 			Vector3 position=ab.getMatrixPosition(i);//TODO getPosition()?
-			position.subSelf(ab.getBaseBoneRelativePosition(i));
+			position.sub(ab.getBaseBoneRelativePosition(i));
 			
 			positions.add(position);
 		//	log(ab.getBoneName(i)+" pos="+ThreeLog.get(position)+",base="+ThreeLog.get(ab.getBaseBoneRelativePosition(i)));
@@ -3119,7 +3119,7 @@ HorizontalPanel h1=new HorizontalPanel();
 				continue;
 			}
 			Vector3 pos=ikdata.getTargetPos().clone();
-			pos.subSelf(ab.getBonePosition(ikdata.getLastBoneName()));//relative path
+			pos.sub(ab.getBonePosition(ikdata.getLastBoneName()));//relative path
 			ikDataMap.put(ikdata.getName(), pos);
 		}
 		
@@ -3240,7 +3240,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			if(vec!=null){
 				vec=vec.clone();
-				vec.addSelf(ab.getBonePosition(ikdatas.get(i).getLastBoneName()));//relative path
+				vec.add(ab.getBonePosition(ikdatas.get(i).getLastBoneName()));//relative path
 				ikdatas.get(i).getTargetPos().set(vec.getX(), vec.getY(), vec.getZ());
 			}
 		}
@@ -3268,7 +3268,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		Matrix4 posMx=GWTThreeUtils.translateToMatrix4(pos);
 		
 		Matrix4 rotMx=GWTThreeUtils.rotationToMatrix4(angles);
-		rotMx.multiply(posMx,rotMx);
+		rotMx.multiplyMatrices(posMx,rotMx);
 		
 		//log("bone-pos:"+ThreeLog.get(bones.get(index).getPos()));
 		
@@ -3293,7 +3293,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		Matrix4 posMx=GWTThreeUtils.translateToMatrix4(pos);
 		
 		Matrix4 rotMx=GWTThreeUtils.rotationToMatrix4(angles);
-		rotMx.multiply(posMx,rotMx);
+		rotMx.multiplyMatrices(posMx,rotMx);
 		
 		//log("bone-pos:"+ThreeLog.get(bones.get(index).getPos()));
 		
@@ -3591,7 +3591,7 @@ private List<String> boneList=new ArrayList<String>();
 			if(bone.getParent()!=-1){
 				MatrixAndVector3 parentMv=boneMatrix.get(bone.getParent());
 				Vector3 apos=bpos.clone();
-				apos.addSelf(parentMv.getAbsolutePosition());
+				apos.add(parentMv.getAbsolutePosition());
 				mv.setAbsolutePosition(apos);
 			}else{
 				//root
@@ -3702,7 +3702,7 @@ for(NameAndVector3 nv:samples){
 	int boneIndex=ab.getBoneIndex(nv.getName());
 	Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(ab.getBoneAngleAndMatrix(boneIndex).getMatrix()));
 	Matrix4 newMatrix=GWTThreeUtils.rotationToMatrix4(nv.getVector3());
-	newMatrix.multiply(translates,newMatrix);
+	newMatrix.multiplyMatrices(translates,newMatrix);
 	//log("apply-matrix");
 	matrix.get(boneIndex).setAngle(GWTThreeUtils.radiantToDegree(nv.getVector3()));
 	matrix.get(boneIndex).setMatrix(newMatrix);
@@ -3802,11 +3802,11 @@ private Vector3 findNextStep(int boneIndex,int lastBoneIndex,Vector3 targetPos){
 	for(int i=0;i<path.size()-1;i++){
 		int bindex=path.get(i);
 		AngleAndPosition am=ab.getBoneAngleAndMatrix(bindex);
-		matrix.multiplySelf(am.getMatrix());
+		matrix.multiply(am.getMatrix());
 	}
 	Vector3 base=THREE.Vector3(0,0,0);
 	Vector3 pos=matrix.multiplyVector3(lastTrans.clone());
-	double length=pos.subSelf(targetPos).length();
+	double length=pos.sub(targetPos).length();
 	//log("length:"+length+","+0+"x"+0+"x"+0);
 	Vector3 tmpVec=THREE.Vector3();
 	for(int x=-1;x<=1;x++){
@@ -3822,7 +3822,7 @@ private Vector3 findNextStep(int boneIndex,int lastBoneIndex,Vector3 targetPos){
 					AngleAndPosition am=ab.getBoneAngleAndMatrix(bindex);
 					Matrix4 m=am.getMatrix();
 					if(bindex==boneIndex){
-						Vector3 newAngle=am.getAngle().clone().addSelf(tmpVec);
+						Vector3 newAngle=am.getAngle().clone().add(tmpVec);
 						Vector3 pv=GWTThreeUtils.toPositionVec(m);
 						
 						m=THREE.Matrix4();
@@ -3830,11 +3830,11 @@ private Vector3 findNextStep(int boneIndex,int lastBoneIndex,Vector3 targetPos){
 						m.setRotationFromEuler(newAngle, "XYZ");
 						
 					}
-					matrix.multiplySelf(m);
+					matrix.multiply(m);
 				}
 				
 				pos=matrix.multiplyVector3(lastTrans.clone());
-				double tmpl=pos.subSelf(targetPos).length();
+				double tmpl=pos.sub(targetPos).length();
 				//log("length:"+tmpl+","+x+"x"+y+"x"+z);
 				if(tmpl<length){
 					base.set(x*5,y*5,z*5);
@@ -3844,7 +3844,7 @@ private Vector3 findNextStep(int boneIndex,int lastBoneIndex,Vector3 targetPos){
 		}
 	}
 	//log("mutch:"+ThreeLog.get(base));
-	return base.addSelf(ab.getBoneAngleAndMatrix(boneIndex).getAngle());
+	return base.add(ab.getBoneAngleAndMatrix(boneIndex).getAngle());
 }
 
 private boolean doLimit=true;
@@ -3859,7 +3859,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	
 	
 	List<AngleAndPosition> minMatrix=AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs());
-	double minLength=ab.getBonePosition(ikData.getLastBoneName()).clone().subSelf(ikData.getTargetPos()).length();
+	double minLength=ab.getBonePosition(ikData.getLastBoneName()).clone().sub(ikData.getTargetPos()).length();
 	for(int i=0;i<ikData.getIteration()*cddLoop;i++){
 	String targetBoneName=ikData.getBones().get(currentIkJointIndex);
 	
@@ -3949,7 +3949,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	}
 	}
 	
-	currentAngle.addSelf(diffAngles);
+	currentAngle.add(diffAngles);
 	//log("added:"+ThreeLog.get(currentAngle));
 	
 	//currentAngle.setX(0);//keep x
@@ -4001,7 +4001,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	String afterAngleLog=("after-limit:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(ikkedAngle)));
 	Matrix4 newMatrix=GWTThreeUtils.rotationToMatrix4(ikkedAngle);
 	
-	newMatrix.multiply(translates,newMatrix);
+	newMatrix.multiplyMatrices(translates,newMatrix);
 	
 	ab.getBoneAngleAndMatrix(boneIndex).setMatrix(newMatrix);
 	ab.getBoneAngleAndMatrix(boneIndex).setAngle(GWTThreeUtils.radiantToDegree(ikkedAngle));
@@ -4060,12 +4060,12 @@ private List<AngleAndPosition> findStartMatrix(String boneName,Vector3 targetPos
 	List<AngleAndPosition> retMatrix=candiateAngleAndMatrixs.get(0);
 	ab.setBonesAngleAndMatrixs(retMatrix);//TODO without set
 	Vector3 tpos=ab.getBonePosition(boneName);
-	double minlength=targetPos.clone().subSelf(tpos).length();
+	double minlength=targetPos.clone().sub(tpos).length();
 	for(int i=1;i<candiateAngleAndMatrixs.size();i++){
 		List<AngleAndPosition> mxs=candiateAngleAndMatrixs.get(i);
 		ab.setBonesAngleAndMatrixs(mxs);//TODO change
 		Vector3 tmpPos=ab.getBonePosition(boneName);
-		double tmpLength=targetPos.clone().subSelf(tmpPos).length();
+		double tmpLength=targetPos.clone().sub(tmpPos).length();
 		if(tmpLength<minlength){
 			minlength=tmpLength;
 			retMatrix=mxs;
@@ -4162,10 +4162,10 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			for(int j=0;j<path.size()-1;j++){//last is boneself
 			//	log(""+path.get(j));
 				Matrix4 mx=boneMatrix.get(path.get(j)).getMatrix();
-				matrix.multiply(matrix, mx);
+				matrix.multiplyMatrices(matrix, mx);
 			}
 			matrix.multiplyVector3(pos);
-			matrix.multiply(matrix, boneMatrix.get(path.get(path.size()-1)).getMatrix());//last one
+			matrix.multiplyMatrices(matrix, boneMatrix.get(path.get(path.size()-1)).getMatrix());//last one
 			moveMatrix.add(matrix);
 			
 			
@@ -4294,7 +4294,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			
 			Vector3 bonePos=animationBonesData.getBaseBonePosition(boneIndex1);
 			Vector3 relatePos=bonePos.clone();
-			relatePos.sub(vertexPosition,bonePos);
+			relatePos.subVectors(vertexPosition,bonePos);
 			//double length=relatePos.length();
 			
 			
@@ -4314,7 +4314,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			if(boneIndex2!=boneIndex1){
 				Vector3 bonePos2=animationBonesData.getBaseBonePosition(boneIndex2);
 				Vector3 relatePos2=bonePos2.clone();
-				relatePos2.sub(baseVertex,bonePos2);
+				relatePos2.subVectors(baseVertex,bonePos2);
 				double length2=relatePos2.length();
 				moveMatrix.get(boneIndex2).multiplyVector3(relatePos2);
 				
@@ -4326,7 +4326,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 				relatePos.multiplyScalar(bodyWeight.get(i).getX());
 			
 				relatePos2.multiplyScalar(bodyWeight.get(i).getY());
-				relatePos.addSelf(relatePos2);
+				relatePos.add(relatePos2);
 				
 				
 				//keep distance1 faild
@@ -4344,10 +4344,10 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 				
 				if(length2<1){
 				Vector3 abpos=THREE.Vector3();
-				abpos.sub(relatePos, bonePositions.get(boneIndex2));
+				abpos.subVectors(relatePos, bonePositions.get(boneIndex2));
 				double scar=abpos.length()/length2;
 				abpos.multiplyScalar(scar);
-				abpos.addSelf(bonePositions.get(boneIndex2));
+				abpos.add(bonePositions.get(boneIndex2));
 				relatePos.set(abpos.getX(), abpos.getY(), abpos.getZ());
 				
 				}
@@ -4414,7 +4414,7 @@ private Vector3 getDefaultIkPos(int index){
 		ikLength=2.5;
 	}
 	
-	return pos.clone().subSelf(ppos).multiplyScalar(ikLength).addSelf(ppos);
+	return pos.clone().sub(ppos).multiplyScalar(ikLength).add(ppos);
 }
 
 
@@ -4474,10 +4474,10 @@ private MenuItem contextMenuHidePrefIks;
 			for(int j=0;j<path.size()-1;j++){//last is boneself
 			//	log(""+path.get(j));
 				Matrix4 mx=boneMatrix.get(path.get(j)).getMatrix();
-				matrix.multiply(matrix, mx);
+				matrix.multiplyMatrices(matrix, mx);
 			}
 			matrix.multiplyVector3(pos);
-			matrix.multiply(matrix, boneMatrix.get(path.get(path.size()-1)).getMatrix());//last one
+			matrix.multiplyMatrices(matrix, boneMatrix.get(path.get(path.size()-1)).getMatrix());//last one
 			moveMatrix.add(matrix);
 			
 			
@@ -4536,7 +4536,7 @@ private MenuItem contextMenuHidePrefIks;
 				relatePos.multiplyScalar(bodyWeight.get(i).getX());
 			
 				relatePos2.multiplyScalar(bodyWeight.get(i).getY());
-				relatePos.addSelf(relatePos2);
+				relatePos.add(relatePos2);
 				
 				
 				//keep distance1 faild
@@ -4557,7 +4557,7 @@ private MenuItem contextMenuHidePrefIks;
 				abpos.sub(relatePos, bonePositions.get(boneIndex2));
 				double scar=abpos.length()/length2;
 				abpos.multiplyScalar(scar);
-				abpos.addSelf(bonePositions.get(boneIndex2));
+				abpos.add(bonePositions.get(boneIndex2));
 				relatePos.set(abpos.getX(), abpos.getY(), abpos.getZ());
 				
 				}
