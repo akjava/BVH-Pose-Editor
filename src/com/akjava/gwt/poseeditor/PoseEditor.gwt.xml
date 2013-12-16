@@ -25,7 +25,7 @@
 <inherits name="com.akjava.gwt.html5.Html5widget"/>
 <inherits name="com.akjava.gwt.stats.Stats"/>
 <inherits name="com.akjava.gwt.three.Three"/>
-<inherits name="com.akjava.gwt.lib.Commons"/>
+<inherits name='com.akjava.gwt.common.Common'/>
 <inherits name="com.akjava.gwt.bvh.GWTBVH"/>
 
 <inherits name="com.google.gwt.logging.Logging"/>

@@ -32,18 +32,6 @@ import com.akjava.gwt.lib.client.StorageControler;
 import com.akjava.gwt.lib.client.StorageException;
 import com.akjava.gwt.poseeditor.client.PreferenceTabPanel.PreferenceListener;
 import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
-import com.akjava.gwt.three.client.THREE;
-import com.akjava.gwt.three.client.cameras.Camera;
-import com.akjava.gwt.three.client.core.Geometry;
-import com.akjava.gwt.three.client.core.Intersect;
-import com.akjava.gwt.three.client.core.Matrix4;
-import com.akjava.gwt.three.client.core.Object3D;
-import com.akjava.gwt.three.client.core.Projector;
-import com.akjava.gwt.three.client.core.Vector3;
-import com.akjava.gwt.three.client.core.Vector4;
-import com.akjava.gwt.three.client.extras.GeometryUtils;
-import com.akjava.gwt.three.client.extras.ImageUtils;
-import com.akjava.gwt.three.client.extras.loaders.JSONLoader.LoadHandler;
 import com.akjava.gwt.three.client.gwt.GWTDragObjectControler;
 import com.akjava.gwt.three.client.gwt.GWTGeometryUtils;
 import com.akjava.gwt.three.client.gwt.GWTThreeUtils;
@@ -62,12 +50,27 @@ import com.akjava.gwt.three.client.gwt.animation.ik.CDDIK;
 import com.akjava.gwt.three.client.gwt.animation.ik.IKData;
 import com.akjava.gwt.three.client.gwt.core.BoundingBox;
 import com.akjava.gwt.three.client.gwt.ui.SimpleTabDemoEntryPoint;
-import com.akjava.gwt.three.client.lights.Light;
-import com.akjava.gwt.three.client.materials.Material;
-import com.akjava.gwt.three.client.objects.Mesh;
-import com.akjava.gwt.three.client.renderers.WebGLRenderer;
-import com.akjava.gwt.three.client.scenes.Scene;
-import com.akjava.gwt.three.client.textures.Texture;
+import com.akjava.gwt.three.client.js.THREE;
+import com.akjava.gwt.three.client.js.cameras.Camera;
+import com.akjava.gwt.three.client.js.core.Geometry;
+import com.akjava.gwt.three.client.js.core.Intersect;
+import com.akjava.gwt.three.client.js.core.Object3D;
+import com.akjava.gwt.three.client.js.core.Projector;
+import com.akjava.gwt.three.client.js.extras.GeometryUtils;
+import com.akjava.gwt.three.client.js.extras.ImageUtils;
+import com.akjava.gwt.three.client.js.lights.Light;
+import com.akjava.gwt.three.client.js.loaders.JSONLoader.JSONLoadHandler;
+import com.akjava.gwt.three.client.js.materials.Material;
+import com.akjava.gwt.three.client.js.math.Euler;
+import com.akjava.gwt.three.client.js.math.Matrix4;
+import com.akjava.gwt.three.client.js.math.Vector3;
+import com.akjava.gwt.three.client.js.math.Vector4;
+import com.akjava.gwt.three.client.js.objects.Line;
+import com.akjava.gwt.three.client.js.objects.Mesh;
+import com.akjava.gwt.three.client.js.renderers.WebGLRenderer;
+import com.akjava.gwt.three.client.js.scenes.Scene;
+import com.akjava.gwt.three.client.js.textures.Texture;
+import com.google.common.collect.Lists;
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.dom.client.ImageElement;
@@ -132,7 +135,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		if(root!=null){
 
 			root.setPosition((double)positionXRange.getValue()/10, (double)positionYRange.getValue()/10, (double)positionZRange.getValue()/10);
-			root.getRotation().set(Math.toRadians(rotationXRange.getValue()),Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()));
+			root.getRotation().set(Math.toRadians(rotationXRange.getValue()),Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()),Euler.XYZ);
 			
 			
 			//camera rotation style
@@ -221,6 +224,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
+		
 		this.renderer=renderer;
 		
 		canvas.addDomHandler(new ContextMenu(), ContextMenuEvent.getType());
@@ -252,10 +256,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		root.add(mesh);
 		
 		//line removed,because of flicking
-		Mesh xline=GWTGeometryUtils.createLineMesh(THREE.Vector3(-50, 0, 0.001), THREE.Vector3(50, 0, 0.001), 0x880000,3);
+		Object3D xline=GWTGeometryUtils.createLineMesh(THREE.Vector3(-50, 0, 0.001), THREE.Vector3(50, 0, 0.001), 0x880000,3);
 		//root.add(xline);
 		
-		Mesh zline=GWTGeometryUtils.createLineMesh(THREE.Vector3(0, 0, -50), THREE.Vector3(0, 0, 50), 0x008800,3);
+		Object3D zline=GWTGeometryUtils.createLineMesh(THREE.Vector3(0, 0, -50), THREE.Vector3(0, 0, 50), 0x008800,3);
 		//root.add(zline);
 		
 		
@@ -1445,7 +1449,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 							ikdataIndex=j;
 							selectionMesh.setVisible(true);
 							selectionMesh.setPosition(target.getPosition());
-							selectionMesh.getMaterial().getColor().setHex(0x00ff00);
+							selectionMesh.getMaterial().gwtGetColor().setHex(0x00ff00);
 							
 							if(!bname.equals(currentSelectionIkName)){
 								switchSelectionIk(bname);
@@ -1467,7 +1471,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					selectedBone=target.getName();
 					selectionMesh.setVisible(true);
 					selectionMesh.setPosition(target.getPosition());
-					selectionMesh.getMaterial().getColor().setHex(0xff0000);
+					selectionMesh.getMaterial().gwtGetColor().setHex(0xff0000);
 					switchSelectionIk(null);
 					
 					dragObjectControler.selectObject(target, event.getX(), event.getY(), screenWidth, screenHeight, camera);
@@ -1828,7 +1832,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	public void onMouseWheel(MouseWheelEvent event) {
 		if(isSelectedIk()){
 			double dy=event.getDeltaY()*0.2;
-			getCurrentIkData().getTargetPos().incrementZ(dy);
+			getCurrentIkData().getTargetPos().gwtIncrementZ(dy);
 			
 			if(event.isAltKeyDown()){//slow
 				if(event.isShiftKeyDown()){
@@ -2595,9 +2599,9 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 
 	private void LoadJsonModel(String jsonText){
-		GWTGeometryUtils.loadJsonModel(jsonText,new  LoadHandler() {
+		GWTGeometryUtils.loadJsonModel(jsonText,new  JSONLoadHandler() {
 			@Override
-			public void loaded(Geometry geometry) {
+			public void loaded(Geometry geometry,JsArray<Material> materials) {
 				if(bodyMesh!=null){
 					root.remove(bodyMesh);//for initialzie
 					bodyMesh=null;
@@ -3558,12 +3562,12 @@ private List<String> boneList=new ArrayList<String>();
 			
 			//log(bone.getName());
 			
-			Matrix4 mx=THREE.Matrix4();
+			Matrix4 mx=THREE.Matrix4().makeRotationFromQuaternion(GWTThreeUtils.jsArrayToQuaternion(motion.getRot()));
 			Vector3 motionPos=GWTThreeUtils.jsArrayToVector3(motion.getPos());
 			//seems same as bone
 		//	LogUtils.log(motionPos);
 			mx.setPosition(motionPos);
-			mx.setRotationFromQuaternion(GWTThreeUtils.jsArrayToQuaternion(motion.getRot()));
+			//mx.setRotationFromQuaternion();
 			/*
 			Matrix4 mx2=THREE.Matrix4();
 			mx2.setRotationFromQuaternion(motion.getRot());
@@ -4172,7 +4176,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			//pos.addSelf(ppos);
 			
 			//log(boneName+":"+ThreeLog.get(pos)+","+ThreeLog.get(ppos));	
-			Mesh line=GWTGeometryUtils.createLineMesh(pos, ppos, 0xffffff);
+			Object3D line=GWTGeometryUtils.createLineMesh(pos, ppos, 0xffffff);
 			bone3D.add(line);
 			
 			//cylinder
@@ -4218,7 +4222,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 					}
 					bone3D.add(ikMesh);
 					ikMesh.setPosition(ik.getTargetPos());
-					Mesh ikline=GWTGeometryUtils.createLineMesh(pos, ik.getTargetPos(), 0xffffff);
+					Line ikline=GWTGeometryUtils.createLineMesh(pos, ik.getTargetPos(), 0xffffff);
 					bone3D.add(ikline);
 				}
 			}
@@ -4229,9 +4233,9 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			
 			//mesh color
 			if(pos.getY()<0){
-				mesh.getMaterial().setColor(THREE.Color(0xffee00));//over color
+				mesh.getMaterial().gwtGetColor().set(0xffee00);//over color
 			}else if(pos.getY()<1){
-				mesh.getMaterial().setColor(THREE.Color(0xff8800));//over color
+				mesh.getMaterial().gwtGetColor().set(0xff8800);//over color
 			}
 			
 			bonePositions.add(pos);
@@ -4482,7 +4486,7 @@ private MenuItem contextMenuHidePrefIks;
 			Vector3 ppos=bonePositions.get(bones.get(i).getParent());	
 			//pos.addSelf(ppos);
 			
-			Mesh line=GWTGeometryUtils.createLineMesh(pos, ppos, 0xffffff);
+			Line line=GWTGeometryUtils.createLineMesh(pos, ppos, 0xffffff);
 			bone3D.add(line);
 			
 			
