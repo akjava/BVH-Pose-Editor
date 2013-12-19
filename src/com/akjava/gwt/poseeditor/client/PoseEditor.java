@@ -638,10 +638,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		//storageControler.setValue(PreferenceTabPanel.KEY_MODEL_SELECTION, 0);
 		preferencePanel=new PreferenceTabPanel(storageControler,this);
-		LogUtils.log("x");
 		tabPanel.add(preferencePanel,"Preference");
-		preferencePanel.doit();
-		LogUtils.log("x2");
+		
 		//about
 		String html="";
 		html+="<br/>"+"[Howto Move]<br/><b>Select Nothing:</b><br/>Mouse Drag=Cammera Rotatation-XY<br/>Mouse Wheel= Zoom<br/> +ALT Move-XY Camera";

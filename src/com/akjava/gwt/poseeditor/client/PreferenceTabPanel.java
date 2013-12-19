@@ -78,13 +78,11 @@ public class PreferenceTabPanel extends VerticalPanel {
 				updateModelList();
 			}
 		});
-		FormPanel p=new FormPanel(Document.get().createFormElement(),false){};
-		add(p);
-		LogUtils.log("2");
+		
 		final FileUploadForm modelUpload=new FileUploadForm();
 		
 		add(modelUpload);
-		LogUtils.log("2.1");
+		
 		modelUpload.getFileUpload().addChangeHandler(new ChangeHandler() {
 			
 			@Override
@@ -133,7 +131,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 				reader.readAsText(file,"utf-8");
 			}
 		});
-		LogUtils.log("3");
+		
 		modelControler=new StorageDataList(controler, "MODEL");
 		modelSelection = new Label();
 		add(modelSelection);
@@ -143,7 +141,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 		add(modelListBox);
 		modelListBox.setVisibleItemCount(5);
 		
-		LogUtils.log("4");
+		
 		modelListBox.addChangeHandler(new ChangeHandler() {
 
 			@Override
@@ -153,7 +151,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 		});
 		
 		
-		LogUtils.log("5");
+		
 		updateModelList();
 		
 		HorizontalPanel buttons = new HorizontalPanel();
@@ -179,7 +177,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 			}
 		});
 	
-		LogUtils.log("6");
+		
 		
 	}
 	
@@ -384,13 +382,11 @@ public class PreferenceTabPanel extends VerticalPanel {
 		this.controler = cs;
 		this.listener = listener;
 		
-		
-	}
-	public void doit(){
 		createModelControl();
 		
 		createTextureControl();
 	}
+
 	protected void updateModelButtons() {
 		//preset cant remove
 		String id = modelListBox.getValue(modelListBox.getSelectedIndex());
