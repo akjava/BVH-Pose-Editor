@@ -32,7 +32,6 @@ import com.akjava.gwt.lib.client.StorageException;
 import com.akjava.gwt.poseeditor.client.PreferenceTabPanel.PreferenceListener;
 import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
 import com.akjava.gwt.three.client.gwt.GWTDragObjectControler;
-import com.akjava.gwt.three.client.gwt.GWTThreeUtils;
 import com.akjava.gwt.three.client.gwt.Object3DUtils;
 import com.akjava.gwt.three.client.gwt.ThreeLog;
 import com.akjava.gwt.three.client.gwt.animation.AngleAndPosition;
@@ -46,9 +45,12 @@ import com.akjava.gwt.three.client.gwt.animation.NameAndVector3;
 import com.akjava.gwt.three.client.gwt.animation.ik.CDDIK;
 import com.akjava.gwt.three.client.gwt.animation.ik.IKData;
 import com.akjava.gwt.three.client.gwt.core.BoundingBox;
+import com.akjava.gwt.three.client.gwt.model.JSONModelFile;
 import com.akjava.gwt.three.client.java.animation.WeightBuilder;
 import com.akjava.gwt.three.client.java.ui.SimpleTabDemoEntryPoint;
 import com.akjava.gwt.three.client.java.utils.GWTGeometryUtils;
+import com.akjava.gwt.three.client.java.utils.GWTThreeUtils;
+import com.akjava.gwt.three.client.java.utils.GWTThreeUtils.InvalidModelFormatException;
 import com.akjava.gwt.three.client.js.THREE;
 import com.akjava.gwt.three.client.js.cameras.Camera;
 import com.akjava.gwt.three.client.js.core.Geometry;
@@ -2620,43 +2622,62 @@ HorizontalPanel h1=new HorizontalPanel();
 		return null;
 	}
 
+	JSONModelFile lastLoadedModel;
 	private void LoadJsonModel(String jsonText){
-		GWTGeometryUtils.loadJsonModel(jsonText,new  JSONLoadHandler() {
-			@Override
-			public void loaded(Geometry geometry,JsArray<Material> materials) {
-				if(bodyMesh!=null){
-					root.remove(bodyMesh);//for initialzie
-					bodyMesh=null;
-				}
-				
-				ab=null;//for remake matrix.
-				
-				baseGeometry=geometry;//change body mesh
-				
-				if(baseGeometry.getBones()!=null){
-					logger.fine("create-bone from geometry");
-					setBone(baseGeometry.getBones());
+		try {
+			JSONModelFile model=GWTThreeUtils.parseJsonObject(jsonText);
+			lastLoadedModel=model;
+			GWTThreeUtils.loadJsonModel(lastLoadedModel,new  JSONLoadHandler() {
+				@Override
+				public void loaded(Geometry geometry,JsArray<Material> materials) {
+					if(bodyMesh!=null){
+						root.remove(bodyMesh);//for initialzie
+						bodyMesh=null;
+					}
 					
-				}else{
-					logger.fine("bvh:"+bvh);
-					//initialize default bone
-					AnimationBoneConverter converter=new AnimationBoneConverter();
-					setBone(converter.convertJsonBone(bvh));
+					ab=null;//for remake matrix.
+					
+					baseGeometry=geometry;//change body mesh
+					
+					if(baseGeometry.getBones()!=null){
+						logger.fine("create-bone from geometry");
+						setBone(baseGeometry.getBones());
+						
+					}else{
+						logger.fine("bvh:"+bvh);
+						//initialize default bone
+						AnimationBoneConverter converter=new AnimationBoneConverter();
+						setBone(converter.convertJsonBone(bvh));
+					}
+					//log(""+(baseGeometry.getBones()!=null));
+					//log(baseGeometry.getBones());
+					
+					doRePose(0);
+					
+					
+					//log("snapped");
+					if(poseEditorDatas.size()==0){//initial new list
+						initialPoseFrameData=snapCurrentFrameData();//get invalid pose
+						updateMaterial();
+						doNewFile();
+					}
+					
+					//update texture
+					if(texture!=null){
+					if(lastLoadedModel.getMetaData().getFormatVersion()==3){
+						LogUtils.log("model-format is 3.0 and set flipY=false");
+						texture.setFlipY(false);
+					}else{
+						texture.setFlipY(true);
+					}
+					}
 				}
-				//log(""+(baseGeometry.getBones()!=null));
-				//log(baseGeometry.getBones());
-				
-				doRePose(0);
-				
-				
-				//log("snapped");
-				if(poseEditorDatas.size()==0){//initial new list
-					initialPoseFrameData=snapCurrentFrameData();//get invalid pose
-					updateMaterial();
-					doNewFile();
-				}
-			}
-		});
+			});
+		} catch (InvalidModelFormatException e) {
+			LogUtils.log("LoadJsonModel:"+e.getMessage());
+		}
+		
+		
 		
 	}
 	private String getSelectedBoneName(){
@@ -3419,7 +3440,13 @@ HorizontalPanel h1=new HorizontalPanel();
 	private Texture texture;
 	protected void updateMaterial() {
 		
-		texture.setFlipY(false);//for temporary release //TODO as option for 3.1 format models
+		if(lastLoadedModel!=null){
+			if(lastLoadedModel.getMetaData().getFormatVersion()==3){
+				texture.setFlipY(false);
+			}else{
+				texture.setFlipY(true);
+			}
+		}
 		
 		Material material=null;
 		boolean transparent=transparentCheck.getValue();
