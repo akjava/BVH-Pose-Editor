@@ -8,7 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import com.akjava.bvh.client.BVH;
 import com.akjava.bvh.client.BVHMotion;
@@ -70,7 +69,6 @@ import com.akjava.gwt.three.client.js.objects.Mesh;
 import com.akjava.gwt.three.client.js.renderers.WebGLRenderer;
 import com.akjava.gwt.three.client.js.scenes.Scene;
 import com.akjava.gwt.three.client.js.textures.Texture;
-import com.google.common.collect.Lists;
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.dom.client.ImageElement;
@@ -222,6 +220,25 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 	}
 	private GWTDragObjectControler dragObjectControler;
+	
+	public static class Logger {
+		boolean enabled=false;
+		public static Logger getLogger(String name){
+			return new Logger();
+		}
+		public void fine(String log){
+			if(enabled){
+				LogUtils.log(log);
+			}
+		}
+		public void info(String log) {
+			if(enabled){
+			LogUtils.log(log);
+			}
+		}
+		
+		
+	}
 	
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
@@ -498,7 +515,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				public void onClick(ClickEvent event) {
 					
 					
-					JSONValue jsonValue=JSONParser.parseLenient(json);
+					JSONValue jsonValue=JSONParser.parseStrict(json);
 					JSONObject ped=jsonValue.isObject();
 					if(ped!=null){
 						String newName=Window.prompt("Change Name",name);
@@ -581,6 +598,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	}
 	
 	private void createTabs(){
+		
 		tabPanel.addSelectionHandler(new SelectionHandler<Integer>() {
 			
 			@Override
@@ -617,10 +635,13 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		} catch (StorageException e) {
 			e.printStackTrace();
 		}
+		
 		//storageControler.setValue(PreferenceTabPanel.KEY_MODEL_SELECTION, 0);
 		preferencePanel=new PreferenceTabPanel(storageControler,this);
+		LogUtils.log("x");
 		tabPanel.add(preferencePanel,"Preference");
-		
+		preferencePanel.doit();
+		LogUtils.log("x2");
 		//about
 		String html="";
 		html+="<br/>"+"[Howto Move]<br/><b>Select Nothing:</b><br/>Mouse Drag=Cammera Rotatation-XY<br/>Mouse Wheel= Zoom<br/> +ALT Move-XY Camera";
@@ -630,11 +651,13 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		html+="<br/><br/>"+"yello box means under Y:0,orange box means near Y:0";
 		html+="<br/>On IK-Moving switching normal & +Alt(Smooth) is good tactics.";
 		html+="<br/>"+"<a href='http://webgl.akjava.com'>More info at webgl.akjava.com</a>";
+		
 		HTML htmlP=new HTML(html);
 		VerticalPanel aboutRoot=new VerticalPanel();
 		//TODO credit
 		aboutRoot.add(htmlP);
 		tabPanel.add(aboutRoot,"About");
+		
 	}
 	PreferenceTabPanel preferencePanel;
 	
@@ -3477,6 +3500,7 @@ private List<String> boneList=new ArrayList<String>();
 				setBone(converter.convertJsonBone(bvh));
 				
 				if(preferencePanel!=null){
+					LogUtils.log("load from preference");
 					preferencePanel.loadSelectionModel();
 					preferencePanel.loadSelectionTexture();
 				}

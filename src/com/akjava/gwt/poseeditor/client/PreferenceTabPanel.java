@@ -18,6 +18,7 @@ import com.akjava.gwt.lib.client.StorageException;
 import com.akjava.gwt.lib.client.ValueUtils;
 import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
 import com.google.gwt.core.client.JsArray;
+import com.google.gwt.dom.client.Document;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -34,6 +35,7 @@ import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.FocusWidget;
+import com.google.gwt.user.client.ui.FormPanel;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
@@ -60,7 +62,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 	}
 
 	private void createModelControl(){
-
+		LogUtils.log("1");
 		HorizontalPanel mPanel=new HorizontalPanel();
 		
 		add(mPanel);
@@ -76,9 +78,13 @@ public class PreferenceTabPanel extends VerticalPanel {
 				updateModelList();
 			}
 		});
-		
+		FormPanel p=new FormPanel(Document.get().createFormElement(),false){};
+		add(p);
+		LogUtils.log("2");
 		final FileUploadForm modelUpload=new FileUploadForm();
+		
 		add(modelUpload);
+		LogUtils.log("2.1");
 		modelUpload.getFileUpload().addChangeHandler(new ChangeHandler() {
 			
 			@Override
@@ -93,7 +99,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 						modelUpload.reset();
 						try{
 						String text=reader.getResultAsString();
-						JSONValue lastJsonValue = JSONParser.parseLenient(text);
+						JSONValue lastJsonValue = JSONParser.parseStrict(text);
 						//TODO more validate
 						JSONObject object=lastJsonValue.isObject();
 						if(object==null){
@@ -127,7 +133,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 				reader.readAsText(file,"utf-8");
 			}
 		});
-		
+		LogUtils.log("3");
 		modelControler=new StorageDataList(controler, "MODEL");
 		modelSelection = new Label();
 		add(modelSelection);
@@ -137,7 +143,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 		add(modelListBox);
 		modelListBox.setVisibleItemCount(5);
 		
-
+		LogUtils.log("4");
 		modelListBox.addChangeHandler(new ChangeHandler() {
 
 			@Override
@@ -147,7 +153,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 		});
 		
 		
-
+		LogUtils.log("5");
 		updateModelList();
 		
 		HorizontalPanel buttons = new HorizontalPanel();
@@ -173,7 +179,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 			}
 		});
 	
-		
+		LogUtils.log("6");
 		
 	}
 	
@@ -235,10 +241,11 @@ public class PreferenceTabPanel extends VerticalPanel {
 			}
 		});
 		
+		
 		textureControler=new StorageDataList(controler, "TEXTURE");
 		textureSelection = new Label();
 		add(textureSelection);
-
+		
 		textureListBox = new ListBox();
 		textureListBox.setWidth("300px");
 		add(textureListBox);
@@ -259,6 +266,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 				textureListBox.addItem(fileName, id);
 			}
 		}
+		
 		
 		List<HeaderAndValue> textures=textureControler.getDataList();
 		for(int i=0;i<textures.size();i++){
@@ -289,7 +297,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 		} catch (StorageException e) {
 			LogUtils.log("get key_texture_selection faild");
 		}//default bone
-		
+	
 		
 		
 		
@@ -315,7 +323,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 						.getSelectedIndex());
 			}
 		});
-		
+
 		Button exportBt = new Button("Export");
 		buttons.add(exportBt);
 		exportBt.addClickHandler(new ClickHandler() {
@@ -375,8 +383,12 @@ public class PreferenceTabPanel extends VerticalPanel {
 			PreferenceListener listener) {
 		this.controler = cs;
 		this.listener = listener;
-
+		
+		
+	}
+	public void doit(){
 		createModelControl();
+		
 		createTextureControl();
 	}
 	protected void updateModelButtons() {
