@@ -33,7 +33,6 @@ import com.akjava.gwt.lib.client.StorageException;
 import com.akjava.gwt.poseeditor.client.PreferenceTabPanel.PreferenceListener;
 import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
 import com.akjava.gwt.three.client.gwt.GWTDragObjectControler;
-import com.akjava.gwt.three.client.gwt.GWTGeometryUtils;
 import com.akjava.gwt.three.client.gwt.GWTThreeUtils;
 import com.akjava.gwt.three.client.gwt.Object3DUtils;
 import com.akjava.gwt.three.client.gwt.ThreeLog;
@@ -45,11 +44,12 @@ import com.akjava.gwt.three.client.gwt.animation.AnimationHierarchyItem;
 import com.akjava.gwt.three.client.gwt.animation.AnimationKey;
 import com.akjava.gwt.three.client.gwt.animation.BoneLimit;
 import com.akjava.gwt.three.client.gwt.animation.NameAndVector3;
-import com.akjava.gwt.three.client.gwt.animation.WeightBuilder;
 import com.akjava.gwt.three.client.gwt.animation.ik.CDDIK;
 import com.akjava.gwt.three.client.gwt.animation.ik.IKData;
 import com.akjava.gwt.three.client.gwt.core.BoundingBox;
-import com.akjava.gwt.three.client.gwt.ui.SimpleTabDemoEntryPoint;
+import com.akjava.gwt.three.client.java.animation.WeightBuilder;
+import com.akjava.gwt.three.client.java.ui.SimpleTabDemoEntryPoint;
+import com.akjava.gwt.three.client.java.utils.GWTGeometryUtils;
 import com.akjava.gwt.three.client.js.THREE;
 import com.akjava.gwt.three.client.js.cameras.Camera;
 import com.akjava.gwt.three.client.js.core.Geometry;
@@ -81,6 +81,7 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.ContextMenuEvent;
 import com.google.gwt.event.dom.client.ContextMenuHandler;
+import com.google.gwt.event.dom.client.DoubleClickEvent;
 import com.google.gwt.event.dom.client.LoadEvent;
 import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseMoveEvent;
@@ -128,7 +129,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="3.0";
+	private String version="4.0(for three.r63)";
 	private Vector3 zero=THREE.Vector3();
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
@@ -3397,7 +3398,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	private Texture texture;
 	protected void updateMaterial() {
 		
-		texture.setFlipY(false);//for temporary release
+		texture.setFlipY(false);//for temporary release //TODO as option for 3.1 format models
 		
 		Material material=null;
 		boolean transparent=transparentCheck.getValue();
@@ -4657,6 +4658,12 @@ private MenuItem contextMenuHidePrefIks;
 		});
 		
 		
+		
+	}
+
+	@Override
+	public void onDoubleClick(DoubleClickEvent event) {
+		// TODO Auto-generated method stub
 		
 	}
 }
