@@ -41,6 +41,6 @@
   -->
     <entry-point class='com.akjava.gwt.poseeditor.client.PoseEditor'/>
   <set-property name="user.agent" value="safari"/>
-  <add-linker name="sso" />
-<!--  -->
+
+<!--   <add-linker name="sso" /> -->
 </module>

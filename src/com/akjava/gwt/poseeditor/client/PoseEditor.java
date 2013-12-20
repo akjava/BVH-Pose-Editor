@@ -129,7 +129,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="4.0(for three.r63)";
+	private String version="5.0(for three.r64)";
 	private Vector3 zero=THREE.Vector3();
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
