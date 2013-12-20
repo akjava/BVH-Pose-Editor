@@ -62,7 +62,6 @@ public class PreferenceTabPanel extends VerticalPanel {
 	}
 
 	private void createModelControl(){
-		LogUtils.log("1");
 		HorizontalPanel mPanel=new HorizontalPanel();
 		
 		add(mPanel);
