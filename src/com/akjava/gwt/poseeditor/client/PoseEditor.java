@@ -4198,7 +4198,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			bone3D.add(mesh);
 			
 			Vector3 pos=THREE.Vector3();
-			pos.getPositionFromMatrix(boneMatrix.get(i).getMatrix());
+			pos.setFromMatrixPosition(boneMatrix.get(i).getMatrix());
 			
 			//Vector3 rot=GWTThreeUtils.rotationToVector3(GWTThreeUtils.jsArrayToQuaternion(bones.get(i).getRotq()));
 			Vector3 rot=GWTThreeUtils.degreeToRagiant(ab.getBoneAngleAndMatrix(i).getAngle());
@@ -4517,7 +4517,7 @@ private MenuItem contextMenuHidePrefIks;
 			
 			Matrix4 tmpmx=boneMatrix.get(path.get(path.size()-1)).getMatrix();
 			Vector3 tmpp=THREE.Vector3();
-			tmpp.getPositionFromMatrix(tmpmx);
+			tmpp.setFromMatrixPosition(tmpmx);
 			//log(pos.getX()+","+pos.getY()+","+pos.getZ()+":"+tmpp.getX()+","+tmpp.getY()+","+tmpp.getZ());
 			
 			Matrix4 matrix=THREE.Matrix4();
