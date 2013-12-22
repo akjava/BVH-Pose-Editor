@@ -1,5 +1,9 @@
 BVH Pose Editor
 
+[Updated]
+support three.js r64
+
+
 Licensed Apache2.0
 included Three.js & stats.js & GWT-Three.js Wrapper is Under MIT License
 
