@@ -50,8 +50,8 @@ import com.akjava.gwt.three.client.java.animation.WeightBuilder;
 import com.akjava.gwt.three.client.java.ui.SimpleTabDemoEntryPoint;
 import com.akjava.gwt.three.client.java.utils.GWTGeometryUtils;
 import com.akjava.gwt.three.client.java.utils.GWTThreeUtils;
-import com.akjava.gwt.three.client.java.utils.Object3DUtils;
 import com.akjava.gwt.three.client.java.utils.GWTThreeUtils.InvalidModelFormatException;
+import com.akjava.gwt.three.client.java.utils.Object3DUtils;
 import com.akjava.gwt.three.client.js.THREE;
 import com.akjava.gwt.three.client.js.cameras.Camera;
 import com.akjava.gwt.three.client.js.core.Geometry;
@@ -71,6 +71,7 @@ import com.akjava.gwt.three.client.js.objects.Mesh;
 import com.akjava.gwt.three.client.js.renderers.WebGLRenderer;
 import com.akjava.gwt.three.client.js.scenes.Scene;
 import com.akjava.gwt.three.client.js.textures.Texture;
+import com.google.common.base.Joiner;
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.dom.client.ImageElement;
@@ -295,7 +296,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		//delay make problem
 		//loadBVH("pose.bvh");//initial bone
 		
-		
+		/*
 		IKData ikdata1=new IKData("LowerBack-Neck1");
 		//ikdata1.setTargetPos(THREE.Vector3(0, 20, 0));
 		ikdata1.setLastBoneName("Head");
@@ -340,6 +341,15 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikdata3.setBones(new String[]{"LeftLeg","LeftUpLeg"});
 		ikdata3.setIteration(5);
 		ikdatas.add(ikdata3);
+		*/
+		
+		
+		IKData mhikdata3=new IKData("lThigh-lShin");
+		//ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
+		mhikdata3.setLastBoneName("lFoot");
+		mhikdata3.setBones(new String[]{"lShin","lThigh"});//what is this?
+		mhikdata3.setIteration(5);//what is this?
+		ikdatas.add(mhikdata3);
 		
 		//updateIkLabels();
 		
@@ -1498,6 +1508,8 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					selectionMesh.getMaterial().gwtGetColor().setHex(0xff0000);
 					switchSelectionIk(null);
 					
+					LogUtils.log("select selection:"+ThreeLog.get(selectionMesh.getPosition()));
+					
 					dragObjectControler.selectObject(target, event.getX(), event.getY(), screenWidth, screenHeight, camera);
 					logger.fine("onMouse down-end2");
 					return;
@@ -1921,24 +1933,35 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					doPoseIkk(0,false,5,ik,1);
 					}
 				}else{
-					Vector3 rootPos=ab.getBonePosition(0);
+					//Vector3 rootPos=ab.getBonePosition(0);
+					
 					Vector3 movedAngle=ab.getBoneAngleAndMatrix(selectedBone).getAngle().clone();
 					movedAngle.sub(angle);
-					logger.fine("before:"+ThreeLog.get(angle)+" moved:"+ThreeLog.get(movedAngle));
-					Matrix4 mx=GWTThreeUtils.degitRotationToMatrix4(movedAngle);
+					//logger.fine("before:"+ThreeLog.get(angle)+" moved:"+ThreeLog.get(movedAngle));
+					//Matrix4 mx=GWTThreeUtils.degitRotationToMatrix4(movedAngle);
+					
+					
+					
+					//move green-ik-indicator
+					//--this is keep green ik-bone position
 					for(IKData ik:ikdatas){
 						/*
-						 * i faild turn 
+						 * i faild turn :i have no idea;
 						Vector3 ikpos=ik.getTargetPos().clone().subSelf(rootPos);
 						mx.multiplyVector3(ikpos);
 						ik.setTargetPos(ikpos.addSelf(rootPos));
 						*/
 						
+						
+						
 						String name=ik.getLastBoneName();
-						Vector3 pos=ab.getBonePosition(name);
+						//Vector3 pos=ab.getBonePosition(name);
 						//ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
+						
+						//LogUtils.log("ik:"+name);
 						ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
 						}
+						
 					
 					doPoseByMatrix(ab);//redraw
 				}
@@ -2636,12 +2659,20 @@ HorizontalPanel h1=new HorizontalPanel();
 					}
 					
 					ab=null;//for remake matrix.
+					LogUtils.log("loadJsonModel:");
+					LogUtils.log(geometry);
 					
 					baseGeometry=geometry;//change body mesh
 					
 					if(baseGeometry.getBones()!=null){
-						logger.fine("create-bone from geometry");
-						setBone(baseGeometry.getBones());
+						//logger.fine("create-bone from geometry");
+						setBone(baseGeometry.getBones()); //possible broken bone.TODO test geometry bone
+						
+						/*
+						logger.fine("testly use bone from bvh");//TODO move back
+						AnimationBoneConverter converter=new AnimationBoneConverter();
+						setBone(converter.convertJsonBone(bvh));
+						*/
 						
 					}else{
 						logger.fine("bvh:"+bvh);
@@ -4163,7 +4194,8 @@ CDDIK cddIk=new CDDIK();
 private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
 	if(isSelectedBone()){
-		selectionMesh.setPosition(ab.getBoneAngleAndMatrix(selectedBone).getPosition());
+		selectionMesh.setPosition(ab.getBonePosition(selectedBone));
+		LogUtils.log("update selection:"+ThreeLog.get(selectionMesh.getPosition()));
 	}
 		
 	List<AngleAndPosition> boneMatrix=animationBonesData.getBonesAngleAndMatrixs();
@@ -4303,11 +4335,33 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		if(bodyMesh==null){//initial
 			bodyIndices = (JsArray<Vector4>) JsArray.createArray();
 			bodyWeight = (JsArray<Vector4>) JsArray.createArray();
+			
+			
+			
 			//geometry initialized 0 indices & weights
 			if(baseGeometry.getSkinIndices().length()!=0 && baseGeometry.getSkinWeight().length()!=0){
-				LogUtils.log("auto-weight from geometry:");
+				//LogUtils.log(bones);
+				LogUtils.log("use geometry bone");
+				//test
+				/*
+				LogUtils.log("testlly use root all geometry");
+				WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_ROOT_ALL, bodyIndices, bodyWeight);
+				*/
+				
 				WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_FROM_GEOMETRY, bodyIndices, bodyWeight);
+				
+				/*
+				List<String> lines=new ArrayList<String>();
+				for(int i=0;i<bodyWeight.length();i++){
+					lines.add(i+get(bodyWeight.get(i)));
+				}
+				LogUtils.log("after");
+				LogUtils.log(Joiner.on("\n").join(lines));
+				
+				*/
+				
 			}else{
+				LogUtils.log("auto-weight :sometime this broke models.you can use ModelWeight Apps");
 				WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_NearParentAndChildren, bodyIndices, bodyWeight);
 				}
 			}else{
@@ -4455,6 +4509,18 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		geo.computeTangents();
 		*/
 		}
+
+//TODO move to three.js
+public static String get(Vector4 vec){
+	if(vec==null){
+		return "Null";
+	}
+	String ret="x:"+vec.getX();
+	ret+=",y:"+vec.getY();
+	ret+=",z:"+vec.getZ();
+	ret+=",w:"+vec.getW();
+	return ret;
+}
 
 private Vector3 getDefaultIkPos(int index){
 	Vector3 pos=ab.getBonePosition(index);
