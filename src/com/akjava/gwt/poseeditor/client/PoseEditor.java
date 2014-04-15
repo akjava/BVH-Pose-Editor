@@ -592,6 +592,25 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				}
 			});
 			
+			Button rawBt=new Button("Raw Json");
+			add(rawBt);
+			rawBt.addClickHandler(new ClickHandler() {
+				
+				private Anchor anchor;
+
+				@Override
+				public void onClick(ClickEvent event) {
+					
+					if(anchor!=null){
+						anchor.removeFromParent();
+					}
+					HTML5Download html5=new HTML5Download();
+					anchor = html5.generateTextDownloadLink(json, "raw"+".json", "Click to download",true);
+					add(anchor);
+					
+				}
+			});
+			
 		}
 	}
 	
@@ -3168,6 +3187,10 @@ HorizontalPanel h1=new HorizontalPanel();
 		updateSaveButtons();
 	}
 	
+	/**
+	 * load frame data
+	 * @param ped
+	 */
 	public void doLoad(PoseEditorData ped){
 		ped.updateMatrix(ab);//need bone data
 		poseEditorDatas.add(ped);
