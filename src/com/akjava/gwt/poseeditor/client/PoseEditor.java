@@ -768,12 +768,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			List<List<NameAndVector3>> result=createBases(getCurrentIkData());
 			//log("switchd:"+result.size());
 			
+			/*for debug
 			List<NameAndVector3> tmp=result.get(result.size()-1);
-			
 			for(NameAndVector3 value:tmp){
 			//	log(value.getName()+":"+ThreeLog.get(value.getVector3()));
 			}
-			
+			*/
 		
 		if(candiateAngleAndMatrixs!=null){
 			candiateAngleAndMatrixs.clear();
@@ -1525,7 +1525,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 							selectionMesh.setPosition(target.getPosition());
 							selectionMesh.getMaterial().gwtGetColor().setHex(0x00ff00);
 							
-							LogUtils.log(ikBoneName+","+currentSelectionIkName);
+							
 							if(!ikBoneName.equals(currentSelectionIkName)){
 								switchSelectionIk(ikBoneName);
 							}
@@ -1739,7 +1739,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				
 				
 			}else if(isSelectedBone()){
-				logger.fine("selected bone");
+				logger.info("selected bone");
 				if(event.isShiftKeyDown()){//move position
 					
 					int boneIndex=ab.getBoneIndex(selectedBone);
@@ -1817,11 +1817,11 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					doPoseIkk(0,false,5,ik,1);
 					}
 				}else{
-					Vector3 rootPos=ab.getBonePosition(0);
+					//Vector3 rootPos=ab.getBonePosition(0);
 					Vector3 movedAngle=ab.getBoneAngleAndMatrix(selectedBone).getAngle().clone();
 					movedAngle.sub(angle);
 					//log("before:"+ThreeLog.get(angle)+" moved:"+ThreeLog.get(movedAngle));
-					Matrix4 mx=GWTThreeUtils.degitRotationToMatrix4(movedAngle);
+					//Matrix4 mx=GWTThreeUtils.degitRotationToMatrix4(movedAngle);
 					
 					
 					
@@ -1832,7 +1832,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 						ik.setTargetPos(ikpos.addSelf(rootPos));
 						*/
 						String name=ik.getLastBoneName();
-						Vector3 pos=ab.getBonePosition(name);
+						//Vector3 pos=ab.getBonePosition(name);
 						
 						if(existBone(name)){
 							ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
