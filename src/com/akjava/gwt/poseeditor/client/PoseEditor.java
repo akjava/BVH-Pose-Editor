@@ -1,5 +1,6 @@
 package com.akjava.gwt.poseeditor.client;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -92,6 +93,8 @@ import com.google.gwt.event.dom.client.MouseUpHandler;
 import com.google.gwt.event.dom.client.MouseWheelEvent;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
+import com.google.gwt.event.logical.shared.ValueChangeEvent;
+import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
@@ -103,6 +106,7 @@ import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.json.client.JSONValue;
+import com.google.gwt.text.shared.Renderer;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Anchor;
@@ -118,6 +122,7 @@ import com.google.gwt.user.client.ui.MenuItem;
 import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.ScrollPanel;
+import com.google.gwt.user.client.ui.ValueListBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 
 
@@ -508,10 +513,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				@Override
 				public void onClick(ClickEvent event) {
 					int loadedIndex=isLoaded(ind);
+					LogUtils.log("loadedIndex:"+loadedIndex);
 					if(loadedIndex!=-1){
-						selectPoseEditorDatas(loadedIndex);
-						tabPanel.selectTab(0);//datas
-						return;
+						//if already exist remove from list & alwasy recrete.because possiblly model's bone is alway difference.
+						poseEditorDatas.remove(loadedIndex);
+						LogUtils.log("old data is removed");
 					}
 					PoseEditorData ped=PoseEditorData.readData(json);
 					
@@ -2848,17 +2854,34 @@ HorizontalPanel h1=new HorizontalPanel();
 		HorizontalPanel topPanel=new HorizontalPanel();
 		main.add(topPanel);
 		
-		fileNames = new ListBox();
-		
-		fileNames.addChangeHandler(new ChangeHandler() {
+		pedSelectionListBox=new ValueListBox<PoseEditorData>(new Renderer<PoseEditorData>() {
+
 			@Override
-			public void onChange(ChangeEvent event) {
-				selectPoseEditorDatas(fileNames.getSelectedIndex());
+			public String render(PoseEditorData object) {
+				if(object==null){
+					return "";
+				}
+				return object.getName();
+			}
+
+			@Override
+			public void render(PoseEditorData object, Appendable appendable) throws IOException {
+				// TODO Auto-generated method stub
+				
+			}
+		});
+		pedSelectionListBox.addValueChangeHandler(new ValueChangeHandler<PoseEditorData>() {
+			@Override
+			public void onValueChange(ValueChangeEvent<PoseEditorData> event) {
+				event.getValue().updateMatrix(ab);//need bone data
+				updatePoseEditorDatas();
 			}
 		});
 		
+		topPanel.add(pedSelectionListBox);
 		
-		topPanel.add(fileNames);
+		
+		
 		Button newFile=new Button("New");
 		topPanel.add(newFile);
 		newFile.addClickHandler(new ClickHandler() {
@@ -3034,7 +3057,9 @@ HorizontalPanel h1=new HorizontalPanel();
 		if(result!=null){
 			pdata.setName(result);
 			JSONObject data=PoseEditorData.writeData(pdata);
-			fileNames.setItemText(poseEditorDataSelection, result);
+			
+			updateListBox();
+			//fileNames.setItemText(poseEditorDataSelection, result);
 			
 			//TODO
 			if(!storageControler.isAvailable()){
@@ -3150,18 +3175,16 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 
 
-	private int poseEditorDataSelection;
+	//private int poseEditorDataSelection;
 	List<PoseEditorData> poseEditorDatas=new ArrayList<PoseEditorData>();
 	
-	public void selectPoseEditorDatas(int index){
-		poseEditorDataSelection=index;
-		fileNames.setSelectedIndex(index);
-		
+	public void updatePoseEditorDatas(){
+		//poseEditorDataSelection=index;
 		updatePoseIndex(0);
 		updateSaveButtons();
 	}
 	private PoseEditorData getSelectedPoseEditorData(){
-		return poseEditorDatas.get(poseEditorDataSelection);
+		return pedSelectionListBox.getValue();
 	}
 	
 	protected void doNewFile() {
@@ -3180,11 +3203,15 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		poseEditorDatas.add(ped);
-		fileNames.addItem(newName);
-		fileNames.setSelectedIndex(fileNames.getItemCount()-1);
-		selectPoseEditorDatas(fileNames.getItemCount()-1);
+		
+		pedSelectionListBox.setValue(ped);
 		
 		updateSaveButtons();
+	}
+	
+	
+	private void updateListBox(){//refresh list
+		pedSelectionListBox.setAcceptableValues(poseEditorDatas);
 	}
 	
 	/**
@@ -3192,16 +3219,20 @@ HorizontalPanel h1=new HorizontalPanel();
 	 * @param ped
 	 */
 	public void doLoad(PoseEditorData ped){
-		ped.updateMatrix(ab);//need bone data
+		//add to list
 		poseEditorDatas.add(ped);
-		fileNames.addItem(ped.getName());
+		updateListBox();
+		pedSelectionListBox.setValue(ped);//select
 		
-		selectPoseEditorDatas(poseEditorDatas.size()-1);
 		
+		
+		ped.updateMatrix(ab);//need bone data
 		tabPanel.selectTab(0);//datas
-		//called addChangeHandler
-		updateSaveButtons();
+		
+		updatePoseEditorDatas();
 	}
+	
+
 
 	protected void doPaste() {
 		if(clipboard!=null){
@@ -4621,7 +4652,8 @@ private VerticalPanel bonePositionsPanel;
 private VerticalPanel boneRotationsPanel;
 private CheckBox zlockCheck;
 private CheckBox ikLockCheck;
-private ListBox fileNames;
+//private ListBox fileNames;
+private ValueListBox<PoseEditorData> pedSelectionListBox;
 private IStorageControler storageControler;
 private VerticalPanel datasPanel;
 private Button saveButton;
@@ -4817,6 +4849,9 @@ private MenuItem contextMenuHidePrefIks;
 	public void modelChanged(HeaderAndValue model) {
 		//log("model-load:"+model.getData());
 		LoadJsonModel(model.getData());
+		
+		//refresh matrix for new bone-model
+		pedSelectionListBox.getValue().updateMatrix(ab);
 		
 		//new model need new initial pose
 		initialPoseFrameData=snapCurrentFrameData();
