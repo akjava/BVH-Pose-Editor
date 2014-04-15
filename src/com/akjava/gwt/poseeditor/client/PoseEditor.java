@@ -133,6 +133,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	private String version="5.0.1(for three.r66)";
 	private Vector3 zero=THREE.Vector3();
 	
+	private static boolean debug;
 
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
@@ -4028,17 +4029,19 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	
 	
 	//Vector3 beforeAngles=GWTThreeUtils.radiantToDegree(GWTThreeUtils.rotationToVector3(jointRot));
-	Vector3 beforeAngle=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
+	//Vector3 beforeAngle=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
 	
 	//Matrix4 newMatrix=cddIk.doStep(lastJointPos, jointPos, jointRot, ikData.getTargetPos());
 	
 	//TODO add parent bone angles
-	AngleAndPosition root=ab.getBoneAngleAndMatrix(0);
+	//AngleAndPosition root=ab.getBoneAngleAndMatrix(0);
 	Vector3 parentAngle=ab.getParentAngles(boneIndex);
 	Matrix4 newMatrix=cddIk.getStepAngleMatrix(parentAngle,lastJointPos, jointPos, jointRot, ikData.getTargetPos());
 	beforeAngleLog=targetBoneName+","+"parent:"+ThreeLog.get(parentAngle)+",joint:"+ThreeLog.get(currentAngle);
 	if(newMatrix==null){//invalid value
-		LogUtils.log("null matrix");
+		if(debug){
+			LogUtils.log("null matrix");
+		}
 		continue;
 	}
 	
@@ -4135,7 +4138,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	}
 	
 	
-	String afterAngleLog=("after-limit:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(ikkedAngle)));
+	//String afterAngleLog=("after-limit:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(ikkedAngle)));
 	Matrix4 newMatrix=GWTThreeUtils.rotationToMatrix4(ikkedAngle);
 	
 	newMatrix.multiplyMatrices(translates,newMatrix);
