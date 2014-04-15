@@ -132,6 +132,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
 	private String version="5.0.1(for three.r66)";
 	private Vector3 zero=THREE.Vector3();
+	
+
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
@@ -332,7 +334,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikdata2.setBones(new String[]{"LeftForeArm","LeftArm"});
 		ikdata2.setIteration(7);
 		ikdatas.add(ikdata2);
-		
+		*/
 		
 		//
 		IKData ikdata3=new IKData("LeftUpLeg-LeftLeg");
@@ -341,7 +343,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikdata3.setBones(new String[]{"LeftLeg","LeftUpLeg"});
 		ikdata3.setIteration(5);
 		ikdatas.add(ikdata3);
-		*/
+		
 		
 		
 		IKData mhikdata3=new IKData("lThigh-lShin");
@@ -350,6 +352,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		mhikdata3.setBones(new String[]{"lShin","lThigh"});//what is this?
 		mhikdata3.setIteration(5);//what is this?
 		ikdatas.add(mhikdata3);
+		
+		//bone limit is very important otherwise ik really slow
+		boneLimits.put("lShin",BoneLimit.createBoneLimit(0, 160, 0, 0, -20, 0));
+		boneLimits.put("lThigh",BoneLimit.createBoneLimit(-120, 60, -5, 35, -40, 80));
 		
 		//updateIkLabels();
 		
@@ -744,34 +750,51 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		return currentSelectionIkName!=null;
 	}
 	
+	//here is so slow.
 	private void switchSelectionIk(String name){
+		
+		
 		currentSelectionIkName=name;
 		currentMatrixs=AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs());
 		
+		
+		
+			
+		
+		
+		
 		if(currentSelectionIkName!=null){
-		List<List<NameAndVector3>> result=createBases(getCurrentIkData());
-		//log("switchd:"+result.size());
 		
-		List<NameAndVector3> tmp=result.get(result.size()-1);
-		
-		for(NameAndVector3 value:tmp){
-		//	log(value.getName()+":"+ThreeLog.get(value.getVector3()));
-		}
-		
+			List<List<NameAndVector3>> result=createBases(getCurrentIkData());
+			//log("switchd:"+result.size());
+			
+			List<NameAndVector3> tmp=result.get(result.size()-1);
+			
+			for(NameAndVector3 value:tmp){
+			//	log(value.getName()+":"+ThreeLog.get(value.getVector3()));
+			}
+			
 		
 		if(candiateAngleAndMatrixs!=null){
 			candiateAngleAndMatrixs.clear();
 		}else{
 			candiateAngleAndMatrixs=new ArrayList<List<AngleAndPosition>>();
 		}
-		//log("result-size:"+result.size());
+		
+		//must be lower .to keep lower add limit bone inside IK
+		if(result.size()>1500){
+			LogUtils.log("warn many result-size:"+result.size()+" this almost freeze everything. are you forget limit bone.");
+		}
+		//LogUtils.log("safe heresome how in danger:"+name);
+		
+		
 		int index=0;
 		for(List<NameAndVector3> nv:result){
 			//log("candiate:"+index);
 			List<AngleAndPosition> bm=AnimationBonesData.cloneAngleAndMatrix(currentMatrixs);
 			applyMatrix(bm, nv);
 			
-			//deb
+			//for debug;
 			for(String bname:getCurrentIkData().getBones()){
 				Vector3 angle=bm.get(ab.getBoneIndex(bname)).getAngle();
 				//log(bname+":"+ThreeLog.get(angle));
@@ -780,10 +803,19 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			candiateAngleAndMatrixs.add(bm);
 			index++;
 		}
+		
 		}else{
-			
-		//	log("null selected");
+			//LogUtils.log("currentSelectionIkName not selected yet:"+name);
 		}
+		
+		
+		
+		/*
+		LogUtils.log("end switchSelectionIk:"+name);
+		if(true){
+			return;
+		}
+		*/
 		
 		updateIkLabels();
 	}
@@ -796,6 +828,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		}
 		List<List<NameAndVector3>> all=new ArrayList();
 		List<List<NameAndVector3>> result=new ArrayList();
+		
 		for(int i=0;i<data.getBones().size();i++){
 			String name=data.getBones().get(i);
 			List<NameAndVector3> patterns=createBases(name,angle); //90 //60 is slow
@@ -986,9 +1019,13 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			@Override
 			public void execute() {
 				for(IKData ik:ikdatas){
-				
-					ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(ik.getLastBoneName())));
-					doPoseByMatrix(ab);
+					String name=ik.getLastBoneName();
+					
+					if(existBone(name)){
+						ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
+						doPoseByMatrix(ab);
+					}
+					
 					hideContextMenu();
 					
 				}
@@ -1476,17 +1513,21 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			Object3D target=sect.getObject();
 			if(!target.getName().isEmpty()){
 				if(target.getName().startsWith("ik:")){
-					logger.fine("7 drag");
-					String bname=target.getName().substring(3);
+					
+					
+					String ikBoneName=target.getName().substring(3);//3 is "ik:".length()
+					
+					
 					for(int j=0;j<ikdatas.size();j++){
-						if(ikdatas.get(j).getLastBoneName().equals(bname)){
+						if(ikdatas.get(j).getLastBoneName().equals(ikBoneName)){
 							ikdataIndex=j;
 							selectionMesh.setVisible(true);
 							selectionMesh.setPosition(target.getPosition());
 							selectionMesh.getMaterial().gwtGetColor().setHex(0x00ff00);
 							
-							if(!bname.equals(currentSelectionIkName)){
-								switchSelectionIk(bname);
+							LogUtils.log(ikBoneName+","+currentSelectionIkName);
+							if(!ikBoneName.equals(currentSelectionIkName)){
+								switchSelectionIk(ikBoneName);
 							}
 							selectedBone=null;
 							
@@ -1494,11 +1535,12 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 							
 							dragObjectControler.selectObject(target, event.getX(), event.getY(), screenWidth, screenHeight, camera);
 							
-							logger.fine("onMouse down-end3");
+							
+							logger.info("onMouse down-end3");
 							return;//ik selected
 						}
 					}
-					logger.fine("7b down");
+					
 				}else{
 					//maybe bone or root
 					//log("select:"+target.getName());
@@ -1508,7 +1550,6 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					selectionMesh.getMaterial().gwtGetColor().setHex(0xff0000);
 					switchSelectionIk(null);
 					
-					LogUtils.log("select selection:"+ThreeLog.get(selectionMesh.getPosition()));
 					
 					dragObjectControler.selectObject(target, event.getX(), event.getY(), screenWidth, screenHeight, camera);
 					logger.fine("onMouse down-end2");
@@ -1793,7 +1834,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 						String name=ik.getLastBoneName();
 						Vector3 pos=ab.getBonePosition(name);
 						
-						ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
+						if(existBone(name)){
+							ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
+						}
 						//ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
 						
 						}
@@ -1959,7 +2002,11 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 						//ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
 						
 						//LogUtils.log("ik:"+name);
-						ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
+						
+						//some difference bone call this
+						if(existBone(name)){
+							ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
+							}
 						}
 						
 					
@@ -2665,7 +2712,7 @@ HorizontalPanel h1=new HorizontalPanel();
 					baseGeometry=geometry;//change body mesh
 					
 					if(baseGeometry.getBones()!=null){
-						//logger.fine("create-bone from geometry");
+						logger.fine("create-bone from geometry");
 						setBone(baseGeometry.getBones()); //possible broken bone.TODO test geometry bone
 						
 						/*
@@ -3299,6 +3346,12 @@ HorizontalPanel h1=new HorizontalPanel();
 		poseFrameDataIndex=index;
 		PoseFrameData pfd=getSelectedPoseEditorData().getPoseFrameDatas().get(index);
 		
+		if(pfd.getAngleAndMatrixs().size()!=bones.length()){
+			Window.alert("difference- bone.not compatiple this frame.\nso push new button.");
+			return;
+		}
+		
+		
 		currentMatrixs=AnimationBonesData.cloneAngleAndMatrix(pfd.getAngleAndMatrixs());
 		ab.setBonesAngleAndMatrixs(currentMatrixs);
 		//update
@@ -3597,6 +3650,9 @@ private List<String> boneList=new ArrayList<String>();
 		}
 	}
 	
+	private boolean existBone(String name){
+		return boneList.contains(name);
+	}
 	
 	public static class MatrixAndVector3{
 		public MatrixAndVector3(){}
@@ -4195,7 +4251,6 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
 	if(isSelectedBone()){
 		selectionMesh.setPosition(ab.getBonePosition(selectedBone));
-		LogUtils.log("update selection:"+ThreeLog.get(selectionMesh.getPosition()));
 	}
 		
 	List<AngleAndPosition> boneMatrix=animationBonesData.getBonesAngleAndMatrixs();
@@ -4736,7 +4791,16 @@ private MenuItem contextMenuHidePrefIks;
 	public void modelChanged(HeaderAndValue model) {
 		//log("model-load:"+model.getData());
 		LoadJsonModel(model.getData());
+		
+		//new model need new initial pose
+		initialPoseFrameData=snapCurrentFrameData();
+		
+		try{
+		//now catch error	
 		selectFrameData(currentFrameRange.getValue());//re pose
+		}catch (Exception e) {
+			Window.alert("maybe difference bone model loaded.\nreload app");
+		}
 	}
 
 	@Override
