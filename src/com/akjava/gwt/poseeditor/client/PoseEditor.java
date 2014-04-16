@@ -2815,10 +2815,19 @@ HorizontalPanel h1=new HorizontalPanel();
 					//fix geometry weight,otherwise broken model
 					for(int i=0;i<geometry.getSkinWeight().length();i++){
 						Vector4 vec4=geometry.getSkinWeight().get(i);
-						double total=vec4.getX()+vec4.getY();
+						double x=vec4.getX();
+						double y=vec4.getY();
+						//seems somehow 1.0 weight make problem?
+						if(x==1){
+							geometry.getSkinIndices().get(i).setY(geometry.getSkinIndices().get(i).getX());
+						}else if(y==1){
+							geometry.getSkinIndices().get(i).setX(geometry.getSkinIndices().get(i).getY());
+						}else{//less 1.0 bone usually make problem
+						double total=x+y;
 						double remain=(1.0-total)/2;
-						vec4.setX(vec4.getX()+remain);
-						vec4.setY(vec4.getY()+remain);
+						vec4.setX(x+remain);
+						vec4.setY(y+remain);
+						}
 					}
 					
 					
