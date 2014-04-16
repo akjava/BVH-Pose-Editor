@@ -74,6 +74,7 @@ import com.akjava.gwt.three.client.js.renderers.WebGLRenderer;
 import com.akjava.gwt.three.client.js.scenes.Scene;
 import com.akjava.gwt.three.client.js.textures.Texture;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.dom.client.ImageElement;
@@ -145,6 +146,19 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		if(root!=null){
 
+			if(bodyMesh!=null){
+				bodyMesh.getScale().set(upscale,upscale,upscale);
+			}
+			
+			if(bone3D!=null){
+				bone3D.getScale().set(upscale,upscale,upscale);
+				double itemScale=(1.0/upscale);
+				for(int i=0;i<bone3D.getChildren().length();i++){
+					bone3D.getChildren().get(i).getScale().set(itemScale,itemScale,itemScale);
+				}
+			}
+			
+			
 			root.setPosition((double)positionXRange.getValue()/10, (double)positionYRange.getValue()/10, (double)positionZRange.getValue()/10);
 			root.getRotation().set(Math.toRadians(rotationXRange.getValue()),Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()),Euler.XYZ);
 			
@@ -458,6 +472,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		updateDatasPanel();
 		
+		onTotalSizeChanged(true);
 		
 	}
 	private int defaultOffSetY=-140;
@@ -2556,6 +2571,14 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		*/
 		
+		CheckBox do1small=new CheckBox("x 0.1");
+		do1small.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
+			@Override
+			public void onValueChange(ValueChangeEvent<Boolean> event) {
+				onTotalSizeChanged(event.getValue());
+			}
+		});
+		parent.add(do1small);
 		
 		
 		
@@ -2567,6 +2590,39 @@ HorizontalPanel h1=new HorizontalPanel();
 		showControl();
 		
 	}
+	
+	int upscale=1;
+	protected void onTotalSizeChanged(Boolean value) {
+		if(value){
+			upscale=10;
+		}else{
+			upscale=1;
+		}
+		
+		List<Mesh> meshs=Lists.newArrayList();
+		/*
+		meshs.addAll(vertexMeshs);
+		meshs.addAll(boneJointMeshs);
+		meshs.addAll(boneCoreMeshs);
+		meshs.addAll(endPointMeshs);
+		
+		
+		if(selectionPointIndicateMesh!=null){
+		meshs.add(selectionPointIndicateMesh);
+		}
+		if(boneSelectionMesh!=null){
+			meshs.add(boneSelectionMesh);
+			}
+			*/
+		
+		//redo-bone and vertex
+		for(Mesh mesh:meshs){
+			double scale=(1.0/upscale);
+			mesh.getScale().set(scale,scale,scale);
+		}
+	}
+	
+	
 	private int screenShotIndex;
 	
 	
@@ -2780,7 +2836,7 @@ HorizontalPanel h1=new HorizontalPanel();
 					}
 					}
 				}
-			},"textures/");
+			},"textures/");//texture tested.
 		} catch (InvalidModelFormatException e) {
 			LogUtils.log("LoadJsonModel:"+e.getMessage());
 		}
