@@ -144,19 +144,23 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
+		
 		if(root!=null){
-
-			if(bodyMesh!=null){
-				bodyMesh.getScale().set(upscale,upscale,upscale);
-			}
+			/*
+			root.getScale().set(upscale,upscale,upscale);
+			
 			
 			if(bone3D!=null){
-				bone3D.getScale().set(upscale,upscale,upscale);
+				//bone3D.getScale().set(upscale,upscale,upscale);
 				double itemScale=(1.0/upscale);
 				for(int i=0;i<bone3D.getChildren().length();i++){
-					bone3D.getChildren().get(i).getScale().set(itemScale,itemScale,itemScale);
+					if(bone3D.getChildren().get(i) instanceof Mesh){
+						bone3D.getChildren().get(i).getScale().set(itemScale,itemScale,itemScale);	
+					}
+					
 				}
 			}
+			*/
 			
 			
 			root.setPosition((double)positionXRange.getValue()/10, (double)positionYRange.getValue()/10, (double)positionZRange.getValue()/10);
@@ -294,6 +298,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		root=THREE.Object3D();
 		scene.add(root);
 		
+		//background;
 		Geometry geo=THREE.PlaneGeometry(100, 100,20,20);
 		Mesh mesh=THREE.Mesh(geo, THREE.MeshBasicMaterial().color(0xaaaaaa).wireFrame().build());
 		mesh.setRotation(Math.toRadians(-90), 0, 0);
@@ -472,7 +477,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		updateDatasPanel();
 		
-		onTotalSizeChanged(true);
+		
 		
 	}
 	private int defaultOffSetY=-140;
@@ -2571,6 +2576,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		*/
 		
+		/*
 		CheckBox do1small=new CheckBox("x 0.1");
 		do1small.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
 			@Override
@@ -2579,7 +2585,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		parent.add(do1small);
-		
+		*/
 		
 		
 		
@@ -2590,7 +2596,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		showControl();
 		
 	}
-	
+	/*
 	int upscale=1;
 	protected void onTotalSizeChanged(Boolean value) {
 		if(value){
@@ -2600,7 +2606,8 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 		
 		List<Mesh> meshs=Lists.newArrayList();
-		/*
+		//meshs.add(selectionMesh);
+		
 		meshs.addAll(vertexMeshs);
 		meshs.addAll(boneJointMeshs);
 		meshs.addAll(boneCoreMeshs);
@@ -2613,7 +2620,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		if(boneSelectionMesh!=null){
 			meshs.add(boneSelectionMesh);
 			}
-			*/
+			
 		
 		//redo-bone and vertex
 		for(Mesh mesh:meshs){
@@ -2621,7 +2628,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			mesh.getScale().set(scale,scale,scale);
 		}
 	}
-	
+	*/
 	
 	private int screenShotIndex;
 	
@@ -2795,6 +2802,19 @@ HorizontalPanel h1=new HorizontalPanel();
 					LogUtils.log("loadJsonModel:");
 					LogUtils.log(geometry);
 					
+					
+					
+					
+					//fix geometry weight,otherwise broken model
+					for(int i=0;i<geometry.getSkinWeight().length();i++){
+						Vector4 vec4=geometry.getSkinWeight().get(i);
+						double total=vec4.getX()+vec4.getY();
+						double remain=(1.0-total)/2;
+						vec4.setX(vec4.getX()+remain);
+						vec4.setY(vec4.getY()+remain);
+					}
+					
+					
 					baseGeometry=geometry;//change body mesh
 					
 					if(baseGeometry.getBones()!=null){
@@ -2809,6 +2829,7 @@ HorizontalPanel h1=new HorizontalPanel();
 						
 					}else{
 						logger.fine("bvh:"+bvh);
+						LogUtils.log("use bvh bone:maybe this is problem");
 						//initialize default bone
 						AnimationBoneConverter converter=new AnimationBoneConverter();
 						setBone(converter.convertJsonBone(bvh));
