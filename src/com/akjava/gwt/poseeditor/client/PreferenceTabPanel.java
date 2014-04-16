@@ -9,6 +9,7 @@ import com.akjava.gwt.html5.client.file.FileHandler;
 import com.akjava.gwt.html5.client.file.FileReader;
 import com.akjava.gwt.html5.client.file.FileUploadForm;
 import com.akjava.gwt.html5.client.file.FileUtils;
+import com.akjava.gwt.html5.client.file.FileUtils.DataURLListener;
 import com.akjava.gwt.lib.client.ExportUtils;
 import com.akjava.gwt.lib.client.HeaderAndValue;
 import com.akjava.gwt.lib.client.IStorageControler;
@@ -18,7 +19,6 @@ import com.akjava.gwt.lib.client.StorageException;
 import com.akjava.gwt.lib.client.ValueUtils;
 import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
 import com.google.gwt.core.client.JsArray;
-import com.google.gwt.dom.client.Document;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -35,7 +35,6 @@ import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.FocusWidget;
-import com.google.gwt.user.client.ui.FormPanel;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
@@ -65,7 +64,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 		HorizontalPanel mPanel=new HorizontalPanel();
 		
 		add(mPanel);
-		Label modelLabel=new Label("Model");
+		Label modelLabel=new Label("Model(three.json include bone)");
 		modelLabel.setWidth("150px");
 		mPanel.add(modelLabel);
 		Button modelUpdateBt=new Button("Update");
@@ -78,10 +77,44 @@ public class PreferenceTabPanel extends VerticalPanel {
 			}
 		});
 		
-		final FileUploadForm modelUpload=new FileUploadForm();
+		final FileUploadForm modelUpload=FileUtils.createSingleTextFileUploadForm(new DataURLListener() {
+			@Override
+			public void uploaded(File file, String text) {
+				JSONValue lastJsonValue = JSONParser.parseStrict(text);
+				//TODO more validate
+				JSONObject object=lastJsonValue.isObject();
+				if(object==null){
+					Window.alert("invalid model");
+					return;
+				}
+				
+				modelControler.setDataValue(file.getFileName(), text);
+				
+				int id=modelControler.incrementId();
+				
+				
+				loadModel(new HeaderAndValue(id, file.getFileName(), text));
+				
+				
+				modelListBox.addItem(file.getFileName(),""+id);
+				
+				//LogUtils.log("preferenceDebug:6"+(modelListBox.getItemCount()-1));
+				modelListBox.setSelectedIndex(modelListBox.getItemCount()-1);
+				//LogUtils.log("preferenceDebug:7"+id);
+				updateModelButtons();
+				
+				
+				try {
+					controler.setValue(KEY_MODEL_SELECTION, modelListBox.getItemCount()-1);
+				} catch (StorageException e) {
+					PoseEditor.alert(e.getMessage());
+				}
+				//LogUtils.log("preferenceDebug:8"+id);
+			}
+		}, true);
 		
 		add(modelUpload);
-		
+		/*
 		modelUpload.getFileUpload().addChangeHandler(new ChangeHandler() {
 			
 			@Override
@@ -130,6 +163,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 				reader.readAsText(file,"utf-8");
 			}
 		});
+		*/
 		
 		modelControler=new StorageDataList(controler, "MODEL");
 		modelSelection = new Label();

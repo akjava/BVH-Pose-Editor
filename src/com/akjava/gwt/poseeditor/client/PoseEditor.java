@@ -63,6 +63,7 @@ import com.akjava.gwt.three.client.js.extras.ImageUtils;
 import com.akjava.gwt.three.client.js.lights.Light;
 import com.akjava.gwt.three.client.js.loaders.JSONLoader.JSONLoadHandler;
 import com.akjava.gwt.three.client.js.materials.Material;
+import com.akjava.gwt.three.client.js.materials.MeshFaceMaterial;
 import com.akjava.gwt.three.client.js.math.Euler;
 import com.akjava.gwt.three.client.js.math.Matrix4;
 import com.akjava.gwt.three.client.js.math.Vector3;
@@ -2718,6 +2719,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		return null;
 	}
 
+	private JsArray<Material> loadedMaterials;
 	JSONModelFile lastLoadedModel;
 	private void LoadJsonModel(String jsonText){
 		try {
@@ -2730,6 +2732,8 @@ HorizontalPanel h1=new HorizontalPanel();
 						root.remove(bodyMesh);//for initialzie
 						bodyMesh=null;
 					}
+					//LogUtils.log("material?");
+					loadedMaterials=materials;
 					
 					ab=null;//for remake matrix.
 					LogUtils.log("loadJsonModel:");
@@ -2776,7 +2780,7 @@ HorizontalPanel h1=new HorizontalPanel();
 					}
 					}
 				}
-			});
+			},"textures/");
 		} catch (InvalidModelFormatException e) {
 			LogUtils.log("LoadJsonModel:"+e.getMessage());
 		}
@@ -3578,6 +3582,10 @@ HorizontalPanel h1=new HorizontalPanel();
 	private String textureUrl="female001_texture1.jpg";//default
 	private Texture texture;
 	protected void updateMaterial() {
+		if(true){
+			LogUtils.log("update material called");
+			//return;
+		}
 		
 		if(lastLoadedModel!=null){
 			if(lastLoadedModel.getMetaData().getFormatVersion()==3){
@@ -3611,6 +3619,16 @@ HorizontalPanel h1=new HorizontalPanel();
 		if(bodyMesh!=null){
 		bodyMesh.setMaterial(material);
 		}
+		
+		//test loaded material
+		
+		/* i have no idea how to set it.
+		if(loadedMaterials!=null){
+		MeshFaceMaterial faceMaterial=THREE.MeshFaceMaterial(loadedMaterials);
+		LogUtils.log(faceMaterial);
+		bodyMesh.setMaterial(faceMaterial);
+		}
+		*/
 	}
 
 	//TODO use for load bvh
