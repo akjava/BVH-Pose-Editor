@@ -163,7 +163,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			*/
 			
 			
-			root.setPosition((double)positionXRange.getValue()/10, (double)positionYRange.getValue()/10, (double)positionZRange.getValue()/10);
+			root.setPosition((double)positionXRange.getValue()/posDivided, (double)positionYRange.getValue()/posDivided, (double)positionZRange.getValue()/posDivided);
 			root.getRotation().set(Math.toRadians(rotationXRange.getValue()),Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()),Euler.XYZ);
 			
 			
@@ -272,6 +272,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
+		cameraZ=5;
 		
 		this.renderer=renderer;
 		
@@ -299,20 +300,21 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		scene.add(root);
 		
 		//background;
-		Geometry geo=THREE.PlaneGeometry(100, 100,20,20);
+		Geometry geo=THREE.PlaneGeometry(1000/posDivided, 1000/posDivided,20,20);
 		Mesh mesh=THREE.Mesh(geo, THREE.MeshBasicMaterial().color(0xaaaaaa).wireFrame().build());
 		mesh.setRotation(Math.toRadians(-90), 0, 0);
 		root.add(mesh);
 		
 		//line removed,because of flicking
-		Object3D xline=GWTGeometryUtils.createLineMesh(THREE.Vector3(-50, 0, 0.001), THREE.Vector3(50, 0, 0.001), 0x880000,3);
+		//Object3D xline=GWTGeometryUtils.createLineMesh(THREE.Vector3(-50, 0, 0.001), THREE.Vector3(50, 0, 0.001), 0x880000,3);
 		//root.add(xline);
 		
-		Object3D zline=GWTGeometryUtils.createLineMesh(THREE.Vector3(0, 0, -50), THREE.Vector3(0, 0, 50), 0x008800,3);
+		//Object3D zline=GWTGeometryUtils.createLineMesh(THREE.Vector3(0, 0, -50), THREE.Vector3(0, 0, 50), 0x008800,3);
 		//root.add(zline);
 		
+		double selectionSize=baseBoneCoreSize*2.5/posDivided;
 		
-		selectionMesh=THREE.Mesh(THREE.CubeGeometry(2, 2, 2), THREE.MeshBasicMaterial().color(0x00ff00).wireFrame(true).build());
+		selectionMesh=THREE.Mesh(THREE.CubeGeometry(selectionSize,selectionSize,selectionSize), THREE.MeshBasicMaterial().color(0x00ff00).wireFrame(true).build());
 		
 		root.add(selectionMesh);
 		selectionMesh.setVisible(false);
@@ -480,7 +482,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		
 	}
-	private int defaultOffSetY=-140;
+	private int defaultOffSetY=-40;
 	
 	private void updateDatasPanel(){
 		datasPanel.clear();
@@ -1802,15 +1804,16 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					if(dragObjectControler.isSelected()){
 						Vector3 newPos=dragObjectControler.moveSelectionPosition(event.getX(), event.getY(), screenWidth, screenHeight, camera);
 						double length=newPos.clone().length();
+						
 						if(length<mouseMoved*50){
 							if(length>mouseMoved*10){
 								logger.fine("diff-move:"+length+",mouse="+mouseMoved);
 							}
 							//getCurrentIkData().getTargetPos().copy(newPos);	
 							
-							positionXBoneRange.setValue((int)(newPos.getX()*10));
-							positionYBoneRange.setValue((int)(newPos.getY()*10));
-							positionZBoneRange.setValue((int)(newPos.getZ()*10));
+							positionXBoneRange.setValue((int)(newPos.getX()*100));
+							positionYBoneRange.setValue((int)(newPos.getY()*100));
+							positionZBoneRange.setValue((int)(newPos.getZ()*100));
 							logger.fine("moved:"+length+",mouse="+mouseMoved);
 						}else{
 							logger.info("diff-error:"+length+",mouse="+mouseMoved);
@@ -1957,7 +1960,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	@Override
 	public void onMouseWheel(MouseWheelEvent event) {
 		if(isSelectedIk()){
-			double dy=event.getDeltaY()*0.2;
+			double dy=event.getDeltaY()*2.0/posDivided;
 			getCurrentIkData().getTargetPos().gwtIncrementZ(dy);
 			
 			if(event.isAltKeyDown()){//slow
@@ -2061,23 +2064,25 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				}
 			}
 		}
-		else{
+		else{//use small version
+			double tzoom=0.05;
 			//TODO make class
 			long t=System.currentTimeMillis();
 			if(mouseLast+100>t){
-				tmpZoom*=2;
+				czoom*=2;
 			}else{
-				tmpZoom=defaultZoom;
+				czoom=tzoom;
 			}
 			//GWT.log("wheel:"+event.getDeltaY());
-			int tmp=(int)cameraZ+event.getDeltaY()*tmpZoom;
-			tmp=Math.max(minCamera, tmp);
+			double tmp=cameraZ+event.getDeltaY()*czoom;
+			tmp=Math.max(0.2, tmp);
 			tmp=Math.min(4000, tmp);
-			cameraZ=tmp;
+			cameraZ=(double)tmp;
 			mouseLast=t;
 		}
 		
 	}
+	private double czoom;
 	
 	
 
@@ -2102,6 +2107,8 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	private CheckBox xlockCheck;
 	private List<String> ikLocks=new ArrayList<String>();
 	private CheckBox showBonesCheck;
+	
+	private int posDivided=100;
 	@Override
 	public void createControl(DropVerticalPanelBase parent) {
 HorizontalPanel h1=new HorizontalPanel();
@@ -2152,7 +2159,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		HorizontalPanel h4=new HorizontalPanel();
 		positionXRange = InputRangeWidget.createInputRange(-300,300,0);
-		parent.add(HTML5Builder.createRangeLabel("X-Position:", positionXRange,10));
+		parent.add(HTML5Builder.createRangeLabel("X-Position:", positionXRange,posDivided));
 		parent.add(h4);
 		h4.add(positionXRange);
 		Button reset4=new Button("Reset");
@@ -2166,7 +2173,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		HorizontalPanel h5=new HorizontalPanel();
 		positionYRange = InputRangeWidget.createInputRange(-300,300,0);
-		parent.add(HTML5Builder.createRangeLabel("Y-Position:", positionYRange,10));
+		parent.add(HTML5Builder.createRangeLabel("Y-Position:", positionYRange,posDivided));
 		parent.add(h5);
 		h5.add(positionYRange);
 		Button reset5=new Button("Reset");
@@ -2327,7 +2334,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		bonePositionsPanel.setVisible(false);
 		
 		HorizontalPanel h1bpos=new HorizontalPanel();
-		positionXBoneRange = InputRangeWidget.createInputRange(-300,300,0);
+		positionXBoneRange = InputRangeWidget.createInputRange(-3000,3000,0);
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("X-Pos:", positionXBoneRange,10));
 		bonePositionsPanel.add(h1bpos);
 		h1bpos.add(positionXBoneRange);
@@ -2349,7 +2356,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		HorizontalPanel h2bpos=new HorizontalPanel();
 		
-		positionYBoneRange = InputRangeWidget.createInputRange(-300,300,0);
+		positionYBoneRange = InputRangeWidget.createInputRange(-3000,3000,0);
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Y-Pos:", positionYBoneRange,10));
 		bonePositionsPanel.add(h2bpos);
 		h2bpos.add(positionYBoneRange);
@@ -2371,7 +2378,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		HorizontalPanel h3bpos=new HorizontalPanel();
-		positionZBoneRange = InputRangeWidget.createInputRange(-300,300,0);
+		positionZBoneRange = InputRangeWidget.createInputRange(-3000,3000,0);
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Z-Pos:", positionZBoneRange,10));
 		bonePositionsPanel.add(h3bpos);
 		h3bpos.add(positionZBoneRange);
@@ -2882,7 +2889,7 @@ HorizontalPanel h1=new HorizontalPanel();
 
 		Vector3 pos=THREE.Vector3(positionXBoneRange.getValue(),
 				positionYBoneRange.getValue()
-				, positionZBoneRange.getValue()).multiplyScalar(0.1);
+				, positionZBoneRange.getValue()).multiplyScalar(0.01);
 		
 		/*
 		Vector3 angles=GWTThreeUtils.rotationToVector3(ab.getBoneAngleAndMatrix(index).getMatrix());
@@ -4399,6 +4406,9 @@ CDDIK cddIk=new CDDIK();
 	//Vector3 targetPos=THREE.Vector3(-10, -3, 0);
 	private ListBox boneNamesBox;
 	
+	
+private double baseBoneCoreSize=7;
+private double baseIkLength=13;
 private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
 	if(isSelectedBone()){
@@ -4429,10 +4439,12 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		List<Vector3> bonePositions=new ArrayList<Vector3>();
 		for(int i=0;i<bones.length();i++){
 			Matrix4 mv=boneMatrix.get(i).getMatrix();
-			double bsize=.7;
-			if(i==0){
-				bsize=1.5;
+			double bsize=baseBoneCoreSize;
+			if(i==0){//root is better 
+				bsize=baseBoneCoreSize*2;
 			}
+			bsize/=posDivided;
+			
 			Mesh mesh=THREE.Mesh(THREE.CubeGeometry(bsize,bsize, bsize),THREE.MeshLambertMaterial().color(0xff0000).build());
 			bone3D.add(mesh);
 			
@@ -4491,14 +4503,18 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 						//log("xxx");
 						//initial
 						
-						double ikLength=1.5;
+						double ikLength=baseIkLength/posDivided;
 						if(!hasChild(bonePath,i)){
-							ikLength=2.5;
+							ikLength=baseIkLength*2/posDivided;
 						}
+						
+						
+						double ikCoreSize=baseBoneCoreSize*2/posDivided;
+						
 						
 						Vector3 ikpos=pos.clone().subSelf(ppos).multiplyScalar(ikLength).addSelf(ppos);
 						//ikpos=pos.clone();
-						ikMesh=THREE.Mesh(THREE.CubeGeometry(1.5, 1.5, 1.5),THREE.MeshLambertMaterial().color(0x00ff00).build());
+						ikMesh=THREE.Mesh(THREE.CubeGeometry(ikCoreSize, ikCoreSize, ikCoreSize),THREE.MeshLambertMaterial().color(0x00ff00).build());
 						ikMesh.setPosition(ikpos);
 						ikMesh.setName("ik:"+boneName);
 					//	log(boneName+":"+ThreeLog.get(ikpos));
@@ -4523,8 +4539,8 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			//mesh color
 			if(pos.getY()<0){
 				mesh.getMaterial().gwtGetColor().set(0xffee00);//over color
-			}else if(pos.getY()<1){
-				mesh.getMaterial().gwtGetColor().set(0xff8800);//over color
+			}else if(pos.getY()<10.0/posDivided){
+				mesh.getMaterial().gwtGetColor().set(0xff8800);//near
 			}
 			
 			bonePositions.add(pos);
