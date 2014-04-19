@@ -1649,6 +1649,13 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					
 					dragObjectControler.selectObject(target, event.getX(), event.getY(), screenWidth, screenHeight, camera);
 					logger.fine("onMouse down-end2");
+					
+					//i guess set pos
+					//this is same effect as mouse move
+					positionXBoneRange.setValue((int) (selectionMesh.getPosition().getX()*100));
+					positionYBoneRange.setValue((int)(selectionMesh.getPosition().getY()*100));
+					positionZBoneRange.setValue((int)(selectionMesh.getPosition().getZ()*100));
+					
 					return;
 				}
 				
@@ -2007,7 +2014,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	@Override
 	public void onMouseWheel(MouseWheelEvent event) {
 		if(isSelectedIk()){
-			
+			LogUtils.log("select-ik");
 			double dy=event.getDeltaY()*2.0/posDivided;
 			getCurrentIkData().getTargetPos().gwtIncrementZ(dy);
 			
@@ -2024,13 +2031,17 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					}
 			}else if(event.isShiftKeyDown()){//move only
 				//doPoseIkk(0,true,1,getCurrentIkData(),1);
+				LogUtils.log("shift-key");
 				doPoseByMatrix(ab);
 			}else{
 				doPoseIkk(0,true,1,getCurrentIkData(),5);
 			}
 			
 		}else if(isSelectedBone()){
-			if(event.isShiftKeyDown()){//move
+			LogUtils.log("select-Bone:"+selectedBone);
+			if(event.isShiftKeyDown()){
+				LogUtils.log("shift-key");
+				//move
 			int diff=event.getDeltaY();
 			
 			int boneIndex=ab.getBoneIndex(selectedBone);
@@ -2039,6 +2050,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				pos=ab.getBonePosition(boneIndex);
 			}
 			
+			LogUtils.log("vec3:"+ThreeLog.get(pos));
+			
+			LogUtils.log("pos-z-range:"+positionZBoneRange.getValue());
 			
 			positionZBoneRange.setValue(positionZBoneRange.getValue()+diff);
 			positionToBone();
@@ -2379,7 +2393,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		//positions
 		bonePositionsPanel = new VerticalPanel();
 		bonePostionAndRotationContainer.add(bonePositionsPanel);
-		bonePositionsPanel.setVisible(false);
+		bonePositionsPanel.setVisible(true);
 		
 		HorizontalPanel h1bpos=new HorizontalPanel();
 		positionXBoneRange = InputRangeWidget.createInputRange(-3000,3000,0);
