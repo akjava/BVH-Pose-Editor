@@ -367,6 +367,25 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		*/
 		
 		//
+		
+		//head ik
+		ikdatas.add(createIKData(Lists.newArrayList("head","neck","chest","abdomen"),9));
+		boneLimits.put("abdomen",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
+		boneLimits.put("chest",BoneLimit.createBoneLimit(-30, 30, -40, 40, -40, 40));
+		boneLimits.put("neck",BoneLimit.createBoneLimit(-34, 34, -34, 34, -34, 34));
+		
+		//righ-hands
+		ikdatas.add(createIKData(Lists.newArrayList("rHand","rForeArm","rShldr"),9));
+		boneLimits.put("rForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 140, -30, 10));
+		boneLimits.put("rShldr",BoneLimit.createBoneLimit(-80, 60, -75, 91, -70, 115));
+		
+		//left-hand
+		ikdatas.add(createIKData(Lists.newArrayList("lHand","lForeArm","lShldr"),9));
+		boneLimits.put("lForeArm",BoneLimit.createBoneLimit(-40, 10, -140, 0, -10, 30));
+		boneLimits.put("lShldr",BoneLimit.createBoneLimit(-80, 60, -91, 75, -115, 70));
+
+		
+		
 		IKData ikdata3=new IKData("LeftUpLeg-LeftLeg");
 		//ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
 		ikdata3.setLastBoneName("LeftFoot");
@@ -375,8 +394,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikdatas.add(ikdata3);
 		
 		
+	
 		
-		ikdatas.add(createIKData(Lists.newArrayList("rShin","rThigh","rFoot"),5));
+		ikdatas.add(createIKData(Lists.newArrayList("rFoot","rShin","rThigh"),5));
 		
 		IKData mhikdata3=new IKData("lThigh-lShin");
 		//ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
@@ -493,9 +513,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 	private 	IKData createIKData(List<String> names,int iteration){
 		List<String> boneNames=Lists.newArrayList(names);
-		String last=names.remove(names.size()-1);
-		
-		IKData mhikdata3=new IKData(Joiner.on("-").join(names));
+		String last=boneNames.remove(0);//something name is strange
+		IKData mhikdata3=new IKData(Joiner.on("-").join(boneNames));
 		//ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
 		mhikdata3.setLastBoneName(last);
 		mhikdata3.setBones(boneNames.toArray(new String[0]));//what is this?
