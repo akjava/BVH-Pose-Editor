@@ -1582,6 +1582,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		*/
 		//log("mouse-click:"+event.getX()+"x"+event.getY());
 		
+		//TODO only call once for speed up
 		JsArray<Object3D> targets=(JsArray<Object3D>) JsArray.createArray();
 		JsArray<Object3D> childs=root.getChildren();
 		for(int i=0;i<childs.length();i++){
@@ -1592,6 +1593,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		for(int i=0;i<bones.length();i++){
 			//LogUtils.log(bones.get(i).getName());
 			targets.push(bones.get(i));
+		}
+		
+		for(int i=0;i<ik3D.getChildren().length();i++){
+			//LogUtils.log(bones.get(i).getName());
+			targets.push(ik3D.getChildren().get(i));
 		}
 		
 		
@@ -2001,6 +2007,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	@Override
 	public void onMouseWheel(MouseWheelEvent event) {
 		if(isSelectedIk()){
+			
 			double dy=event.getDeltaY()*2.0/posDivided;
 			getCurrentIkData().getTargetPos().gwtIncrementZ(dy);
 			
@@ -3981,6 +3988,7 @@ private List<String> boneList=new ArrayList<String>();
 	Mesh bodyMesh;
 	Object3D root;
 	Object3D bone3D;
+	Object3D ik3D;
 	private CheckBox transparentCheck;
 	private CheckBox basicMaterialCheck;
 
@@ -4474,6 +4482,12 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		bone3D=THREE.Object3D();
 		root.add(bone3D);
 		
+		if(ik3D!=null){
+			root.remove(ik3D);
+		}
+		ik3D=THREE.Object3D();
+		root.add(ik3D);
+		
 		
 		//selection
 		
@@ -4575,10 +4589,10 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 					}else{
 						ikMesh.getParent().remove(ikMesh);
 					}
-					bone3D.add(ikMesh);
+					ik3D.add(ikMesh);
 					ikMesh.setPosition(ik.getTargetPos());
 					Line ikline=GWTGeometryUtils.createLineMesh(pos, ik.getTargetPos(), 0xffffff);
-					bone3D.add(ikline);
+					ik3D.add(ikline);
 				}
 			}
 			
