@@ -74,6 +74,7 @@ import com.akjava.gwt.three.client.js.renderers.WebGLRenderer;
 import com.akjava.gwt.three.client.js.scenes.Scene;
 import com.akjava.gwt.three.client.js.textures.Texture;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.core.client.JsArray;
@@ -111,6 +112,7 @@ import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.text.shared.Renderer;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.rpc.core.java.util.Collections;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
@@ -208,7 +210,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			cameraHolder.remove(camera);
 			camera=null;
 		}
-		Camera camera = THREE.PerspectiveCamera(35,(double)width/height,1,6000);
+		Camera camera = THREE.PerspectiveCamera(35,(double)width/height,0.1,6000);
 		//camera.getPosition().set(0, 0, cameraZ);
 		cameraHolder.add(camera); //some kind of trick.
 		this.camera=camera;
@@ -374,6 +376,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		
 		
+		ikdatas.add(createIKData(Lists.newArrayList("rShin","rThigh","rFoot"),5));
+		
 		IKData mhikdata3=new IKData("lThigh-lShin");
 		//ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
 		mhikdata3.setLastBoneName("lFoot");
@@ -382,8 +386,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikdatas.add(mhikdata3);
 		
 		//bone limit is very important otherwise ik really slow
-		boneLimits.put("lShin",BoneLimit.createBoneLimit(0, 160, 0, 0, -20, 0));
-		boneLimits.put("lThigh",BoneLimit.createBoneLimit(-120, 60, -5, 35, -40, 80));
+		
+		boneLimits.put("rShin",BoneLimit.createBoneLimit(0, 160, 0, 0, -20, 0));
+		boneLimits.put("rThigh",BoneLimit.createBoneLimit(-120, 60, -5, 35, -40, 80));
+		
+		boneLimits.put("lShin",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
+		boneLimits.put("lThigh",BoneLimit.createBoneLimit(-120, 60, -35, 5, -80, 40));
 		
 		//updateIkLabels();
 		
@@ -482,6 +490,20 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		
 	}
+	
+	private 	IKData createIKData(List<String> names,int iteration){
+		List<String> boneNames=Lists.newArrayList(names);
+		String last=names.remove(names.size()-1);
+		
+		IKData mhikdata3=new IKData(Joiner.on("-").join(names));
+		//ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
+		mhikdata3.setLastBoneName(last);
+		mhikdata3.setBones(boneNames.toArray(new String[0]));//what is this?
+		mhikdata3.setIteration(iteration);//what is this?
+		return mhikdata3;
+	}
+	
+	
 	private int defaultOffSetY=-40;
 	
 	private void updateDatasPanel(){

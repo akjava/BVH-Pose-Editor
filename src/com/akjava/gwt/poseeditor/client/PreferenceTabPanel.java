@@ -214,7 +214,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 		
 	}
 	
-	String[] imageExtensions={".jpg",".png",".jpeg"};
+	String[] imageExtensions={".jpg",".png",".jpeg","webp"};
 	private boolean isImageFile(File file){
 		String name=file.getFileName().toLowerCase();
 		for(int i=0;i<imageExtensions.length;i++){
@@ -232,8 +232,33 @@ public class PreferenceTabPanel extends VerticalPanel {
 	private void createTextureControl(){
 
 		add(new Label("Texture"));
-		final FileUploadForm textureUpload=new FileUploadForm();
+		
+		final FileUploadForm textureUpload=FileUtils.createSingleFileUploadForm(new DataURLListener() {
+			public void uploaded(File file,String value){
+				if(!isImageFile(file)){
+					Window.alert("texture format  support .jpg , .png or .webp");
+					return;
+				}
+				
+				//TODO check image and validate it for size
+				
+				try{
+				textureControler.setDataValue(file.getFileName(), value);
+				int id=textureControler.incrementId();
+				
+				loadTexture(new HeaderAndValue(id, file.getFileName(), value));
+				textureListBox.addItem(file.getFileName(),""+id);
+				textureListBox.setSelectedIndex(textureListBox.getItemCount()-1);
+				updateTextureButtons();
+				controler.setValue(KEY_TEXTURE_SELECTION, textureListBox.getItemCount()-1);
+				}catch(Exception e){
+					
+					PoseEditor.alert(e.getMessage());
+				}
+			}
+		},true);
 		add(textureUpload);
+		/*
 		textureUpload.getFileUpload().addChangeHandler(new ChangeHandler() {
 			
 			@Override
@@ -271,7 +296,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 				reader.readAsDataURL(file);
 			}
 		});
-		
+		*/
 		
 		textureControler=new StorageDataList(controler, "TEXTURE");
 		textureSelection = new Label();
