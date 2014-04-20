@@ -3471,8 +3471,13 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			
 			
-			Vector3 pos=ikdata.getTargetPos().clone();
+			
+			//some how not work correctly
+			Vector3 pos=getDefaultIkPos(ab.getBoneIndex(ikdata.getLastBoneName()));
 			pos.sub(ab.getBonePosition(ikdata.getLastBoneName()));//relative path
+			
+			//Vector3 pos=
+			
 			ikDataMap.put(ikdata.getName(), pos);
 		}
 		
