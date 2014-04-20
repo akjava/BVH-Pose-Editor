@@ -2013,23 +2013,23 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	
 	@Override
 	public void onMouseWheel(MouseWheelEvent event) {
-		if(isSelectedIk()){
-			LogUtils.log("select-ik");
+		if(isSelectedIk()){//IK 
 			double dy=event.getDeltaY()*2.0/posDivided;
 			getCurrentIkData().getTargetPos().gwtIncrementZ(dy);
 			
-			if(event.isAltKeyDown()){//slow
-				if(event.isShiftKeyDown()){
+			if(event.isAltKeyDown()){
+				if(event.isShiftKeyDown()){//IK selected with ALT+Shift on mouseWheel,? bugs
 					doPoseIkk(0,false,1,getCurrentIkData(),1);
 						for(IKData ik:ikdatas){
 							if(ik!=getCurrentIkData()){
 							doPoseIkk(0,false,5,ik,1);
 							}
 						}	
-					}else{
+					}else{//IK selected with ALT on mouseWheel,Do move bones mildly.
 				doPoseIkk(0,false,1,getCurrentIkData(),10);
 					}
-			}else if(event.isShiftKeyDown()){//move only
+			}else if(event.isShiftKeyDown()){//IK selected with Shift on mouseWheel,Do move IK only
+				
 				//doPoseIkk(0,true,1,getCurrentIkData(),1);
 				LogUtils.log("shift-key");
 				doPoseByMatrix(ab);
@@ -2038,10 +2038,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			}
 			
 		}else if(isSelectedBone()){
-			LogUtils.log("select-Bone:"+selectedBone);
-			if(event.isShiftKeyDown()){
-				LogUtils.log("shift-key");
-				//move
+			if(event.isShiftKeyDown()){//move
 			int diff=event.getDeltaY();
 			
 			int boneIndex=ab.getBoneIndex(selectedBone);
@@ -2050,9 +2047,6 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				pos=ab.getBonePosition(boneIndex);
 			}
 			
-			LogUtils.log("vec3:"+ThreeLog.get(pos));
-			
-			LogUtils.log("pos-z-range:"+positionZBoneRange.getValue());
 			
 			positionZBoneRange.setValue(positionZBoneRange.getValue()+diff);
 			positionToBone();
@@ -2062,7 +2056,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				for(IKData ik:ikdatas){
 					doPoseIkk(0,false,5,ik,1);
 					}
-				}else{//follow
+				}else{//ik-follow
 					if(boneIndex==0){
 					Vector3 moved=ab.getBonePosition(boneIndex);
 					moved.sub(pos);
@@ -4216,6 +4210,8 @@ private Vector3 findNextStep(int boneIndex,int lastBoneIndex,Vector3 targetPos){
 private boolean doLimit=true;
 private boolean ignorePerLimit=false;
 
+
+
 private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 
 	//do CDDIK
@@ -4414,6 +4410,9 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 
 private void doPoseIkk(int index,boolean resetMatrix,int perLimit,IKData ikdata,int cddLoop){
 		
+	if(!existBone(ikdata.getLastBoneName())){
+		return;//some non exist bone.
+	}
 	//initializeBodyMesh();
 	initializeAnimationData(index,resetMatrix);
 	stepCDDIk(perLimit,ikdata,cddLoop);	
