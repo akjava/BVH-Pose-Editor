@@ -74,7 +74,9 @@ import com.akjava.gwt.three.client.js.renderers.WebGLRenderer;
 import com.akjava.gwt.three.client.js.scenes.Scene;
 import com.akjava.gwt.three.client.js.textures.Texture;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.core.client.JsArray;
@@ -1069,6 +1071,17 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			contextMenu.hide();
 		}
 	}
+	
+	private Predicate<IKData> existIkPredicate=new Predicate<IKData>() {
+		@Override
+		public boolean apply(IKData input) {
+			return existBone(input.getLastBoneName());
+		}
+	};
+	private Iterable<IKData> getAvaiableIkdatas(){
+		return Iterables.filter(ikdatas,existIkPredicate);
+	}
+	
 	private void createContextMenu(){
 		contextMenu=new PopupPanel();
 		MenuBar rootBar=new MenuBar(true);
@@ -1083,7 +1096,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikBar.addItem("Exec", new Command(){
 			@Override
 			public void execute() {
-				for(IKData ik:ikdatas){
+				for(IKData ik:getAvaiableIkdatas()){
 					doPoseIkk(0,false,45,ik,10);
 				}
 				hideContextMenu();
@@ -1095,7 +1108,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikBar.addItem("Fit target", new Command(){
 			@Override
 			public void execute() {
-				for(IKData ik:ikdatas){
+				for(IKData ik:getAvaiableIkdatas()){
 					String name=ik.getLastBoneName();
 					Vector3 pos=ab.getBonePosition(name);
 					ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
@@ -2343,6 +2356,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		boneNames.add(boneNamesBox);
 		ikLockCheck = new CheckBox("ik-lock");
+		ikLockCheck.setTitle("only work on + ALT mild IK");
 		boneNames.add(ikLockCheck);
 		ikLockCheck.addClickHandler(new ClickHandler() {
 			
@@ -2844,6 +2858,14 @@ HorizontalPanel h1=new HorizontalPanel();
 		if(name.indexOf("left")!=-1){
 			return name.replace("left", "right");
 		}
+		//makehuman bones
+		if(name.startsWith("r")){
+			return "l"+name.substring(1);
+		}
+		else if(name.startsWith("l")){
+			return "r"+name.substring(1);
+		}
+		
 		return null;
 	}
 
@@ -4232,8 +4254,10 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 		if(currentIkJointIndex>=ikData.getBones().size()){
 			currentIkJointIndex=0;
 		}
+		//LogUtils.log("skipped-ik:"+targetBoneName);
 		continue;
 	}
+	//LogUtils.log("do-ik:"+targetBoneName);
 	
 	int boneIndex=ab.getBoneIndex(targetBoneName);
 	
