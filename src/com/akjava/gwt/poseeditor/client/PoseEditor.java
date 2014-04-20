@@ -63,7 +63,6 @@ import com.akjava.gwt.three.client.js.extras.ImageUtils;
 import com.akjava.gwt.three.client.js.lights.Light;
 import com.akjava.gwt.three.client.js.loaders.JSONLoader.JSONLoadHandler;
 import com.akjava.gwt.three.client.js.materials.Material;
-import com.akjava.gwt.three.client.js.materials.MeshFaceMaterial;
 import com.akjava.gwt.three.client.js.math.Euler;
 import com.akjava.gwt.three.client.js.math.Matrix4;
 import com.akjava.gwt.three.client.js.math.Vector3;
@@ -75,7 +74,6 @@ import com.akjava.gwt.three.client.js.scenes.Scene;
 import com.akjava.gwt.three.client.js.textures.Texture;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gwt.canvas.client.Canvas;
@@ -114,7 +112,6 @@ import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.text.shared.Renderer;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.rpc.core.java.util.Collections;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
@@ -820,7 +817,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	}
 	
 	int ikdataIndex=1;
-	List<IKData> ikdatas=new ArrayList<IKData>();
+	private List<IKData> ikdatas=new ArrayList<IKData>();
 
 	private String currentSelectionIkName;
 	Mesh selectionMesh;
@@ -1121,7 +1118,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikBar.addItem("Follow target", new Command(){
 			@Override
 			public void execute() {
-				for(IKData ik:ikdatas){
+				for(IKData ik:getAvaiableIkdatas()){
 					String name=ik.getLastBoneName();
 					
 					if(existBone(name)){
@@ -1140,7 +1137,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikBar.addItem("Y-Zero", new Command(){
 			@Override
 			public void execute() {
-				for(IKData ik:ikdatas){
+				for(IKData ik:getAvaiableIkdatas()){
 					String name=ik.getLastBoneName();
 					Vector3 pos=ab.getBonePosition(name);
 					ik.getTargetPos().setY(0);
@@ -1151,7 +1148,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikBar.addItem("Move to First-IK-XZ", new Command(){
 			@Override
 			public void execute() {
-				for(IKData ik:ikdatas){
+				for(IKData ik:getAvaiableIkdatas()){
 					String name=ik.getBones().get(0);
 					Vector3 pos=ab.getBonePosition(name);
 					ik.getTargetPos().setX(pos.getX());
@@ -1163,7 +1160,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikBar.addItem("Move to Last-IK-XZ", new Command(){
 			@Override
 			public void execute() {
-				for(IKData ik:ikdatas){
+				for(IKData ik:getAvaiableIkdatas()){
 					String name=ik.getBones().get(ik.getBones().size()-1);
 					Vector3 pos=ab.getBonePosition(name);
 					ik.getTargetPos().setX(pos.getX());
@@ -1497,7 +1494,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				doPoseByMatrix(ab);
 				hideContextMenu();
 				/*
-				for(IKData ik:ikdatas){
+				for(IKData ik:getAvaiableIkdatas()){
 					ik.getTargetPos().addSelf(diff);
 					doPoseByMatrix(ab);
 					hideContextMenu();
@@ -1629,7 +1626,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					
 					for(int j=0;j<ikdatas.size();j++){
 						if(ikdatas.get(j).getLastBoneName().equals(ikBoneName)){
-							ikdataIndex=j;
+							ikdataIndex=j;//set ikindex here
 							selectionMesh.setVisible(true);
 							selectionMesh.setPosition(target.getPosition());
 							selectionMesh.getMaterial().gwtGetColor().setHex(0x00ff00);
@@ -1835,7 +1832,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					
 					doPoseIkk(0,false,1,getCurrentIkData(),1);
 					
-						for(IKData ik:ikdatas){
+						for(IKData ik:getAvaiableIkdatas()){
 							//log("ik:"+ik.getName());
 							if(ik!=getCurrentIkData()){
 							doPoseIkk(0,false,5,ik,1);
@@ -1899,7 +1896,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					if(event.isAltKeyDown()){//not follow ik
 					//	switchSelectionIk(null);
 					//effect-ik
-					for(IKData ik:ikdatas){
+					for(IKData ik:getAvaiableIkdatas()){
 						
 						doPoseIkk(0,false,5,ik,1);
 						}
@@ -1908,7 +1905,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 						Vector3 movedPos=ab.getBonePosition(boneIndex);
 						movedPos.sub(pos);
 						
-						for(IKData ik:ikdatas){
+						for(IKData ik:getAvaiableIkdatas()){
 							ik.getTargetPos().add(movedPos);
 							}
 						doPoseByMatrix(ab);//redraw
@@ -1929,7 +1926,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				if(event.isAltKeyDown()){
 				//	switchSelectionIk(null);
 				//effect-ik
-				for(IKData ik:ikdatas){
+				for(IKData ik:getAvaiableIkdatas()){
 					
 					doPoseIkk(0,false,5,ik,1);
 					}
@@ -1942,7 +1939,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					
 					
 					
-					for(IKData ik:ikdatas){
+					for(IKData ik:getAvaiableIkdatas()){
 						/*
 						Vector3 ikpos=ik.getTargetPos().clone().subSelf(rootPos);
 						mx.multiplyVector3(ikpos);
@@ -2033,7 +2030,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			if(event.isAltKeyDown()){
 				if(event.isShiftKeyDown()){//IK selected with ALT+Shift on mouseWheel,? bugs
 					doPoseIkk(0,false,1,getCurrentIkData(),1);
-						for(IKData ik:ikdatas){
+						for(IKData ik:getAvaiableIkdatas()){
 							if(ik!=getCurrentIkData()){
 							doPoseIkk(0,false,5,ik,1);
 							}
@@ -2066,7 +2063,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			if(event.isAltKeyDown()){
 				//switchSelectionIk(null);
 				//effect-ik
-				for(IKData ik:ikdatas){
+				for(IKData ik:getAvaiableIkdatas()){
 						if(ik!=getCurrentIkData()){//no need re-ik root?
 						doPoseIkk(0,false,5,ik,1);
 						}
@@ -2075,7 +2072,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					if(boneIndex==0){
 					Vector3 moved=ab.getBonePosition(boneIndex);
 					moved.sub(pos);
-					for(IKData ik:ikdatas){
+					for(IKData ik:getAvaiableIkdatas()){
 						ik.getTargetPos().add(moved);
 						}
 					}
@@ -2092,7 +2089,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				if(event.isAltKeyDown()){
 				//	switchSelectionIk(null);
 				//effect-ik
-				for(IKData ik:ikdatas){
+				for(IKData ik:getAvaiableIkdatas()){
 					
 					doPoseIkk(0,false,5,ik,1);
 					}
@@ -2108,7 +2105,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					
 					//move green-ik-indicator
 					//--this is keep green ik-bone position
-					for(IKData ik:ikdatas){
+					for(IKData ik:getAvaiableIkdatas()){
 						/*
 						 * i faild turn :i have no idea;
 						Vector3 ikpos=ik.getTargetPos().clone().subSelf(rootPos);
@@ -2125,7 +2122,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 						//LogUtils.log("ik:"+name);
 						
 						//some difference bone call this
-						if(existBone(name)){
+						if(existBone(name)){//duplicate?
 							ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
 							}
 						}
@@ -3471,6 +3468,9 @@ HorizontalPanel h1=new HorizontalPanel();
 			if(!availIk(ikdata)){//check ik 
 				continue;
 			}
+			
+			
+			
 			Vector3 pos=ikdata.getTargetPos().clone();
 			pos.sub(ab.getBonePosition(ikdata.getLastBoneName()));//relative path
 			ikDataMap.put(ikdata.getName(), pos);
@@ -3592,6 +3592,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			if(!availIk(ikdatas.get(i))){
 				continue;
 			}
+			
 			String ikName=ikdatas.get(i).getName();
 			Vector3 vec=pfd.getIkTargetPosition(ikName);
 			
@@ -3897,6 +3898,7 @@ private List<String> boneList=new ArrayList<String>();
 	}
 	
 	private boolean existBone(String name){
+		//should use availIk();
 		return boneList.contains(name);
 	}
 	
@@ -4598,7 +4600,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			}
 			*/
 			
-			for(IKData ik:ikdatas){
+			for(IKData ik:getAvaiableIkdatas()){
 				if(ik.getLastBoneName().equals(boneName)){//valid ik
 					Mesh ikMesh=targetMeshs.get(boneName);
 					
