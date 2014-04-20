@@ -3209,7 +3209,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
-		currentFrameLabel = new Label();
+		currentFrameLabel = new Label("1/1");//usually this style
 		currentFrameLabel.setWidth("40px");
 		pPanel.add(currentFrameLabel);
 		
@@ -3499,10 +3499,10 @@ HorizontalPanel h1=new HorizontalPanel();
 		PoseFrameData ps=snapCurrentFrameData();
 		if(overwrite){
 			getSelectedPoseEditorData().getPoseFrameDatas().set(index,ps);
-			updatePoseIndex(index);
+			updatePoseIndex(index,false);
 		}else{
 			getSelectedPoseEditorData().getPoseFrameDatas().add(index,ps);
-			updatePoseIndex(getSelectedPoseEditorData().getPoseFrameDatas().size()-1);
+			updatePoseIndex(getSelectedPoseEditorData().getPoseFrameDatas().size()-1,false);
 		}
 		
 		getSelectedPoseEditorData().setModified(true);
@@ -3568,17 +3568,30 @@ HorizontalPanel h1=new HorizontalPanel();
 	
 	
 	private void updatePoseIndex(int index){
-		LogUtils.log("index:"+index);
+		updatePoseIndex(index,true);
+	}
+	private void updatePoseIndex(int index,boolean needSelect){
+		
 		if(index==-1){
 		currentFrameRange.setMax(0);
 		currentFrameRange.setValue(0);
 		currentFrameLabel.setText("");	
 		}else{
 		//poseIndex=index;
-		currentFrameRange.setMax(getSelectedPoseEditorData().getPoseFrameDatas().size()-1);
+		currentFrameRange.setMax(Math.max(0,getSelectedPoseEditorData().getPoseFrameDatas().size()-1));
 		currentFrameRange.setValue(index);
 		currentFrameLabel.setText((index+1)+"/"+getSelectedPoseEditorData().getPoseFrameDatas().size());
-		selectFrameData(index);
+		
+		if(!needSelect){
+			return;//no need select maybe still add or replacing
+		}
+		//check in range
+		if(index<=currentFrameRange.getMax() && getSelectedPoseEditorData().getPoseFrameDatas().size()!=0){//0 is empty no need to set
+			selectFrameData(index);
+		}else{
+			LogUtils.log("call small index:"+index+" of "+currentFrameRange.getMax());
+		}
+		
 		}
 	}
 	
@@ -3748,7 +3761,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
 		
 		Vector3 values=GWTThreeUtils.toPositionVec(ab.getBoneAngleAndMatrix(name).getMatrix());
-		values.multiplyScalar(10);
+		values.multiplyScalar(100);
 
 		int x=(int) values.getX();
 		positionXBoneRange.setValue(x);
