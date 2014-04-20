@@ -2054,7 +2054,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 				//switchSelectionIk(null);
 				//effect-ik
 				for(IKData ik:ikdatas){
-					doPoseIkk(0,false,5,ik,1);
+						if(ik!=getCurrentIkData()){//no need re-ik root?
+						doPoseIkk(0,false,5,ik,1);
+						}
 					}
 				}else{//ik-follow
 					if(boneIndex==0){
