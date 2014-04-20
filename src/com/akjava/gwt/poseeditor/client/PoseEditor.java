@@ -1502,6 +1502,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				*/
 			}});
 		
+		/*
+		 * swap angle maybe need for old range
 		rootBoneBar.addItem("180 to -180", new Command(){
 			@Override
 			public void execute() {
@@ -1529,6 +1531,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				hideContextMenu();
 		
 			}});
+			*/
 	}
 	//TODO future
 	private boolean isShowPrevIk;
