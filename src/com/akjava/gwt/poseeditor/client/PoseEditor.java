@@ -1239,8 +1239,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				}
 				IKData ik=getCurrentIkData();
 				for(String boneName:ik.getBones()){
-					boneLock.clearZ(boneName);
-					boneLock.clearZ(boneName);
+					boneLock.clearX(boneName);
+					boneLock.clearY(boneName);
 					boneLock.setZ(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getZ());
 					
 				}
@@ -2044,7 +2044,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 			}else if(event.isShiftKeyDown()){//IK selected with Shift on mouseWheel,Do move IK only
 				
 				//doPoseIkk(0,true,1,getCurrentIkData(),1);
-				LogUtils.log("shift-key");
+				//LogUtils.log("shift-key");
 				doPoseByMatrix(ab);
 			}else{
 				doPoseIkk(0,true,1,getCurrentIkData(),5);
@@ -3568,6 +3568,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	
 	
 	private void updatePoseIndex(int index){
+		LogUtils.log("index:"+index);
 		if(index==-1){
 		currentFrameRange.setMax(0);
 		currentFrameRange.setValue(0);
