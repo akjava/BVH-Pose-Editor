@@ -2576,7 +2576,18 @@ HorizontalPanel h1=new HorizontalPanel();
 		boneRotationsPanel.add(HTML5Builder.createRangeLabel("Z-Rotate:", rotationBoneZRange));
 		boneRotationsPanel.add(h3b);
 		h3b.add(rotationBoneZRange);
-		Button reset3b=new Button("Reset");
+		
+		Button minus3b=new Button("-");
+		minus3b.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				rotationBoneZRange.setValue(rotationBoneZRange.getValue()-1);
+				rotToBone();
+			}
+		});
+		h3b.add(minus3b);
+		
+		Button reset3b=new Button("0");
 		reset3b.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
@@ -2585,6 +2596,17 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		h3b.add(reset3b);
+		
+		Button plus3b=new Button("+");
+		plus3b.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				rotationBoneZRange.setValue(rotationBoneZRange.getValue()+1);
+				rotToBone();
+			}
+		});
+		h3b.add(plus3b);
+		
 		rotationBoneZRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
 			public void onMouseUp(MouseUpEvent event) {
