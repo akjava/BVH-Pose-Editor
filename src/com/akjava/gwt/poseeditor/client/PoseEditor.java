@@ -911,10 +911,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 	public List<List<NameAndVector3>> createBases(IKData data){
 		int angle=30;
-		if(data.getLastBoneName().equals("RightFoot") || data.getLastBoneName().equals("LeftFoot")){
-			//something special for foot
-			angle=20;
-		}
+		
+		//need change angle step if need more 
+		//if(data.getLastBoneName().equals("chest")){
+			//angle=5;	//chest is important?
+		//}
 		List<List<NameAndVector3>> all=new ArrayList();
 		List<List<NameAndVector3>> result=new ArrayList();
 		
