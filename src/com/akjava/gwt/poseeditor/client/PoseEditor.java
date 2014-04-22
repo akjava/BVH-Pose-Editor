@@ -375,8 +375,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		//righ-hands
 		ikdatas.add(createIKData(Lists.newArrayList("rHand","rForeArm","rShldr"),9));
-		boneLimits.put("rForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 140, -30, 10));
-		boneLimits.put("rShldr",BoneLimit.createBoneLimit(-80, 60, -75, 91, -70, 115));
+		boneLimits.put("rForeArm",BoneLimit.createBoneLimit(-60, 60, -60, 90, 0,0));
+		boneLimits.put("rShldr",BoneLimit.createBoneLimit(-90, 60, -75, 80, -120, 80));
 		
 		//left-hand
 		ikdatas.add(createIKData(Lists.newArrayList("lHand","lForeArm","lShldr"),9));
@@ -2976,7 +2976,7 @@ HorizontalPanel h1=new HorizontalPanel();
 					}
 					}
 				}
-			},"textures/");//texture tested.
+			});//texture tested.
 		} catch (InvalidModelFormatException e) {
 			LogUtils.log("LoadJsonModel:"+e.getMessage());
 		}
