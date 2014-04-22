@@ -271,6 +271,86 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 	}
 	
+	private void createIKAndLimitBone(){
+		//TODO load from file
+		
+		//bone limit is very important otherwise ik really slow
+		
+		//make human1.0 bones
+		
+		//head ik
+				ikdatas.add(createIKData(Lists.newArrayList("head","neck","chest","abdomen"),9));
+				boneLimits.put("abdomen",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
+				boneLimits.put("chest",BoneLimit.createBoneLimit(-30, 30, -40, 40, -40, 40));
+				boneLimits.put("neck",BoneLimit.createBoneLimit(-34, 34, -34, 34, -34, 34));
+				
+				//righ-hands
+				ikdatas.add(createIKData(Lists.newArrayList("rHand","rForeArm","rShldr"),9));
+				boneLimits.put("rForeArm",BoneLimit.createBoneLimit(-60, 60, -60, 90, 0,0));
+				boneLimits.put("rShldr",BoneLimit.createBoneLimit(-90, 60, -75, 80, -120, 80));
+				
+				//left-hand
+				ikdatas.add(createIKData(Lists.newArrayList("lHand","lForeArm","lShldr"),9));
+				boneLimits.put("lForeArm",BoneLimit.createBoneLimit(-40, 10, -140, 0, -10, 30));
+				boneLimits.put("lShldr",BoneLimit.createBoneLimit(-80, 60, -91, 75, -115, 70));
+
+				
+
+				
+				
+				
+				
+				ikdatas.add(createIKData(Lists.newArrayList("rFoot","rShin","rThigh"),5));
+				boneLimits.put("rShin",BoneLimit.createBoneLimit(0, 160, 0, 0, -20, 0));
+				boneLimits.put("rThigh",BoneLimit.createBoneLimit(-120, 60, -5, 35, -40, 80));
+				
+				
+				ikdatas.add(createIKData(Lists.newArrayList("lFoot","lShin","lThigh"),5));
+				boneLimits.put("lShin",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
+				boneLimits.put("lThigh",BoneLimit.createBoneLimit(-120, 60, -35, 5, -80, 40));
+				
+				
+				
+			
+				
+				
+				
+				
+				
+				
+				
+				//old datas,right now just catch critibal bug
+				IKData ikdata3=new IKData("LeftUpLeg-LeftLeg");
+				//ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
+				ikdata3.setLastBoneName("LeftFoot");
+				ikdata3.setBones(new String[]{"LeftLeg","LeftUpLeg"});
+				ikdata3.setIteration(5);
+				ikdatas.add(ikdata3);
+				
+				
+				
+				boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 140, -30, 10));
+				boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -75, 91, -70, 115));
+				
+				boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -140, 0, -10, 30));
+				boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-80, 60, -91, 75, -115, 70));
+
+				
+				boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
+				boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-120, 60, -35, 5, -80, 40));
+				
+				
+				boneLimits.put("LeftLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, -20, 0));
+				boneLimits.put("LeftUpLeg",BoneLimit.createBoneLimit(-120, 60, -5, 35, -40, 80));
+				
+				
+				boneLimits.put("LowerBack",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
+				boneLimits.put("Spine",BoneLimit.createBoneLimit(-30, 30, -40, 40, -40, 40));
+				//boneLimits.put("Spine1",BoneLimit.createBoneLimit(-30, 30, -30, 30, -30, 30));
+				boneLimits.put("Neck",BoneLimit.createBoneLimit(-29, 29, -29, 29, -29, 29));
+				boneLimits.put("Neck1",BoneLimit.createBoneLimit(-5, 5, -5, 5, -5, 5));
+	}
+	
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
 		cameraZ=5;
@@ -320,6 +400,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		root.add(selectionMesh);
 		selectionMesh.setVisible(false);
 		
+		
+		createIKAndLimitBone();
 		//line flicked think something
 		
 		
@@ -367,50 +449,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		//
 		
-		//head ik
-		ikdatas.add(createIKData(Lists.newArrayList("head","neck","chest","abdomen"),9));
-		boneLimits.put("abdomen",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
-		boneLimits.put("chest",BoneLimit.createBoneLimit(-30, 30, -40, 40, -40, 40));
-		boneLimits.put("neck",BoneLimit.createBoneLimit(-34, 34, -34, 34, -34, 34));
 		
-		//righ-hands
-		ikdatas.add(createIKData(Lists.newArrayList("rHand","rForeArm","rShldr"),9));
-		boneLimits.put("rForeArm",BoneLimit.createBoneLimit(-60, 60, -60, 90, 0,0));
-		boneLimits.put("rShldr",BoneLimit.createBoneLimit(-90, 60, -75, 80, -120, 80));
-		
-		//left-hand
-		ikdatas.add(createIKData(Lists.newArrayList("lHand","lForeArm","lShldr"),9));
-		boneLimits.put("lForeArm",BoneLimit.createBoneLimit(-40, 10, -140, 0, -10, 30));
-		boneLimits.put("lShldr",BoneLimit.createBoneLimit(-80, 60, -91, 75, -115, 70));
-
-		
-		
-		IKData ikdata3=new IKData("LeftUpLeg-LeftLeg");
-		//ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
-		ikdata3.setLastBoneName("LeftFoot");
-		ikdata3.setBones(new String[]{"LeftLeg","LeftUpLeg"});
-		ikdata3.setIteration(5);
-		ikdatas.add(ikdata3);
-		
-		
-	
-		
-		ikdatas.add(createIKData(Lists.newArrayList("rFoot","rShin","rThigh"),5));
-		
-		IKData mhikdata3=new IKData("lThigh-lShin");
-		//ikdata.setTargetPos(THREE.Vector3(0, -10, 0));
-		mhikdata3.setLastBoneName("lFoot");
-		mhikdata3.setBones(new String[]{"lShin","lThigh"});//what is this?
-		mhikdata3.setIteration(5);//what is this?
-		ikdatas.add(mhikdata3);
-		
-		//bone limit is very important otherwise ik really slow
-		
-		boneLimits.put("rShin",BoneLimit.createBoneLimit(0, 160, 0, 0, -20, 0));
-		boneLimits.put("rThigh",BoneLimit.createBoneLimit(-120, 60, -5, 35, -40, 80));
-		
-		boneLimits.put("lShin",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
-		boneLimits.put("lThigh",BoneLimit.createBoneLimit(-120, 60, -35, 5, -80, 40));
 		
 		//updateIkLabels();
 		
@@ -471,26 +510,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		//manual
 		
-		boneLimits.put("RightForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 140, -30, 10));
-		boneLimits.put("RightArm",BoneLimit.createBoneLimit(-80, 60, -75, 91, -70, 115));
 		
-		boneLimits.put("LeftForeArm",BoneLimit.createBoneLimit(-40, 10, -140, 0, -10, 30));
-		boneLimits.put("LeftArm",BoneLimit.createBoneLimit(-80, 60, -91, 75, -115, 70));
-
-		
-		boneLimits.put("RightLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
-		boneLimits.put("RightUpLeg",BoneLimit.createBoneLimit(-120, 60, -35, 5, -80, 40));
-		
-		
-		boneLimits.put("LeftLeg",BoneLimit.createBoneLimit(0, 160, 0, 0, -20, 0));
-		boneLimits.put("LeftUpLeg",BoneLimit.createBoneLimit(-120, 60, -5, 35, -40, 80));
-		
-		
-		boneLimits.put("LowerBack",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
-		boneLimits.put("Spine",BoneLimit.createBoneLimit(-30, 30, -40, 40, -40, 40));
-		//boneLimits.put("Spine1",BoneLimit.createBoneLimit(-30, 30, -30, 30, -30, 30));
-		boneLimits.put("Neck",BoneLimit.createBoneLimit(-29, 29, -29, 29, -29, 29));
-		boneLimits.put("Neck1",BoneLimit.createBoneLimit(-5, 5, -5, 5, -5, 5));
 		
 		
 		//for initialize texture
@@ -3836,7 +3856,13 @@ HorizontalPanel h1=new HorizontalPanel();
 		bodyMaterial=material;
 		
 		if(bodyMesh!=null){
-		bodyMesh.setMaterial(material);
+			material.setNeedsUpdate(true);
+			bodyMesh.setMaterial(material);//somehow now works.
+			//LogUtils.log(bodyMaterial);
+			//LogUtils.log(bodyMesh);
+			
+		}else{
+			LogUtils.log("materical update called,but body mesh is null");
 		}
 		
 		//test loaded material
