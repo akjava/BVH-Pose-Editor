@@ -284,25 +284,26 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				boneLimits.put("chest",BoneLimit.createBoneLimit(-30, 30, -40, 40, -40, 40));
 				boneLimits.put("neck",BoneLimit.createBoneLimit(-34, 34, -34, 34, -34, 34));
 				
-				//righ-hands
+				//righ-hands,now modifiing
 				ikdatas.add(createIKData(Lists.newArrayList("rHand","rForeArm","rShldr"),9));
 				boneLimits.put("rForeArm",BoneLimit.createBoneLimit(-60, 60, -60, 90, 0,0));
 				boneLimits.put("rShldr",BoneLimit.createBoneLimit(-90, 60, -75, 80, -120, 80));
 				
 				//left-hand
 				ikdatas.add(createIKData(Lists.newArrayList("lHand","lForeArm","lShldr"),9));
-				boneLimits.put("lForeArm",BoneLimit.createBoneLimit(-40, 10, -140, 0, -10, 30));
+				boneLimits.put("lForeArm",BoneLimit.createBoneLimit(-20, 10, -140, 0, -10, 30));
 				boneLimits.put("lShldr",BoneLimit.createBoneLimit(-80, 60, -91, 75, -115, 70));
 
-				
+				//right leg
+				ikdatas.add(createIKData(Lists.newArrayList("rFoot","rShin","rThigh"),5));
+				boneLimits.put("rShin",BoneLimit.createBoneLimit(0, 160, 0, 0, -0, 0));
+				boneLimits.put("rThigh",BoneLimit.createBoneLimit(-90, 90, -30, 30, -60, 45));
 
 				
 				
 				
 				
-				ikdatas.add(createIKData(Lists.newArrayList("rFoot","rShin","rThigh"),5));
-				boneLimits.put("rShin",BoneLimit.createBoneLimit(0, 160, 0, 0, -20, 0));
-				boneLimits.put("rThigh",BoneLimit.createBoneLimit(-120, 60, -5, 35, -40, 80));
+				
 				
 				
 				ikdatas.add(createIKData(Lists.newArrayList("lFoot","lShin","lThigh"),5));
