@@ -285,9 +285,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				boneLimits.put("neck",BoneLimit.createBoneLimit(-34, 34, -34, 34, -34, 34));
 				
 				//righ-hands,now modifiing
-				ikdatas.add(createIKData(Lists.newArrayList("rHand","rForeArm","rShldr"),9));
-				boneLimits.put("rForeArm",BoneLimit.createBoneLimit(-60, 60, -60, 90, 0,0));
+				ikdatas.add(createIKData(Lists.newArrayList("rHand","rForeArm","rShldr","rCollar"),9));
+				boneLimits.put("rForeArm",BoneLimit.createBoneLimit(-30, 60, -60, 90, 0,0));
 				boneLimits.put("rShldr",BoneLimit.createBoneLimit(-90, 60, -75, 80, -120, 80));
+				boneLimits.put("rCollar",BoneLimit.createBoneLimit(0,0,-30,0,-60,0));
 				
 				//left-hand
 				ikdatas.add(createIKData(Lists.newArrayList("lHand","lForeArm","lShldr"),9));
