@@ -1129,9 +1129,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikBar.addItem("Exec", new Command(){
 			@Override
 			public void execute() {
-				for(IKData ik:getAvaiableIkdatas()){
-					doPoseIkk(0,false,45,ik,10);
-				}
+				execIk();
 				hideContextMenu();
 			}});
 		
@@ -1417,6 +1415,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			}});
 		
 	}
+	protected void execIk() {
+		for(IKData ik:getAvaiableIkdatas()){
+			doPoseIkk(0,false,45,ik,10);
+		}
+	}
+
 	private void createContextMenuRoot(MenuBar rootBar){
 		MenuBar rootBoneBar=new MenuBar(true);
 		rootBar.addItem("Root",rootBoneBar);
@@ -2213,7 +2217,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	private CheckBox ylockCheck;
 	private CheckBox xlockCheck;
 	private List<String> ikLocks=new ArrayList<String>();
-	private CheckBox showBonesCheck;
+	private CheckBox showBonesCheck,showIkCheck;
 	
 	private int posDivided=100;
 	@Override
@@ -2331,8 +2335,10 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
+		HorizontalPanel shows=new HorizontalPanel();
+		parent.add(shows);
 		showBonesCheck = new CheckBox();
-		parent.add(showBonesCheck);
+		shows.add(showBonesCheck);
 		showBonesCheck.setText("Show Bones");
 		showBonesCheck.addClickHandler(new ClickHandler() {
 			
@@ -2342,6 +2348,18 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		showBonesCheck.setValue(true);
+		
+		showIkCheck = new CheckBox();
+		shows.add(showIkCheck);
+		showIkCheck.setText("Show Iks");
+		showIkCheck.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				updateIKVisible();
+			}
+		});
+		showIkCheck.setValue(true);
 		
 		//dont need now
 		/*
@@ -2619,6 +2637,9 @@ HorizontalPanel h1=new HorizontalPanel();
 			public void onClick(ClickEvent event) {
 				rotationBoneZRange.setValue(rotationBoneZRange.getValue()-1);
 				rotToBone();
+				if(event.isAltKeyDown()){
+					execIk();
+				}
 			}
 		});
 		h3b.add(minus3b);
@@ -2629,6 +2650,9 @@ HorizontalPanel h1=new HorizontalPanel();
 			public void onClick(ClickEvent event) {
 				rotationBoneZRange.setValue(0);
 				rotToBone();
+				if(event.isAltKeyDown()){
+					execIk();
+				}
 			}
 		});
 		h3b.add(reset3b);
@@ -2639,6 +2663,9 @@ HorizontalPanel h1=new HorizontalPanel();
 			public void onClick(ClickEvent event) {
 				rotationBoneZRange.setValue(rotationBoneZRange.getValue()+1);
 				rotToBone();
+				if(event.isAltKeyDown()){
+					execIk();
+				}
 			}
 		});
 		h3b.add(plus3b);
@@ -2647,6 +2674,9 @@ HorizontalPanel h1=new HorizontalPanel();
 			@Override
 			public void onMouseUp(MouseUpEvent event) {
 				rotToBone();
+				if(event.isAltKeyDown()){
+					execIk();
+				}
 			}
 		});
 		
@@ -2900,6 +2930,11 @@ HorizontalPanel h1=new HorizontalPanel();
 	protected void updateBonesVisible() {
 		if(bone3D!=null){
 			Object3DUtils.setVisibleAll(bone3D, showBonesCheck.getValue());
+		}
+	}
+	protected void updateIKVisible() {
+		if(ik3D!=null){
+			Object3DUtils.setVisibleAll(ik3D, showIkCheck.getValue());
 		}
 	}
 
@@ -4728,6 +4763,8 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 					ikMesh.setPosition(ik.getTargetPos());
 					Line ikline=GWTGeometryUtils.createLineMesh(pos, ik.getTargetPos(), 0xffffff);
 					ik3D.add(ikline);
+					
+					
 				}
 			}
 			
@@ -4747,6 +4784,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
 		//dont work
 		Object3DUtils.setVisibleAll(bone3D, showBonesCheck.getValue());
+		Object3DUtils.setVisibleAll(ik3D, showIkCheck.getValue());
 		//bone3D.setVisible(showBonesCheck.getValue());
 		
 		//Geometry geo=GeometryUtils.clone(baseGeometry);
