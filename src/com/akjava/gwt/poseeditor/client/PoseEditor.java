@@ -791,7 +791,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 
 
-	Map<String,BoneLimit> boneLimits=new HashMap<String,BoneLimit>();
+	public static Map<String,BoneLimit> boneLimits=new HashMap<String,BoneLimit>();
 	
 	private void updateIkLabels(){
 		//log(""+boneNamesBox);
@@ -876,7 +876,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		if(currentSelectionIkName!=null){
 		
-			List<List<NameAndVector3>> result=createBases(getCurrentIkData());
+			List<List<NameAndVector3>> result=createIKBases(getCurrentIkData());
 			//log("switchd:"+result.size());
 			
 			/*for debug
@@ -893,9 +893,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		}
 		
 		//must be lower .to keep lower add limit bone inside IK
-		if(result.size()>1500){
-			LogUtils.log("warn many result-size:"+result.size()+" this almost freeze everything. are you forget limit bone.");
-		}
+		
 		//LogUtils.log("safe heresome how in danger:"+name);
 		
 		
@@ -931,28 +929,43 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		updateIkLabels();
 	}
 	
-	public List<List<NameAndVector3>> createBases(IKData data){
+	Map<IKData,List<List<NameAndVector3>>> ikBasesMap=new HashMap<IKData,List<List<NameAndVector3>>>();
+	
+	
+	public  List<List<NameAndVector3>> createIKBases(IKData data){
+		
+		if(ikBasesMap.get(data)!=null){
+			return ikBasesMap.get(data);
+		}
+		
 		int angle=30;
 		
 		//need change angle step if need more 
-		//if(data.getLastBoneName().equals("chest")){
-			//angle=5;	//chest is important?
-		//}
-		List<List<NameAndVector3>> all=new ArrayList();
-		List<List<NameAndVector3>> result=new ArrayList();
+		if(data.getLastBoneName().equals("chest") || data.getLastBoneName().equals("neck")  ){
+			angle=10;	//chest is important?,tried but not so effected.
+		}
+		List<List<NameAndVector3>> all=new ArrayList<List<NameAndVector3>>();
+		List<List<NameAndVector3>> result=new ArrayList<List<NameAndVector3>>();
 		
 		for(int i=0;i<data.getBones().size();i++){
 			String name=data.getBones().get(i);
-			List<NameAndVector3> patterns=createBases(name,angle); //90 //60 is slow
+			List<NameAndVector3> patterns=createIKBases(name,angle); //90 //60 is slow
 			all.add(patterns);
 			//log(name+"-size:"+patterns.size());
 		}
 		//log(data.getLastBoneName()+"-joint-size:"+all.size());
 		addBase(all,result,data.getBones(),0,null,2);
+		
+		ikBasesMap.put(data,result);//store
+		
+		if(result.size()>1500){
+			LogUtils.log("warn many result-size:"+result.size()+" this almost freeze everything. are you forget limit bone.");
+		}
+		
 		return result;
 	}
 	
-	private void addBase(List<List<NameAndVector3>> all,
+	private static void addBase(List<List<NameAndVector3>> all,
 			List<List<NameAndVector3>> result, List<String> boneNames, int index,List<NameAndVector3> tmp,int depth) {
 		if(index>=boneNames.size() || index==depth){
 			result.add(tmp);
@@ -974,7 +987,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		}
 	}
 
-	private List<NameAndVector3> createBases(String name,int step){
+	private static List<NameAndVector3> createIKBases(String name,int step){
 		Set<NameAndVector3> patterns=new HashSet<NameAndVector3>();
 		BoneLimit limit=boneLimits.get(name);
 		/*
