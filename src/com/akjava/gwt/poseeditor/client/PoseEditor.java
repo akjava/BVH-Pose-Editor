@@ -4824,6 +4824,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			
 			//relatePos.addSelf(bonePos);
 			if(boneIndex2!=boneIndex1){
+				//what is this?
 				Vector3 bonePos2=animationBonesData.getBaseBonePosition(boneIndex2);
 				Vector3 relatePos2=bonePos2.clone();
 				relatePos2.subVectors(baseVertex,bonePos2);
@@ -4854,6 +4855,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 					relatePos.set(abpos.getX(), abpos.getY(), abpos.getZ());
 				}*/
 				
+				/*//why need this?,anyway this crash models.
 				if(length2<1){
 				Vector3 abpos=THREE.Vector3();
 				abpos.subVectors(relatePos, bonePositions.get(boneIndex2));
@@ -4862,7 +4864,10 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 				abpos.add(bonePositions.get(boneIndex2));
 				relatePos.set(abpos.getX(), abpos.getY(), abpos.getZ());
 				
+				//LogUtils.log("length2<1:"+i);
 				}
+				*/
+				
 				/*
 				Vector3 diff=THREE.Vector3();
 				diff.sub(relatePos2, relatePos);
