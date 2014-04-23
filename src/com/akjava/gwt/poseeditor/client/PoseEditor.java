@@ -2946,11 +2946,19 @@ HorizontalPanel h1=new HorizontalPanel();
 							geometry.getSkinIndices().get(i).setY(geometry.getSkinIndices().get(i).getX());
 						}else if(y==1){
 							geometry.getSkinIndices().get(i).setX(geometry.getSkinIndices().get(i).getY());
-						}else{//less 1.0 bone usually make problem
+						}else{//total value is under 1.0 bone usually make problem
 						double total=x+y;
-						double remain=(1.0-total)/2;
-						vec4.setX(x+remain);
-						vec4.setY(y+remain);
+						if(total>1){
+						//	LogUtils.log("invalid:"+total);
+						}
+						double remain=(1.0-total);
+						
+						double nx=(x/total)*remain+x;
+						double ny=1.0-nx;
+						vec4.setX(nx);
+						vec4.setY(ny);
+						
+						//must be 1.0 ?
 						}
 					}
 					
