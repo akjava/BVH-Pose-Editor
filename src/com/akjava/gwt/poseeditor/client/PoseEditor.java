@@ -33,6 +33,7 @@ import com.akjava.gwt.lib.client.StorageException;
 import com.akjava.gwt.poseeditor.client.PreferenceTabPanel.PreferenceListener;
 import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
 import com.akjava.gwt.three.client.gwt.JSONModelFile;
+import com.akjava.gwt.three.client.gwt.JSParameter;
 import com.akjava.gwt.three.client.gwt.animation.AngleAndPosition;
 import com.akjava.gwt.three.client.gwt.animation.AnimationBone;
 import com.akjava.gwt.three.client.gwt.animation.AnimationBonesData;
@@ -45,6 +46,7 @@ import com.akjava.gwt.three.client.gwt.animation.ik.CDDIK;
 import com.akjava.gwt.three.client.gwt.animation.ik.IKData;
 import com.akjava.gwt.three.client.gwt.core.BoundingBox;
 import com.akjava.gwt.three.client.gwt.core.Intersect;
+import com.akjava.gwt.three.client.gwt.materials.MeshBasicMaterialParameter;
 import com.akjava.gwt.three.client.java.GWTDragObjectControler;
 import com.akjava.gwt.three.client.java.ThreeLog;
 import com.akjava.gwt.three.client.java.animation.WeightBuilder;
@@ -2334,6 +2336,7 @@ HorizontalPanel h1=new HorizontalPanel();
 				updateMaterial();
 			}
 		});
+		basicMaterialCheck.setValue(true);//test 
 		
 		HorizontalPanel shows=new HorizontalPanel();
 		parent.add(shows);
@@ -3484,6 +3487,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		pedSelectionListBox.setValue(ped);
 		
+		updatePoseIndex(Math.max(0,poseFrameDataIndex-1));//new label
 		updateSaveButtons();
 	}
 	
@@ -3879,11 +3883,6 @@ HorizontalPanel h1=new HorizontalPanel();
 	private String textureUrl="female001_texture1.jpg";//default
 	private Texture texture;
 	protected void updateMaterial() {
-		if(true){
-			LogUtils.log("update material called");
-			//return;
-		}
-		
 		if(lastLoadedModel!=null){
 			if(lastLoadedModel.getMetaData().getFormatVersion()==3){
 				texture.setFlipY(false);
@@ -3898,30 +3897,35 @@ HorizontalPanel h1=new HorizontalPanel();
 		if(transparent){
 			opacity=0.75;
 		}
+		JSParameter parameter=MeshBasicMaterialParameter.create().map(texture).transparent(true).opacity(opacity);
+		
 		if(texture==null){//some case happend
-			material=THREE.MeshBasicMaterial().transparent(transparent).opacity(opacity).build();
-			//only initial happend
-			
+			material=THREE.MeshBasicMaterial(MeshBasicMaterialParameter.create().transparent(true).opacity(opacity));
+			//only initial happend,if you set invalid texture
 		}else{
 			if(basicMaterialCheck.getValue()){
-				material=THREE.MeshBasicMaterial().map(texture).transparent(transparent).opacity(opacity).build();
+				material=THREE.MeshBasicMaterial(parameter);
 				
 			}else{
-				material=THREE.MeshLambertMaterial().map(texture).transparent(transparent).opacity(opacity).build();
+				material=THREE.MeshLambertMaterial(parameter);
 			}
 		}
 		
 		bodyMaterial=material;
 		
-		if(bodyMesh!=null){
-			material.setNeedsUpdate(true);
-			bodyMesh.setMaterial(material);//somehow now works.
-			//LogUtils.log(bodyMaterial);
-			//LogUtils.log(bodyMesh);
-			
+		if(basicMaterialCheck.getValue()){
+			if(bodyMesh!=null){
+				bodyMesh.setMaterial(material);//somehow now works.
+			}else{
+				LogUtils.log("materical update called,but body mesh is null");
+			}
 		}else{
-			LogUtils.log("materical update called,but body mesh is null");
+			//not basic material need recreate-model
+			doPoseByMatrix(ab);
 		}
+		
+		
+		
 		
 		//test loaded material
 		
