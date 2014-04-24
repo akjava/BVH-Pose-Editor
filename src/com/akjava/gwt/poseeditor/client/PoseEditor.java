@@ -273,6 +273,27 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 	}
 	
+	
+	private BoneLimit oppositeRL(BoneLimit baseLimit){
+		BoneLimit limit=new BoneLimit();
+		limit.setMinXDegit(baseLimit.getMinXDegit());
+		limit.setMaxXDegit(baseLimit.getMaxXDegit());
+		
+		limit.setMinYDegit(baseLimit.getMaxYDegit()*-1);
+		limit.setMaxYDegit(baseLimit.getMinYDegit()*-1);
+		
+		limit.setMinZDegit(baseLimit.getMaxZDegit()*-1);
+		limit.setMaxZDegit(baseLimit.getMinZDegit()*-1);
+		
+		limit.setMinX(Math.toRadians(limit.getMinXDegit()));
+		limit.setMaxX(Math.toRadians(limit.getMaxXDegit()));
+		limit.setMinY(Math.toRadians(limit.getMinYDegit()));
+		limit.setMaxY(Math.toRadians(limit.getMaxYDegit()));
+		limit.setMinZ(Math.toRadians(limit.getMinZDegit()));
+		limit.setMaxZ(Math.toRadians(limit.getMaxZDegit()));
+		return limit;
+	}
+	
 	private void createIKAndLimitBone(){
 		//TODO load from file
 		
@@ -289,13 +310,14 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				//righ-hands,now modifiing
 				ikdatas.add(createIKData(Lists.newArrayList("rHand","rForeArm","rShldr","rCollar"),9));
 				boneLimits.put("rForeArm",BoneLimit.createBoneLimit(-30, 60, -60, 90, 0,0));
-				boneLimits.put("rShldr",BoneLimit.createBoneLimit(-90, 60, -75, 80, -120, 80));
-				boneLimits.put("rCollar",BoneLimit.createBoneLimit(0,0,-30,0,-60,0));
+				boneLimits.put("rShldr",BoneLimit.createBoneLimit(-90, 60, -75, 80, -120, 60));
+				boneLimits.put("rCollar",BoneLimit.createBoneLimit(0,0,-20,0,-40,0));
 				
 				//left-hand
-				ikdatas.add(createIKData(Lists.newArrayList("lHand","lForeArm","lShldr"),9));
-				boneLimits.put("lForeArm",BoneLimit.createBoneLimit(-20, 10, -140, 0, -10, 30));
-				boneLimits.put("lShldr",BoneLimit.createBoneLimit(-80, 60, -91, 75, -115, 70));
+				ikdatas.add(createIKData(Lists.newArrayList("lHand","lForeArm","lShldr","lCollar"),9));
+				boneLimits.put("lForeArm",oppositeRL(boneLimits.get("rForeArm")));
+				boneLimits.put("lShldr",oppositeRL(boneLimits.get("rShldr")));
+				boneLimits.put("lCollar",oppositeRL(boneLimits.get("rCollar")));
 
 				//right leg
 				ikdatas.add(createIKData(Lists.newArrayList("rFoot","rShin","rThigh"),5));
@@ -303,15 +325,15 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				boneLimits.put("rThigh",BoneLimit.createBoneLimit(-90, 90, -30, 30, -60, 45));
 
 				
-				
-				
-				
-				
-				
-				
 				ikdatas.add(createIKData(Lists.newArrayList("lFoot","lShin","lThigh"),5));
-				boneLimits.put("lShin",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 20));
-				boneLimits.put("lThigh",BoneLimit.createBoneLimit(-120, 60, -35, 5, -80, 40));
+				boneLimits.put("lShin",oppositeRL(boneLimits.get("rShin")));
+				boneLimits.put("lThigh",oppositeRL(boneLimits.get("rThigh")));
+				
+				
+				
+				
+				
+				
 				
 				
 				
@@ -940,7 +962,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			return ikBasesMap.get(data);
 		}
 		
-		int angle=30;
+		//int angle=30;
+		int angle=20;//how smooth?
 		
 		//need change angle step if need more 
 		if(data.getLastBoneName().equals("chest") || data.getLastBoneName().equals("neck")  ){
