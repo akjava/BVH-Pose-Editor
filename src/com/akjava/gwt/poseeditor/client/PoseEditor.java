@@ -32,6 +32,7 @@ import com.akjava.gwt.lib.client.StorageControler;
 import com.akjava.gwt.lib.client.StorageException;
 import com.akjava.gwt.poseeditor.client.PreferenceTabPanel.PreferenceListener;
 import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
+import com.akjava.gwt.three.client.examples.renderers.CellShader;
 import com.akjava.gwt.three.client.gwt.JSONModelFile;
 import com.akjava.gwt.three.client.gwt.JSParameter;
 import com.akjava.gwt.three.client.gwt.animation.AngleAndPosition;
@@ -540,9 +541,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		
 		//for initialize texture
-		texture=ImageUtils.loadTexture("female001_texture1.jpg");//initial one
+		texture=ImageUtils.loadTexture("female001_texture1.jpg");//initial one   //TODO change this.
 		//generateTexture();
 		
+		//initial model to avoid async use clientbundle same as "proxy.js"
 		parseInitialBVHAndLoadModels(PoseEditorBundles.INSTANCE.pose().getText());
 		
 		
@@ -963,7 +965,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		}
 		
 		//int angle=30;
-		int angle=20;//how smooth?
+		int angle=25;//how smooth?
 		
 		//need change angle step if need more 
 		if(data.getLastBoneName().equals("chest") || data.getLastBoneName().equals("neck")  ){
@@ -2244,7 +2246,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	private List<String> ikLocks=new ArrayList<String>();
 	private CheckBox showBonesCheck,showIkCheck;
 	
-	private int posDivided=100;
+	private int posDivided=100;	//
 	@Override
 	public void createControl(DropVerticalPanelBase parent) {
 HorizontalPanel h1=new HorizontalPanel();
@@ -2990,6 +2992,35 @@ HorizontalPanel h1=new HorizontalPanel();
 
 	private JsArray<Material> loadedMaterials;
 	JSONModelFile lastLoadedModel;
+	
+	
+	private void fixGeometryWeight(Geometry geometry){
+		for(int i=0;i<geometry.getSkinWeight().length();i++){
+			Vector4 vec4=geometry.getSkinWeight().get(i);
+			double x=vec4.getX();
+			double y=vec4.getY();
+			//seems somehow 1.0 weight make problem?
+			if(x==1){
+				geometry.getSkinIndices().get(i).setY(geometry.getSkinIndices().get(i).getX());
+			}else if(y==1){
+				geometry.getSkinIndices().get(i).setX(geometry.getSkinIndices().get(i).getY());
+			}else{//total value is under 1.0 bone usually make problem
+			double total=x+y;
+			if(total>1){
+			//	LogUtils.log("invalid:"+total);
+			}
+			double remain=(1.0-total);
+			
+			double nx=(x/total)*remain+x;
+			double ny=1.0-nx;
+			vec4.setX(nx);
+			vec4.setY(ny);
+			
+			//must be 1.0 ?
+			}
+		}
+	}
+	
 	private void LoadJsonModel(String jsonText){
 		try {
 			JSONModelFile model=GWTThreeUtils.parseJsonObject(jsonText);
@@ -3012,35 +3043,13 @@ HorizontalPanel h1=new HorizontalPanel();
 					
 					
 					//fix geometry weight,otherwise broken model
-					for(int i=0;i<geometry.getSkinWeight().length();i++){
-						Vector4 vec4=geometry.getSkinWeight().get(i);
-						double x=vec4.getX();
-						double y=vec4.getY();
-						//seems somehow 1.0 weight make problem?
-						if(x==1){
-							geometry.getSkinIndices().get(i).setY(geometry.getSkinIndices().get(i).getX());
-						}else if(y==1){
-							geometry.getSkinIndices().get(i).setX(geometry.getSkinIndices().get(i).getY());
-						}else{//total value is under 1.0 bone usually make problem
-						double total=x+y;
-						if(total>1){
-						//	LogUtils.log("invalid:"+total);
-						}
-						double remain=(1.0-total);
-						
-						double nx=(x/total)*remain+x;
-						double ny=1.0-nx;
-						vec4.setX(nx);
-						vec4.setY(ny);
-						
-						//must be 1.0 ?
-						}
-					}
+					fixGeometryWeight(geometry);//TODO retest really need?
 					
 					
 					baseGeometry=geometry;//change body mesh
 					
-					if(baseGeometry.getBones()!=null){
+					LogUtils.log(baseGeometry.getBones());
+					if(baseGeometry.getBones()!=null && baseGeometry.getBones().length()>0){
 						logger.fine("create-bone from geometry");
 						setBone(baseGeometry.getBones()); //possible broken bone.TODO test geometry bone
 						
@@ -3930,7 +3939,11 @@ HorizontalPanel h1=new HorizontalPanel();
 				material=THREE.MeshBasicMaterial(parameter);
 				
 			}else{
-				material=THREE.MeshLambertMaterial(parameter);
+				CellShader shader=(CellShader) CellShader.createObject();
+				material=THREE.ShaderMaterial().fragmentShader(shader.fragmentShader()).vertexShader(shader.vertexShader()).uniforms(shader.uniforms()).build();
+				
+				//material=THREE.MeshLambertMaterial(parameter);
+				
 			}
 		}
 		
