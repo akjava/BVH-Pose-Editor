@@ -1,4 +1,2 @@
-female001.json,-1
-female002.json,-2
-male001.json,-3
-proxy.js,-4
+model001_female_eye.js,-1
+model001_proxy837_eye.js,-2

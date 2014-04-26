@@ -303,6 +303,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		//make human1.0 bones
 		
 		//head ik
+		
+		
+				//this is for rese pose and not work correctly
+		/*
 				ikdatas.add(createIKData(Lists.newArrayList("head","neck","chest","abdomen"),9));
 				boneLimits.put("abdomen",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
 				boneLimits.put("chest",BoneLimit.createBoneLimit(-30, 30, -40, 40, -40, 40));
@@ -329,7 +333,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				ikdatas.add(createIKData(Lists.newArrayList("lFoot","lShin","lThigh"),5));
 				boneLimits.put("lShin",oppositeRL(boneLimits.get("rShin")));
 				boneLimits.put("lThigh",oppositeRL(boneLimits.get("rThigh")));
-				
+			*/
 				
 				
 				
@@ -341,8 +345,39 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			
 				
 				
+		
+		//head
+		
+		ikdatas.add(createIKData(Lists.newArrayList("head","neck","chest","abdomen"),9));
+		boneLimits.put("abdomen",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
+		boneLimits.put("chest",BoneLimit.createBoneLimit(-30, 30, -40, 40, -40, 40));//chest not stable if have more Y
+		boneLimits.put("neck",BoneLimit.createBoneLimit(-34, 34, -34, 34, -34, 34));
+		
+		//righ-hand
+		ikdatas.add(createIKData(Lists.newArrayList("rHand","rForeArm","rShldr","rCollar"),9));
+		boneLimits.put("rForeArm",BoneLimit.createBoneLimit(-40, 10, 0, 140, -30, 0));
+		boneLimits.put("rShldr",BoneLimit.createBoneLimit(-80, 60, -60, 91, -70, 115));
+		boneLimits.put("rCollar",BoneLimit.createBoneLimit(0,0,-20,0,-40,0));
+		
+		//left-hand
+		ikdatas.add(createIKData(Lists.newArrayList("lHand","lForeArm","lShldr","lCollar"),9));
+		boneLimits.put("lForeArm",oppositeRL(boneLimits.get("rForeArm")));
+		boneLimits.put("lShldr",oppositeRL(boneLimits.get("rShldr")));
+		boneLimits.put("lCollar",oppositeRL(boneLimits.get("rCollar")));
+
+		//right leg
+		ikdatas.add(createIKData(Lists.newArrayList("rFoot","rShin","rThigh"),5));
+		boneLimits.put("rShin",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 0));
+		boneLimits.put("rThigh",BoneLimit.createBoneLimit(-120, 60, -35, 5, -80, 40));
+
+		
+		ikdatas.add(createIKData(Lists.newArrayList("lFoot","lShin","lThigh"),5));
+		boneLimits.put("lShin",oppositeRL(boneLimits.get("rShin")));
+		boneLimits.put("lThigh",oppositeRL(boneLimits.get("rThigh")));
+		
+		
 				
-				
+		
 				
 				
 				
@@ -544,10 +579,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		texture=ImageUtils.loadTexture("female001_texture1.jpg");//initial one   //TODO change this.
 		//generateTexture();
 		
-		//initial model to avoid async use clientbundle same as "proxy.js"
+		//initial model to avoid async use clientbundle same as "tpose.bvh"
 		parseInitialBVHAndLoadModels(PoseEditorBundles.INSTANCE.pose().getText());
 		
-		
+		//model is loaded usually -1 index in modelName.txt on Bundles.
 		
 		
 		createTabs();
@@ -2244,7 +2279,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	private CheckBox ylockCheck;
 	private CheckBox xlockCheck;
 	private List<String> ikLocks=new ArrayList<String>();
-	private CheckBox showBonesCheck,showIkCheck;
+	private CheckBox showBonesCheck,showIkCheck,smallCheck;
 	
 	private int posDivided=100;	//
 	@Override
@@ -2377,9 +2412,21 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		showBonesCheck.setValue(true);
 		
+		smallCheck = new CheckBox();
+		shows.add(smallCheck);
+		smallCheck.setText("small");
+		smallCheck.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				updateBonesSize();
+			}
+		});
+		smallCheck.setValue(false);
+		
 		showIkCheck = new CheckBox();
 		shows.add(showIkCheck);
-		showIkCheck.setText("Show Iks");
+		showIkCheck.setText("Iks");
 		showIkCheck.addClickHandler(new ClickHandler() {
 			
 			@Override
@@ -2960,6 +3007,12 @@ HorizontalPanel h1=new HorizontalPanel();
 			Object3DUtils.setVisibleAll(bone3D, showBonesCheck.getValue());
 		}
 	}
+	
+	protected void updateBonesSize() {
+		if(bone3D!=null){
+			doPoseByMatrix(ab);//re-create
+		}
+	}
 	protected void updateIKVisible() {
 		if(ik3D!=null){
 			Object3DUtils.setVisibleAll(ik3D, showIkCheck.getValue());
@@ -3050,7 +3103,7 @@ HorizontalPanel h1=new HorizontalPanel();
 					
 					LogUtils.log(baseGeometry.getBones());
 					if(baseGeometry.getBones()!=null && baseGeometry.getBones().length()>0){
-						logger.fine("create-bone from geometry");
+						LogUtils.log("create-bone from geometry:size="+baseGeometry.getBones().length());
 						setBone(baseGeometry.getBones()); //possible broken bone.TODO test geometry bone
 						
 						/*
@@ -3060,6 +3113,7 @@ HorizontalPanel h1=new HorizontalPanel();
 						*/
 						
 					}else{
+						Window.alert("your loaded model has not contain bone,\nand use default bone.but this make many problem.\nplease export  your model with bone");
 						logger.fine("bvh:"+bvh);
 						LogUtils.log("use bvh bone:maybe this is problem");
 						//initialize default bone
@@ -3939,10 +3993,8 @@ HorizontalPanel h1=new HorizontalPanel();
 				material=THREE.MeshBasicMaterial(parameter);
 				
 			}else{
-				CellShader shader=(CellShader) CellShader.createObject();
-				material=THREE.ShaderMaterial().fragmentShader(shader.fragmentShader()).vertexShader(shader.vertexShader()).uniforms(shader.uniforms()).build();
 				
-				//material=THREE.MeshLambertMaterial(parameter);
+				material=THREE.MeshLambertMaterial(parameter);
 				
 			}
 		}
@@ -4718,6 +4770,9 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 				bsize=baseBoneCoreSize*2;
 			}
 			bsize/=posDivided;
+			if(smallCheck.getValue()){
+				bsize/=2;
+			}
 			
 			Mesh mesh=THREE.Mesh(THREE.CubeGeometry(bsize,bsize, bsize),THREE.MeshLambertMaterial().color(0xff0000).build());
 			bone3D.add(mesh);

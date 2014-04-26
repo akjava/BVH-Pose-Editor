@@ -8,7 +8,7 @@ public interface PoseEditorBundles extends ClientBundle {
 public static PoseEditorBundles INSTANCE=GWT.create(PoseEditorBundles.class);
 	TextResource modelNames();
 	TextResource textureNames();
-	@Source("pose.bvh")
+	@Source("tpose.bvh")
 	//@Source("aaa.bvh")
 	TextResource pose();
 
