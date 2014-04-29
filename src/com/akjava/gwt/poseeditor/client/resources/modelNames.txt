@@ -1,2 +1,2 @@
-model001_female_eye.js,-1
-model001_proxy837_eye.js,-2
+model001_female1848_bone19.js,-1
+model001_proxy837_bone19.js,-2

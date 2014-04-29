@@ -356,7 +356,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		//righ-hand
 		ikdatas.add(createIKData(Lists.newArrayList("rHand","rForeArm","rShldr","rCollar"),9));
 		boneLimits.put("rForeArm",BoneLimit.createBoneLimit(0, 0, 0, 140, 0, 0));
-		boneLimits.put("rShldr",BoneLimit.createBoneLimit(-80, 60, -60, 91, -30, 115));
+		boneLimits.put("rShldr",BoneLimit.createBoneLimit(-80, 60, -60, 91, -40, 90));
 		boneLimits.put("rCollar",BoneLimit.createBoneLimit(0,0,-20,0,-40,0));
 		
 		//left-hand
@@ -2719,6 +2719,32 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		h3b.add(minus3b);
 		
+		Button reset3b1=new Button("-90");
+		reset3b1.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				rotationBoneZRange.setValue(-90);
+				rotToBone();
+				if(event.isAltKeyDown()){
+					execIk();
+				}
+			}
+		});
+		h3b.add(reset3b1);
+		
+		Button reset3b2=new Button("-45");
+		reset3b2.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				rotationBoneZRange.setValue(-45);
+				rotToBone();
+				if(event.isAltKeyDown()){
+					execIk();
+				}
+			}
+		});
+		h3b.add(reset3b2);
+		
 		Button reset3b=new Button("0");
 		reset3b.addClickHandler(new ClickHandler() {
 			@Override
@@ -2731,6 +2757,32 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		h3b.add(reset3b);
+		
+		Button reset3b3=new Button("45");
+		reset3b3.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				rotationBoneZRange.setValue(45);
+				rotToBone();
+				if(event.isAltKeyDown()){
+					execIk();
+				}
+			}
+		});
+		h3b.add(reset3b3);
+		
+		Button reset3b4=new Button("90");
+		reset3b4.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				rotationBoneZRange.setValue(90);
+				rotToBone();
+				if(event.isAltKeyDown()){
+					execIk();
+				}
+			}
+		});
+		h3b.add(reset3b4);
 		
 		Button plus3b=new Button("+");
 		plus3b.addClickHandler(new ClickHandler() {
