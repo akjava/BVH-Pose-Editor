@@ -24,15 +24,19 @@ import com.akjava.gwt.bvh.client.threejs.BVHConverter;
 import com.akjava.gwt.html5.client.InputRangeWidget;
 import com.akjava.gwt.html5.client.download.HTML5Download;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
+import com.akjava.gwt.html5.client.file.File;
+import com.akjava.gwt.html5.client.file.FileUploadForm;
+import com.akjava.gwt.html5.client.file.FileUtils;
+import com.akjava.gwt.html5.client.file.FileUtils.DataURLListener;
 import com.akjava.gwt.html5.client.file.ui.DropVerticalPanelBase;
-import com.akjava.gwt.lib.client.HeaderAndValue;
 import com.akjava.gwt.lib.client.IStorageControler;
+import com.akjava.gwt.lib.client.JsonValueUtils;
 import com.akjava.gwt.lib.client.LogUtils;
 import com.akjava.gwt.lib.client.StorageControler;
 import com.akjava.gwt.lib.client.StorageException;
+import com.akjava.gwt.lib.client.datalist.SimpleTextData;
 import com.akjava.gwt.poseeditor.client.PreferenceTabPanel.PreferenceListener;
 import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
-import com.akjava.gwt.three.client.examples.renderers.CellShader;
 import com.akjava.gwt.three.client.gwt.JSONModelFile;
 import com.akjava.gwt.three.client.gwt.JSParameter;
 import com.akjava.gwt.three.client.gwt.animation.AngleAndPosition;
@@ -75,6 +79,7 @@ import com.akjava.gwt.three.client.js.objects.Mesh;
 import com.akjava.gwt.three.client.js.renderers.WebGLRenderer;
 import com.akjava.gwt.three.client.js.scenes.Scene;
 import com.akjava.gwt.three.client.js.textures.Texture;
+import com.akjava.lib.common.utils.ValuesUtils;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -146,6 +151,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 	private static boolean debug;
 
+	private static final String KEY_TRANSPARENT="poseeditor_key_transparent";
+	private static final String KEY_BASIC_MATERIAL="poseeditor_key_basicmaterial";
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		
@@ -757,7 +764,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 						anchor.removeFromParent();
 					}
 					HTML5Download html5=new HTML5Download();
-					anchor = html5.generateTextDownloadLink(json, "raw"+".json", "Click to download",true);
+					JSONValue jsonValue=JSONParser.parseLenient(json);//possible error if json is invalid
+					anchor = html5.generateTextDownloadLink(JsonValueUtils.stringify(jsonValue.isObject().getJavaScriptObject()), "raw"+".json", "Click to download",true);
 					add(anchor);
 					
 				}
@@ -811,7 +819,18 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		VerticalPanel datasRoot=new VerticalPanel();
 		tabPanel.add(datasRoot,"Datas");
 		
+		HorizontalPanel dataButtons=new HorizontalPanel();
+		datasRoot.add(dataButtons);
 		
+		FileUploadForm importBVH=FileUtils.createSingleTextFileUploadForm(new DataURLListener() {	
+			@Override
+			public void uploaded(File file, String value) {
+				// TODO Auto-generated method stub
+				
+			}
+		}, true);
+		dataButtons.add(new Label("Import BVH"));
+		dataButtons.add(importBVH);
 		
 		datasPanel = new VerticalPanel();
 		
@@ -1217,17 +1236,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikBar.addItem("Follow target", new Command(){
 			@Override
 			public void execute() {
-				for(IKData ik:getAvaiableIkdatas()){
-					String name=ik.getLastBoneName();
-					
-					if(existBone(name)){
-						ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
-						doPoseByMatrix(ab);
-					}
-					
-					hideContextMenu();
-					
-				}
+				
+				followTarget();
+				hideContextMenu();
 			}});
 		
 		
@@ -1480,6 +1491,21 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			}});
 		
 	}
+	protected void followTarget() {
+
+		for(IKData ik:getAvaiableIkdatas()){
+			String name=ik.getLastBoneName();
+			
+			if(existBone(name)){
+				ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
+				doPoseByMatrix(ab);
+			}
+			
+			
+			
+		}
+	}
+
 	protected void execIk() {
 		for(IKData ik:getAvaiableIkdatas()){
 			doPoseIkk(0,false,45,ik,10);
@@ -2387,7 +2413,24 @@ h1.setWidth("250px");
 			}
 		});
 		
-		transparentCheck.setValue(true);
+		transparentCheck.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
+			@Override
+			public void onValueChange(ValueChangeEvent<Boolean> event) {
+				try {
+					storageControler.setValue(KEY_TRANSPARENT, ""+event.getValue());
+				} catch (StorageException e) {
+					//not important
+					LogUtils.log("storage error:"+e.getMessage());
+				}
+			}
+			
+		});
+		
+		try {
+			transparentCheck.setValue(ValuesUtils.toBoolean(storageControler.getValue(KEY_TRANSPARENT, "false"),false));
+		} catch (StorageException e) {
+			LogUtils.log("storage error:"+e.getMessage());
+		}
 		
 		basicMaterialCheck = new CheckBox();
 		parent.add(basicMaterialCheck);
@@ -2399,7 +2442,26 @@ h1.setWidth("250px");
 				updateMaterial();
 			}
 		});
-		basicMaterialCheck.setValue(true);//test 
+		
+			try {
+				basicMaterialCheck.setValue(ValuesUtils.toBoolean(storageControler.getValue(KEY_BASIC_MATERIAL, "false"),false));
+			} catch (StorageException e) {
+				LogUtils.log("storage error:"+e.getMessage());
+			}
+		
+		basicMaterialCheck.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
+			@Override
+			public void onValueChange(ValueChangeEvent<Boolean> event) {
+				try {
+					storageControler.setValue(KEY_BASIC_MATERIAL, ""+event.getValue());
+				} catch (StorageException e) {
+					//not important
+					LogUtils.log("storage error:"+e.getMessage());
+				}
+			}
+			
+		});
+		
 		
 		HorizontalPanel shows=new HorizontalPanel();
 		parent.add(shows);
@@ -3904,22 +3966,30 @@ h1.setWidth("250px");
 		ab.setBonesAngleAndMatrixs(currentMatrixs);
 		//update
 		
+		followTarget();//use initial pos
+		
+		/*
 		for(int i=0;i<ikdatas.size();i++){
 			if(!availIk(ikdatas.get(i))){
 				continue;
 			}
 			
+			int boneIndex=ab.getBoneIndex(ikdatas.get(i).getLastBoneName());
+			ab.getBonePosition(boneIndex);
+			
+			
+			//this is load form ikdatas
 			String ikName=ikdatas.get(i).getName();
 			Vector3 vec=pfd.getIkTargetPosition(ikName);
-			
-			//TODO auto generate
-			
 			if(vec!=null){
 				vec=vec.clone();
 				vec.add(ab.getBonePosition(ikdatas.get(i).getLastBoneName()));//relative path
-				ikdatas.get(i).getTargetPos().set(vec.getX(), vec.getY(), vec.getZ());
-			}
+				LogUtils.log("ignore ikpos");
+				ikdatas.get(i).getTargetPos().set(vec.getX(), vec.getY(), vec.getZ());	
+				}
 		}
+		*/
+		
 		
 		if(isSelectedIk()){
 		switchSelectionIk(getCurrentIkData().getLastBoneName());
@@ -5401,12 +5471,14 @@ private MenuItem contextMenuHidePrefIks;
 	}
 
 	@Override
-	public void modelChanged(HeaderAndValue model) {
+	public void modelChanged(SimpleTextData model) {
 		//log("model-load:"+model.getData());
 		LoadJsonModel(model.getData());
 		
 		//refresh matrix for new bone-model
 		pedSelectionListBox.getValue().updateMatrix(ab);
+		
+		
 		
 		//new model need new initial pose
 		initialPoseFrameData=snapCurrentFrameData();
@@ -5420,7 +5492,7 @@ private MenuItem contextMenuHidePrefIks;
 	}
 
 	@Override
-	public void textureChanged(HeaderAndValue textureValue) {
+	public void textureChanged(SimpleTextData textureValue) {
 		textureUrl=textureValue.getData();
 		
 		generateTexture();

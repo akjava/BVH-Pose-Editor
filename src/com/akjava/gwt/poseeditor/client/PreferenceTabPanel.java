@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.akjava.gwt.html5.client.file.File;
-import com.akjava.gwt.html5.client.file.FileHandler;
-import com.akjava.gwt.html5.client.file.FileReader;
 import com.akjava.gwt.html5.client.file.FileUploadForm;
 import com.akjava.gwt.html5.client.file.FileUtils;
 import com.akjava.gwt.html5.client.file.FileUtils.DataURLListener;
@@ -17,8 +15,8 @@ import com.akjava.gwt.lib.client.LogUtils;
 import com.akjava.gwt.lib.client.StorageDataList;
 import com.akjava.gwt.lib.client.StorageException;
 import com.akjava.gwt.lib.client.ValueUtils;
+import com.akjava.gwt.lib.client.datalist.SimpleTextData;
 import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
-import com.google.gwt.core.client.JsArray;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -42,7 +40,7 @@ import com.google.gwt.user.client.ui.VerticalPanel;
 
 public class PreferenceTabPanel extends VerticalPanel {
 	private IStorageControler controler;
-	private PreferenceListener listener;
+	private PreferenceListener preferenceListener;
 	private Map<Integer, String> presetModelMap = new HashMap<Integer, String>();
 	private ListBox modelListBox;
 	private Label modelSelection;
@@ -53,11 +51,11 @@ public class PreferenceTabPanel extends VerticalPanel {
 	public static final String KEY_TEXTURE_SELECTION="TEXTURE_SELECTION";
 	private Button removeBt;
 	public PreferenceListener getListener() {
-		return listener;
+		return preferenceListener;
 	}
 
 	public void setListener(PreferenceListener listener) {
-		this.listener = listener;
+		this.preferenceListener = listener;
 	}
 
 	private void createModelControl(){
@@ -93,7 +91,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 				int id=modelControler.incrementId();
 				
 				
-				loadModel(new HeaderAndValue(id, file.getFileName(), text));
+				loadModel(new SimpleTextData(id, file.getFileName(), text));
 				
 				
 				modelListBox.addItem(file.getFileName(),""+id);
@@ -246,7 +244,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 				textureControler.setDataValue(file.getFileName(), value);
 				int id=textureControler.incrementId();
 				
-				loadTexture(new HeaderAndValue(id, file.getFileName(), value));
+				loadTexture(new SimpleTextData(id, file.getFileName(), value));
 				textureListBox.addItem(file.getFileName(),""+id);
 				textureListBox.setSelectedIndex(textureListBox.getItemCount()-1);
 				updateTextureButtons();
@@ -324,9 +322,9 @@ public class PreferenceTabPanel extends VerticalPanel {
 		}
 		
 		
-		List<HeaderAndValue> textures=textureControler.getDataList();
+		List<SimpleTextData> textures=textureControler.getDataList();
 		for(int i=0;i<textures.size();i++){
-			textureListBox.addItem(textures.get(i).getHeader(),""+textures.get(i).getId());
+			textureListBox.addItem(textures.get(i).getName(),""+textures.get(i).getId());
 		}
 
 		textureListBox.addChangeHandler(new ChangeHandler() {
@@ -412,9 +410,9 @@ public class PreferenceTabPanel extends VerticalPanel {
 				}
 				
 				//update from storage
-				List<HeaderAndValue> models=modelControler.getDataList();
+				List<SimpleTextData> models=modelControler.getDataList();
 				for(int i=0;i<models.size();i++){
-					modelListBox.addItem(models.get(i).getHeader(),""+models.get(i).getId());
+					modelListBox.addItem(models.get(i).getName(),""+models.get(i).getId());
 				}
 				
 				
@@ -438,7 +436,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 	public PreferenceTabPanel(IStorageControler cs,
 			PreferenceListener listener) {
 		this.controler = cs;
-		this.listener = listener;
+		this.preferenceListener = listener;
 		
 		createModelControl();
 		
@@ -534,7 +532,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 						public void onResponseReceived(Request request,
 								Response response) {
 							
-							loadModel(new HeaderAndValue(idIndex, modelName, response.getText()));
+							loadModel(new SimpleTextData(idIndex, modelName, response.getText()));
 							try {
 								controler.setValue(KEY_MODEL_SELECTION, index);
 							} catch (StorageException e) {
@@ -558,7 +556,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 			}
 		} else {
 			// load from cache
-			HeaderAndValue hv=modelControler.getDataValue(idIndex);
+			SimpleTextData hv=modelControler.getDataValue(idIndex);
 			
 			
 			loadModel(hv);
@@ -580,7 +578,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 		if (idIndex < 0) {
 			String path = presetTextureMap.get(idIndex);
 			if (path != null) {
-				loadTexture(new HeaderAndValue(idIndex, textureName, path));
+				loadTexture(new SimpleTextData(idIndex, textureName, path));
 				try {
 					controler.setValue(KEY_TEXTURE_SELECTION, index);
 				} catch (StorageException e) {
@@ -593,7 +591,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 			}
 		} else {
 			// load from cache
-			HeaderAndValue hv=textureControler.getDataValue(idIndex);
+			SimpleTextData hv=textureControler.getDataValue(idIndex);
 			
 			
 			loadTexture(hv);
@@ -623,7 +621,7 @@ public class PreferenceTabPanel extends VerticalPanel {
 			}
 		} else {
 			// load from cache
-			HeaderAndValue hv=textureControler.getDataValue(idIndex);
+			SimpleTextData hv=textureControler.getDataValue(idIndex);
 			
 			//LogUtils.log("texture:"+hv.getData());
 			//Window.open(hv.getData(), textureName, null);
@@ -632,14 +630,14 @@ public class PreferenceTabPanel extends VerticalPanel {
 		}
 	}
 	
-	private void loadModel(HeaderAndValue value) {
-		listener.modelChanged(value);
-		modelSelection.setText("Selection:"+value.getHeader());
+	private void loadModel(SimpleTextData value) {
+		preferenceListener.modelChanged(value);
+		modelSelection.setText("Selection:"+value.getName());
 	}
 	
-	private void loadTexture(HeaderAndValue value) {
-		listener.textureChanged(value);
-		textureSelection.setText("Selection:"+value.getHeader());
+	private void loadTexture(SimpleTextData value) {
+		preferenceListener.textureChanged(value);
+		textureSelection.setText("Selection:"+value.getName());
 	}
 
 	public String getFileNameWithoutExtension(String name) {
@@ -657,8 +655,8 @@ public class PreferenceTabPanel extends VerticalPanel {
 	}
 
 	public interface PreferenceListener {
-		public void modelChanged(HeaderAndValue model);
+		public void modelChanged(SimpleTextData model);
 
-		public void textureChanged(HeaderAndValue texture);
+		public void textureChanged(SimpleTextData texture);
 	}
 }
