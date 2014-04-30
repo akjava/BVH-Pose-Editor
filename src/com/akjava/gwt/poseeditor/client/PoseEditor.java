@@ -356,7 +356,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		//righ-hand
 		ikdatas.add(createIKData(Lists.newArrayList("rHand","rForeArm","rShldr","rCollar"),9));
 		boneLimits.put("rForeArm",BoneLimit.createBoneLimit(0, 0, 0, 140, 0, 0));
-		boneLimits.put("rShldr",BoneLimit.createBoneLimit(-80, 60, -60, 91, -40, 90));
+		boneLimits.put("rShldr",BoneLimit.createBoneLimit(-80, 60, -60, 91, -40, 100));
 		boneLimits.put("rCollar",BoneLimit.createBoneLimit(0,0,-20,0,-40,0));
 		
 		//left-hand
@@ -890,6 +890,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	}
 	
 	private void setEnableBoneRanges(boolean rotate,boolean pos){
+		bonePositionsPanel.setVisible(pos);
+		boneRotationsPanel.setVisible(rotate);
+		
 		rotationBoneXRange.setEnabled(rotate);
 		rotationBoneYRange.setEnabled(rotate);
 		rotationBoneZRange.setEnabled(rotate);
@@ -1003,7 +1006,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		int angle=25;//how smooth?
 		
 		//need change angle step if need more 
-		if(data.getLastBoneName().equals("chest") || data.getLastBoneName().equals("neck")  ){
+		if(data.getLastBoneName().equals("rShldr") || data.getLastBoneName().equals("lShldr")  ){
 			angle=10;	//chest is important?,tried but not so effected.
 		}
 		List<List<NameAndVector3>> all=new ArrayList<List<NameAndVector3>>();
@@ -2285,7 +2288,7 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 	@Override
 	public void createControl(DropVerticalPanelBase parent) {
 HorizontalPanel h1=new HorizontalPanel();
-		
+h1.setWidth("250px");
 
 		rotationXRange = InputRangeWidget.createInputRange(-180,180,0);
 		parent.add(HTML5Builder.createRangeLabel("X-Rotate:", rotationXRange));
@@ -2624,6 +2627,7 @@ HorizontalPanel h1=new HorizontalPanel();
 				
 			}
 		});
+		xlockCheck.setTitle("lock this axis:usually work with alt key drag");
 		
 		rotationBoneXRange = InputRangeWidget.createInputRange(-180,180,0);
 		boneRotationsPanel.add(HTML5Builder.createRangeLabel("X-Rotate:", rotationBoneXRange));
@@ -2663,6 +2667,8 @@ HorizontalPanel h1=new HorizontalPanel();
 				
 			}
 		});
+		ylockCheck.setTitle("lock this axis:usually work with alt key drag");
+		
 		rotationBoneYRange = InputRangeWidget.createInputRange(-180,180,0);
 		boneRotationsPanel.add(HTML5Builder.createRangeLabel("Y-Rotate:", rotationBoneYRange));
 		boneRotationsPanel.add(h2b);
@@ -2685,6 +2691,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		
 		HorizontalPanel h3b=new HorizontalPanel();
+		
 		zlockCheck = new CheckBox();
 		h3b.add(zlockCheck);
 		zlockCheck.addClickHandler(new ClickHandler() {
@@ -2701,6 +2708,9 @@ HorizontalPanel h1=new HorizontalPanel();
 				
 			}
 		});
+		zlockCheck.setTitle("lock this axis:usually work with alt key drag");
+		
+		
 		rotationBoneZRange = InputRangeWidget.createInputRange(-180,180,0);
 		boneRotationsPanel.add(HTML5Builder.createRangeLabel("Z-Rotate:", rotationBoneZRange));
 		boneRotationsPanel.add(h3b);
@@ -2719,6 +2729,46 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		h3b.add(minus3b);
 		
+		
+		List<Integer> angles=Lists.newArrayList(-180,-135,-90,-45,0,45,90,135,180);
+		final ValueListBox<Integer> vlist=new ValueListBox<Integer>(new Renderer<Integer>() {
+
+			@Override
+			public String render(Integer object) {
+				if(object==null){
+					return "";
+				}
+				return String.valueOf(object);
+			}
+
+			@Override
+			public void render(Integer object, Appendable appendable) throws IOException {
+				// TODO Auto-generated method stub
+				
+			}
+		});
+		vlist.setValue(null);
+		vlist.setAcceptableValues(angles);
+		vlist.addValueChangeHandler(new ValueChangeHandler<Integer>() {
+
+			@Override
+			public void onValueChange(ValueChangeEvent<Integer> event) {
+				if(event.getValue()==null){
+					return;
+				}
+				rotationBoneZRange.setValue(event.getValue());
+				rotToBone();
+				vlist.setValue(null);//reset to
+				/*
+				if(event.isAltKeyDown()){
+					execIk();
+				}
+				*/
+			}
+		});
+		
+		h3b.add(vlist);
+		/*
 		Button reset3b1=new Button("-90");
 		reset3b1.addClickHandler(new ClickHandler() {
 			@Override
@@ -2783,6 +2833,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		h3b.add(reset3b4);
+		*/
 		
 		Button plus3b=new Button("+");
 		plus3b.addClickHandler(new ClickHandler() {
@@ -3935,8 +3986,11 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	private void updateBoneRotationRanges(){
 		if(isSelectEmptyBoneListBox()){
+			
 			setEnableBoneRanges(false,false);//no root
 			return;
+		}else{
+			setEnableBoneRanges(true,true);
 		}
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
 		
@@ -3995,6 +4049,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	
 	private boolean isSelectEmptyBoneListBox(){
+	
 	return boneNamesBox.getSelectedIndex()==-1 || boneNamesBox.getItemText(boneNamesBox.getSelectedIndex()).isEmpty();	
 	}
 	private void updateBonePositionRanges(){
