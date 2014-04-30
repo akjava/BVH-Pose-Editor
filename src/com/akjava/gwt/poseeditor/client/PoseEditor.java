@@ -817,7 +817,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		//datasPanel.setStyleName("debug");
 		ScrollPanel scroll=new ScrollPanel(datasPanel);
-		scroll.setSize("720px", "500px");
+		scroll.setSize("800px", "500px");
 		datasRoot.add(scroll);
 		
 		try {
