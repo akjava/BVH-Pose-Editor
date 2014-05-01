@@ -3652,6 +3652,14 @@ h1.setWidth("250px");
 			
 			tabPanel.selectTab(1);//datas
 			}catch(Exception e){
+				try {
+					//remove no need values
+					storageControler.removeValue(KEY_DATA+dataIndex);
+					storageControler.removeValue(KEY_HEAD+dataIndex);
+				} catch (StorageException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 				alert(e.getMessage());
 			}
 		}
@@ -3659,7 +3667,7 @@ h1.setWidth("250px");
 		
 	}
 	
-	
+	//TODO more info
 	public static void alert(String message){
 		logger.fine(message);
 		if(message.indexOf("(QUOTA_EXCEEDED_ERR)")!=-1){
