@@ -761,8 +761,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				}
 			});
 			
+			
 			Button rawBt=new Button("Raw Json");
-			add(rawBt);
+			//add(rawBt);	//this is for debug
 			rawBt.addClickHandler(new ClickHandler() {
 				
 				private Anchor anchor;
