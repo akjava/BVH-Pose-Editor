@@ -3612,8 +3612,8 @@ h1.setWidth("250px");
 			
 			
 			//TODO method?
-			Canvas canvas=Canvas.createIfSupported();
-			
+			//Canvas canvas=Canvas.createIfSupported();
+			/*
 			int thumbW=32;
 			int thumbH=32;
 			canvas.setSize(thumbW+"px", thumbH+"px");
@@ -3625,13 +3625,15 @@ h1.setWidth("250px");
 			
 			String thumbnail=canvas.toDataUrl();
 			LogUtils.log(thumbnail);
+			*/
+			
 		//	Window.alert("hello1");
 			//Window.alert("hello1");
 			//Window.open(thumbnail, "tmp", null);
 			try{
 			storageControler.setValue(KEY_DATA+dataIndex, data.toString());
 		//	Window.alert("hello2");
-			storageControler.setValue(KEY_IMAGE+dataIndex, thumbnail);
+			//storageControler.setValue(KEY_IMAGE+dataIndex, thumbnail);
 			storageControler.setValue(KEY_HEAD+dataIndex, pdata.getName()+"\t"+pdata.getCdate());
 			
 		//	Window.alert("hello3:"+dataIndex);
