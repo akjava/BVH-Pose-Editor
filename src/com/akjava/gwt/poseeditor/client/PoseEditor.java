@@ -14,8 +14,10 @@ import com.akjava.bvh.client.BVH;
 import com.akjava.bvh.client.BVHMotion;
 import com.akjava.bvh.client.BVHNode;
 import com.akjava.bvh.client.BVHParser;
+import com.akjava.bvh.client.BVHParser.InvalidLineException;
 import com.akjava.bvh.client.BVHParser.ParserListener;
 import com.akjava.bvh.client.BVHWriter;
+import com.akjava.bvh.client.Channels;
 import com.akjava.gwt.bvh.client.poseframe.PoseEditorData;
 import com.akjava.gwt.bvh.client.poseframe.PoseFrameData;
 import com.akjava.gwt.bvh.client.threejs.AnimationBoneConverter;
@@ -79,6 +81,7 @@ import com.akjava.gwt.three.client.js.objects.Mesh;
 import com.akjava.gwt.three.client.js.renderers.WebGLRenderer;
 import com.akjava.gwt.three.client.js.scenes.Scene;
 import com.akjava.gwt.three.client.js.textures.Texture;
+import com.akjava.lib.common.utils.FileNames;
 import com.akjava.lib.common.utils.ValuesUtils;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
@@ -86,6 +89,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.core.client.JsArray;
+import com.google.gwt.core.client.JsArrayNumber;
 import com.google.gwt.dom.client.ImageElement;
 import com.google.gwt.dom.client.NativeEvent;
 import com.google.gwt.event.dom.client.ChangeEvent;
@@ -113,6 +117,7 @@ import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.i18n.client.DateTimeFormat;
+import com.google.gwt.json.client.JSONNumber;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
@@ -619,11 +624,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		try{
 		int index=storageControler.getValue(KEY_INDEX, 0);
 		for(int i=index;i>=0;i--){
-			String b64=storageControler.getValue(KEY_IMAGE+i,null);
+			//String b64=storageControler.getValue(KEY_IMAGE+i,null);
 			String json=storageControler.getValue(KEY_DATA+i,null);
 			String head=storageControler.getValue(KEY_HEAD+i,null);
-			if(b64!=null && json!=null){
-			DataPanel dp=new DataPanel(i,head,b64,json);
+			if(json!=null){
+			DataPanel dp=new DataPanel(i,head,null,json);
 			//dp.setSize("200px", "200px");
 			datasPanel.add(dp);
 			}
@@ -642,7 +647,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			json=text;
 			this.index=ind;
 			Image img=new Image();
+			if(base64!=null){
 			img.setUrl(base64);
+			}else{
+				img.setVisible(false);
+			}
+			
 			this.setVerticalAlignment(ALIGN_MIDDLE);
 			
 			String name_cdate[]=head.split("\t");
@@ -825,10 +835,53 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		FileUploadForm importBVH=FileUtils.createSingleTextFileUploadForm(new DataURLListener() {	
 			@Override
 			public void uploaded(File file, String value) {
-				// TODO Auto-generated method stub
+				BVHParser parser=new BVHParser();
 				
+				int dataIndex;
+				try {
+					dataIndex = getNewDataIndex();
+				} catch (StorageException e1) {
+					alert("faild getnewdataindex");
+					return;
+				}
+				JSONObject object=null;
+				try {
+					BVH bvh=parser.parse(value);
+					object=new PoseEditorDataConverter().convert(bvh);
+					
+				} catch (InvalidLineException e) {
+					alert("invalid bvh:"+file.getFileName());
+					return;
+				} 
+				
+				String name=FileNames.getRemovedExtensionName(file.getFileName());
+				long ctime=System.currentTimeMillis();
+				object.put("name", new JSONString(name));
+				object.put("cdate", new JSONNumber(ctime));//
+				
+				
+				
+				try {
+					storageControler.setValue(KEY_DATA+dataIndex, object.toString());
+					storageControler.setValue(KEY_HEAD+dataIndex,name+"\t"+ctime);
+					
+					dataIndex++;
+					storageControler.setValue(KEY_INDEX, dataIndex);
+				} catch (StorageException e) {
+					try {
+						storageControler.removeValue(KEY_DATA+dataIndex);
+						storageControler.removeValue(KEY_HEAD+dataIndex);
+					} catch (StorageException e1) {
+					}
+					alert("data store faild:"+e.getMessage());
+				}
+				
+				
+				updateDatasPanel();
 			}
 		}, true);
+		importBVH.setAccept(".bvh");
+		
 		dataButtons.add(new Label("Import BVH"));
 		dataButtons.add(importBVH);
 		
@@ -3584,6 +3637,14 @@ h1.setWidth("250px");
 	
 	
 	
+	private int getNewDataIndex() throws StorageException{
+		int dataIndex=0;
+		
+			dataIndex = storageControler.getValue(KEY_INDEX, 0);
+		
+		return dataIndex;
+	}
+	
 	protected void doSaveAsFile(PoseEditorData pdata) {
 		String result=Window.prompt("Save File", pdata.getName());
 		if(result!=null){
@@ -3602,14 +3663,14 @@ h1.setWidth("250px");
 			
 		//	Window.alert("hello");
 			//save database
+			
 			int dataIndex=0;
 			try {
-				dataIndex = storageControler.getValue(KEY_INDEX, 0);
-			} catch (StorageException e1) {
-				LogUtils.log("doSaveAsFile faild");
-				e1.printStackTrace();
+				dataIndex = getNewDataIndex();
+			} catch (StorageException e) {
+				alert("save faild:"+e.getMessage());
+				return;
 			}
-			
 			
 			//TODO method?
 			//Canvas canvas=Canvas.createIfSupported();
@@ -3899,13 +3960,40 @@ h1.setWidth("250px");
 		BVHMotion motion=new BVHMotion();
 		motion.setFrameTime(.25);
 		
+		
+		//TODO post issue
+		//this is temporaly fix,first frame contain root pos and must sub position
+		JsArrayNumber rootPos=bones.get(0).getPos();
+		double rootX=0;
+		double rootY=0;
+		double rootZ=0;
+		if(rootPos!=null && rootPos.length()==3){
+			rootX=rootPos.get(0);
+			rootY=rootPos.get(1);
+			rootZ=rootPos.get(2);
+		}
+		
+		
+		//somehow this pos value don't care bone position.
 		for(PoseFrameData pose:ped.getPoseFrameDatas()){
 			double[] values=converter.angleAndMatrixsToMotion(pose.getAngleAndMatrixs(),BVHConverter.ROOT_POSITION_ROTATE_ONLY,"XYZ");
+			
+			//TODO update pos based on channel,but now has no channel data
+			values[0]=values[0]-rootX;
+			values[1]=values[1]-rootY;
+			values[2]=values[2]-rootZ;
+			
 			motion.add(values);
 		}
 		motion.setFrames(motion.getMotions().size());//
 		
 		exportBVH.setMotion(motion);
+		
+		
+		
+		
+		
+		
 		//log("frames:"+exportBVH.getFrames());
 		BVHWriter writer=new BVHWriter();
 		
@@ -4917,7 +5005,11 @@ CDDIK cddIk=new CDDIK();
 private double baseBoneCoreSize=7;
 private double baseIkLength=13;
 private void doPoseByMatrix(AnimationBonesData animationBonesData){
-		
+	
+	if(animationBonesData==null){
+		return;
+	}
+	
 	if(isSelectedBone()){
 		selectionMesh.setPosition(ab.getBonePosition(selectedBone));
 	}
