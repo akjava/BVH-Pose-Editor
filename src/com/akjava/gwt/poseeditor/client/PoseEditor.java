@@ -54,6 +54,7 @@ import com.akjava.gwt.three.client.gwt.animation.ik.IKData;
 import com.akjava.gwt.three.client.gwt.core.BoundingBox;
 import com.akjava.gwt.three.client.gwt.core.Intersect;
 import com.akjava.gwt.three.client.gwt.materials.MeshBasicMaterialParameter;
+import com.akjava.gwt.three.client.gwt.materials.MeshLambertMaterialParameter;
 import com.akjava.gwt.three.client.java.GWTDragObjectControler;
 import com.akjava.gwt.three.client.java.ThreeLog;
 import com.akjava.gwt.three.client.java.animation.WeightBuilder;
@@ -436,7 +437,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		storageControler = new StorageControler();
 		
 		this.renderer=renderer;
-		canvas.setClearColorHex(0x333333);
+		
+		//maybe canvas is transparent
+		canvas.setClearColorHex(0x333333);//qustion
+		
+		//canvas.getElement().getStyle().setBackgroundColor("rgba(0, 0, 0, 0)");
+		//renderer.setClearColor(0, 0);
 	
 		dragObjectControler=new GWTDragObjectControler(scene,projector);
 		
@@ -644,8 +650,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		private long cdate;
 		private String json;
 		public DataPanel(final int ind,String head,String base64, String text){
+			this.setSpacing(4);
 			json=text;
 			this.index=ind;
+			
+			//right now stop using image.
 			Image img=new Image();
 			if(base64!=null){
 			img.setUrl(base64);
@@ -1274,17 +1283,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		
 		
-		ikBar.addItem("Fit target", new Command(){
+		ikBar.addItem("Fit ik on bone", new Command(){
 			@Override
 			public void execute() {
-				for(IKData ik:getAvaiableIkdatas()){
-					String name=ik.getLastBoneName();
-					Vector3 pos=ab.getBonePosition(name);
-					ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
-					doPoseByMatrix(ab);
-					hideContextMenu();
-					
-				}
+				fitIkOnBone();
+				doPoseByMatrix(ab);//really need?
+				hideContextMenu();	
 			}});
 		
 		ikBar.addItem("Follow target", new Command(){
@@ -1292,6 +1296,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			public void execute() {
 				
 				followTarget();
+				doPoseByMatrix(ab);
 				hideContextMenu();
 			}});
 		
@@ -1552,7 +1557,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			
 			if(existBone(name)){
 				ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
-				doPoseByMatrix(ab);
+				//doPoseByMatrix(ab);
 			}
 			
 			
@@ -2089,13 +2094,20 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 						doPoseIkk(0,false,5,ik,1);
 						}
 					}else{ //follow ik
+						
+						
 						if(boneIndex==0){
-						Vector3 movedPos=ab.getBonePosition(boneIndex);
+							/*
+							Vector3 movedPos=ab.getBonePosition(boneIndex);
 						movedPos.sub(pos);
+						
 						
 						for(IKData ik:getAvaiableIkdatas()){
 							ik.getTargetPos().add(movedPos);
 							}
+							*/
+						fitIkOnBone();
+						
 						doPoseByMatrix(ab);//redraw
 						}
 					}
@@ -2126,13 +2138,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					//Matrix4 mx=GWTThreeUtils.degitRotationToMatrix4(movedAngle);
 					
 					
-					
+					/*
 					for(IKData ik:getAvaiableIkdatas()){
-						/*
-						Vector3 ikpos=ik.getTargetPos().clone().subSelf(rootPos);
-						mx.multiplyVector3(ikpos);
-						ik.setTargetPos(ikpos.addSelf(rootPos));
-						*/
+						
 						String name=ik.getLastBoneName();
 						//Vector3 pos=ab.getBonePosition(name);
 						
@@ -2142,6 +2150,8 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 						//ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
 						
 						}
+						*/
+					fitIkOnBone();
 					doPoseByMatrix(ab);//redraw
 				}
 				
@@ -2293,13 +2303,9 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 					
 					//move green-ik-indicator
 					//--this is keep green ik-bone position
+					/*
 					for(IKData ik:getAvaiableIkdatas()){
-						/*
-						 * i faild turn :i have no idea;
-						Vector3 ikpos=ik.getTargetPos().clone().subSelf(rootPos);
-						mx.multiplyVector3(ikpos);
-						ik.setTargetPos(ikpos.addSelf(rootPos));
-						*/
+						
 						
 						
 						
@@ -2314,6 +2320,8 @@ JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.ge
 							ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
 							}
 						}
+						*/
+					fitIkOnBone();
 						
 					
 					doPoseByMatrix(ab);//redraw
@@ -2654,7 +2662,7 @@ h1.setWidth("250px");
 		bonePositionsPanel.setVisible(true);
 		
 		HorizontalPanel h1bpos=new HorizontalPanel();
-		positionXBoneRange = InputRangeWidget.createInputRange(-3000,3000,0);
+		positionXBoneRange = InputRangeWidget.createInputRange(-300,300,0);
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("X-Pos:", positionXBoneRange,10));
 		bonePositionsPanel.add(h1bpos);
 		h1bpos.add(positionXBoneRange);
@@ -2676,7 +2684,7 @@ h1.setWidth("250px");
 		
 		HorizontalPanel h2bpos=new HorizontalPanel();
 		
-		positionYBoneRange = InputRangeWidget.createInputRange(-3000,3000,0);
+		positionYBoneRange = InputRangeWidget.createInputRange(-300,300,0);
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Y-Pos:", positionYBoneRange,10));
 		bonePositionsPanel.add(h2bpos);
 		h2bpos.add(positionYBoneRange);
@@ -2698,7 +2706,7 @@ h1.setWidth("250px");
 		
 		
 		HorizontalPanel h3bpos=new HorizontalPanel();
-		positionZBoneRange = InputRangeWidget.createInputRange(-3000,3000,0);
+		positionZBoneRange = InputRangeWidget.createInputRange(-300,300,0);
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Z-Pos:", positionZBoneRange,10));
 		bonePositionsPanel.add(h3bpos);
 		h3bpos.add(positionZBoneRange);
@@ -4065,7 +4073,8 @@ h1.setWidth("250px");
 		ab.setBonesAngleAndMatrixs(currentMatrixs);
 		//update
 		
-		followTarget();//use initial pos
+		fitIkOnBone();
+		//followTarget();//use initial pos,TODO follow or fit
 		
 		/*
 		for(int i=0;i<ikdatas.size();i++){
@@ -4097,6 +4106,20 @@ h1.setWidth("250px");
 		
 		doPoseByMatrix(ab);
 		updateBoneRanges();
+	}
+
+	/**
+	 * ik position is same on last ik bone.
+	 * this style usually not so moved when root-bone rotateds
+	 */
+	private void fitIkOnBone() {
+		for(IKData ik:getAvaiableIkdatas()){
+			String name=ik.getLastBoneName();
+			Vector3 pos=ab.getBonePosition(name);
+			ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
+			//doPoseByMatrix(ab);
+			
+		}
 	}
 
 	private void rotToBone(String name,double x,double y,double z){
@@ -5123,7 +5146,8 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 						
 						Vector3 ikpos=pos.clone().subSelf(ppos).multiplyScalar(ikLength).addSelf(ppos);
 						//ikpos=pos.clone();
-						ikMesh=THREE.Mesh(THREE.CubeGeometry(ikCoreSize, ikCoreSize, ikCoreSize),THREE.MeshLambertMaterial().color(0x00ff00).build());
+						//trying transparent
+						ikMesh=THREE.Mesh(THREE.CubeGeometry(ikCoreSize, ikCoreSize, ikCoreSize),THREE.MeshLambertMaterial(MeshLambertMaterialParameter.create().color(0x00ff00).transparent(true).opacity(0.5)));
 						ikMesh.setPosition(ikpos);
 						ikMesh.setName("ik:"+boneName);
 					//	log(boneName+":"+ThreeLog.get(ikpos));
