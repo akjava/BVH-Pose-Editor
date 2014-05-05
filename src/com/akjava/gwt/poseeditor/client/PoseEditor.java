@@ -427,7 +427,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
-		cameraZ=5;
+		cameraZ=500/posDivided;
 		
 		this.renderer=renderer;
 		
@@ -2391,7 +2391,7 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 			}
 		}
 		else{//use small version
-			double tzoom=0.05;
+			double tzoom=5.0/posDivided;
 			//TODO make class
 			long t=System.currentTimeMillis();
 			if(mouseLast+100>t){
@@ -2401,7 +2401,7 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 			}
 			//GWT.log("wheel:"+event.getDeltaY());
 			double tmp=cameraZ+event.getDeltaY()*czoom;
-			tmp=Math.max(0.2, tmp);
+			tmp=Math.max(20.0/posDivided, tmp);
 			tmp=Math.min(4000, tmp);
 			cameraZ=(double)tmp;
 			mouseLast=t;
@@ -2434,7 +2434,7 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 	private List<String> ikLocks=new ArrayList<String>();
 	private CheckBox showBonesCheck,showIkCheck,smallCheck;
 	
-	private int posDivided=100;	//
+	private int posDivided=10;	//how small
 	@Override
 	public void createControl(DropVerticalPanelBase parent) {
 HorizontalPanel h1=new HorizontalPanel();
