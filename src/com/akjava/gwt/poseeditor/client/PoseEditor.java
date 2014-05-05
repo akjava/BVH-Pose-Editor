@@ -17,7 +17,6 @@ import com.akjava.bvh.client.BVHParser;
 import com.akjava.bvh.client.BVHParser.InvalidLineException;
 import com.akjava.bvh.client.BVHParser.ParserListener;
 import com.akjava.bvh.client.BVHWriter;
-import com.akjava.bvh.client.Channels;
 import com.akjava.gwt.bvh.client.poseframe.PoseEditorData;
 import com.akjava.gwt.bvh.client.poseframe.PoseFrameData;
 import com.akjava.gwt.bvh.client.threejs.AnimationBoneConverter;
@@ -1754,6 +1753,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		return initialPoseFrameData;
 	}
 
+	private boolean lastSelectionIsIk;
+	private String  lastSelectionIkName;
 	@Override
 	public void onMouseDown(MouseDownEvent event) {
 		logger.fine("onMouse down");
@@ -1787,6 +1788,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		//TODO only call once for speed up
 		JsArray<Object3D> targets=(JsArray<Object3D>) JsArray.createArray();
+		
 		JsArray<Object3D> childs=root.getChildren();
 		for(int i=0;i<childs.length();i++){
 			//LogUtils.log(childs.get(i).getName());
@@ -1806,71 +1808,130 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.getY(), screenWidth, screenHeight,camera,targets);
 		//log("intersects-length:"+intersects.length());
-		for(int i=0;i<intersects.length();i++){
-			Intersect sect=intersects.get(i);
-			
-			Object3D target=sect.getObject();
-			if(!target.getName().isEmpty()){
-				if(target.getName().startsWith("ik:")){
-					
-					
-					String ikBoneName=target.getName().substring(3);//3 is "ik:".length()
-					
-					
-					for(int j=0;j<ikdatas.size();j++){
-						if(ikdatas.get(j).getLastBoneName().equals(ikBoneName)){
-							ikdataIndex=j;//set ikindex here
-							selectionMesh.setVisible(true);
-							selectionMesh.setPosition(target.getPosition());
-							selectionMesh.getMaterial().gwtGetColor().setHex(0x00ff00);
-							
-							
-							if(!ikBoneName.equals(currentSelectionIkName)){
-								switchSelectionIk(ikBoneName);
-							}
-							selectedBone=null;
-							
-							
-							
-							dragObjectControler.selectObject(target, event.getX(), event.getY(), screenWidth, screenHeight, camera);
-							
-							
-							logger.info("onMouse down-end3");
-							return;//ik selected
-						}
-					}
-					
-				}else{
-					//maybe bone or root
-					//log("select:"+target.getName());
-					selectedBone=target.getName();
-					selectionMesh.setVisible(true);
-					selectionMesh.setPosition(target.getPosition());
-					selectionMesh.getMaterial().gwtGetColor().setHex(0xff0000);
-					switchSelectionIk(null);
-					
-					
-					dragObjectControler.selectObject(target, event.getX(), event.getY(), screenWidth, screenHeight, camera);
-					logger.fine("onMouse down-end2");
-					
-					//i guess set pos
-					//this is same effect as mouse move
-					positionXBoneRange.setValue((int) (selectionMesh.getPosition().getX()*100));
-					positionYBoneRange.setValue((int)(selectionMesh.getPosition().getY()*100));
-					positionZBoneRange.setValue((int)(selectionMesh.getPosition().getZ()*100));
-					
-					return;
-				}
-				
+long t=System.currentTimeMillis();
+List<Object3D> selections=convertSelections(intersects);
+
+
+if(lastSelectionIsIk){//trying every click change ik and bone if both intersected
+	//check bone first
+	Object3D lastIk=null;
+	
+	for(Object3D selection:selections){
+		if(selection.getName().startsWith("ik:")){
+			if(selection.getName().equals(lastSelectionIkName)){
+				lastIk=selection;
+			}else{
+			selectIk(selection,event.getX(),event.getY());
+			lastSelectionIsIk=true;
+			lastSelectionIkName=selection.getName();
+			return;
 			}
 		}
+	}
+	
+	for(Object3D selection:selections){
+		if(!selection.getName().isEmpty() && !selection.getName().startsWith("ik:")){
+			selectBone(selection,event.getX(),event.getY());
+			lastSelectionIsIk=false;
+			return;
+		}
+	}
+	
+	
+	if(lastIk!=null){//when ik selected,select another ik or bone first
+		selectIk(lastIk,event.getX(),event.getY());
+		lastSelectionIsIk=true;
+		lastSelectionIkName=lastIk.getName();
+	}
+	
+}else{
+	//ik first
+	for(Object3D selection:selections){
+		if(selection.getName().startsWith("ik:")){
+			selectIk(selection,event.getX(),event.getY());
+			lastSelectionIsIk=true;
+			lastSelectionIkName=selection.getName();
+			return;
+		}
+	}
+	
+	for(Object3D selection:selections){
+		if(!selection.getName().isEmpty() && !selection.getName().startsWith("ik:")){
+			selectBone(selection,event.getX(),event.getY());
+			lastSelectionIsIk=false;
+			return;
+		}
+	}
+}
+
+		
 		//log("no-selection");
+		//not select ik or bone
 		selectedBone=null;
 		selectionMesh.setVisible(false);
 		switchSelectionIk(null);
 		logger.fine("onMouse down-end1");
 	}
 	private String selectedBone;
+	
+	private List<Object3D> convertSelections(JsArray<Intersect> intersects){
+		List<Object3D> selections=new ArrayList<Object3D>();
+		for(int i=0;i<intersects.length();i++){
+		selections.add(intersects.get(i).getObject());
+		}
+		return selections;
+	}
+	
+	private void selectBone(Object3D target,int x,int y){
+		//maybe bone or root-bone
+		//log("select:"+target.getName());
+		selectedBone=target.getName();
+		selectionMesh.setVisible(true);
+		selectionMesh.setPosition(target.getPosition());
+		selectionMesh.getMaterial().gwtGetColor().setHex(0xff0000);
+		switchSelectionIk(null);
+		
+		
+		dragObjectControler.selectObject(target, x,y, screenWidth, screenHeight, camera);
+		logger.fine("onMouse down-end2");
+		
+		//i guess set pos
+		//this is same effect as mouse move
+		positionXBoneRange.setValue((int) (selectionMesh.getPosition().getX()*100));
+		positionYBoneRange.setValue((int)(selectionMesh.getPosition().getY()*100));
+		positionZBoneRange.setValue((int)(selectionMesh.getPosition().getZ()*100));
+		
+		return;
+	}
+	
+	private void selectIk(Object3D target,int x,int y){
+		String ikBoneName=target.getName().substring(3);//3 is "ik:".length()
+		
+		
+		for(int j=0;j<ikdatas.size();j++){
+			if(ikdatas.get(j).getLastBoneName().equals(ikBoneName)){
+				ikdataIndex=j;//set ikindex here
+				selectionMesh.setVisible(true);
+				selectionMesh.setPosition(target.getPosition());
+				selectionMesh.getMaterial().gwtGetColor().setHex(0x00ff00);
+				
+				
+				if(!ikBoneName.equals(currentSelectionIkName)){
+					switchSelectionIk(ikBoneName);
+				}
+				selectedBone=null;
+				
+				
+				
+				dragObjectControler.selectObject(target, x,y, screenWidth, screenHeight, camera);
+				
+				
+				logger.info("onMouse down-end3");
+				return;//ik selected
+			}
+		}
+	}
+	
 
 	@Override
 	public void onMouseUp(MouseUpEvent event) {
