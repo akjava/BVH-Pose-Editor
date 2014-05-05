@@ -1842,6 +1842,7 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 		selectIk(lastIk,event.getX(),event.getY());
 		lastSelectionIsIk=true;
 		lastSelectionIkName=lastIk.getName();
+		return;
 	}
 	
 }else{
