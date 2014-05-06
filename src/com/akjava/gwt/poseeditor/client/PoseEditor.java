@@ -2434,7 +2434,7 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 	private List<String> ikLocks=new ArrayList<String>();
 	private CheckBox showBonesCheck,showIkCheck,smallCheck;
 	
-	private int posDivided=10;	//how small
+	private int posDivided=10;	//how small 10 or 100
 	@Override
 	public void createControl(DropVerticalPanelBase parent) {
 HorizontalPanel h1=new HorizontalPanel();
