@@ -1871,6 +1871,7 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 		selectedBone=null;
 		selectionMesh.setVisible(false);
 		switchSelectionIk(null);
+		lastSelectionIsIk=false;
 		logger.fine("onMouse down-end1");
 	}
 	private String selectedBone;
@@ -2406,7 +2407,8 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 			cameraZ=(double)tmp;
 			mouseLast=t;
 		}
-		
+		//usually after wheel you hope select ik again
+		lastSelectionIsIk=false;
 	}
 	private double czoom;
 	
