@@ -9,10 +9,10 @@ import com.akjava.gwt.html5.client.file.FileUploadForm;
 import com.akjava.gwt.html5.client.file.FileUtils;
 import com.akjava.gwt.html5.client.file.FileUtils.DataURLListener;
 import com.akjava.gwt.lib.client.ExportUtils;
-import com.akjava.gwt.lib.client.HeaderAndValue;
 import com.akjava.gwt.lib.client.IStorageControler;
 import com.akjava.gwt.lib.client.LogUtils;
 import com.akjava.gwt.lib.client.StorageDataList;
+import com.akjava.gwt.lib.client.StorageDataList.StorageExceptionListener;
 import com.akjava.gwt.lib.client.StorageException;
 import com.akjava.gwt.lib.client.ValueUtils;
 import com.akjava.gwt.lib.client.datalist.SimpleTextData;
@@ -239,19 +239,18 @@ public class PreferenceTabPanel extends VerticalPanel {
 				}
 				
 				//TODO check image and validate it for size
-				
 				try{
-				textureControler.setDataValue(file.getFileName(), value);
-				int id=textureControler.incrementId();
+				int id=textureControler.addData(file.getFileName(), value);
 				
 				loadTexture(new SimpleTextData(id, file.getFileName(), value));
 				textureListBox.addItem(file.getFileName(),""+id);
 				textureListBox.setSelectedIndex(textureListBox.getItemCount()-1);
 				updateTextureButtons();
-				controler.setValue(KEY_TEXTURE_SELECTION, textureListBox.getItemCount()-1);
+				
+				controler.setValue(KEY_TEXTURE_SELECTION, textureListBox.getItemCount()-1);//anyway select last one
 				}catch(Exception e){
-					
-					PoseEditor.alert(e.getMessage());
+					LogUtils.log(e.getMessage());
+					//PoseEditor.alert(e.getMessage());
 				}
 			}
 		},true);
@@ -297,6 +296,12 @@ public class PreferenceTabPanel extends VerticalPanel {
 		*/
 		
 		textureControler=new StorageDataList(controler, "TEXTURE");
+		textureControler.setExceptionListener(new StorageExceptionListener() {
+			@Override
+			public void onError(StorageException exception) {
+				PoseEditor.alert(exception.getMessage());
+			}
+		});
 		textureSelection = new Label();
 		add(textureSelection);
 		

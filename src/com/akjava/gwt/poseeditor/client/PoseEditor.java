@@ -3802,10 +3802,10 @@ h1.setWidth("250px");
 	//TODO more info
 	public static void alert(String message){
 		logger.fine(message);
-		if(message.indexOf("(QUOTA_EXCEEDED_ERR)")!=-1){
+		if(message.indexOf("(QUOTA_EXCEEDED_ERR)")!=-1 || message.indexOf("(QuotaExceededError)")!=-1){
 		String title="QUOTA EXCEEDED_ERR\n";
-		title+="over internal HTML5 storage capacity.\n";
-		title+="please remove unused textures or models from Preference Tab";
+		title+="maybe load texture is succeed.but store data is faild.so this data can't load again.\nbecause over internal HTML5 storage capacity.\n";
+		title+="please remove unused textures or models from Preference Tab\n";
 		Window.alert(title);
 		}else{
 		Window.alert("Error:"+message);
