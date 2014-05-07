@@ -2698,16 +2698,28 @@ h1.setWidth("250px");
 		
 		//mirror
 		HorizontalPanel mButtons=new HorizontalPanel();
-		Button mirror=new Button("do Mirror");
+		parent.add(mButtons);
+		
+		Button mirror=new Button("L > R");
 		mirror.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				doMirror();
+				doMirror(false);
 				
 			}
 		});
-		parent.add(mButtons);
 		mButtons.add(mirror);
+		
+		Button rightToLeft=new Button("R > L");
+		rightToLeft.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				doMirror(true);
+				
+			}
+		});
+		mButtons.add(rightToLeft);
+		
 		Button swap=new Button("do Swap");
 		swap.addClickHandler(new ClickHandler() {
 			@Override
@@ -3240,9 +3252,9 @@ h1.setWidth("250px");
 					Vector3 angle1=ab.getBoneAngleAndMatrix(srcIndex).getAngle();
 					
 					Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
-					rotToBone(name, angle.getX(), -angle.getY(), -angle.getZ());
+					rotToBone(name, angle.getX(), -angle.getY(), -angle.getZ(),false);
 					
-					rotToBone(targetName, angle1.getX(), -angle1.getY(), -angle1.getZ());
+					rotToBone(targetName, angle1.getX(), -angle1.getY(), -angle1.getZ(),true);
 				}
 			}
 			//move ik pos
@@ -3288,7 +3300,7 @@ h1.setWidth("250px");
 				rotationBoneXRange.setValue((int) targetAngle.getX());
 				rotationBoneYRange.setValue((int) targetAngle.getY()*-1);
 				rotationBoneZRange.setValue((int) targetAngle.getZ()*-1);
-				rotToBone(targetName,x,y,z);
+				rotToBone(targetName,x,y,z,false);
 				rotToBone();
 			}
 		}
@@ -3302,7 +3314,7 @@ h1.setWidth("250px");
 		}
 		return null;
 	}
-	protected void doMirror() {
+	protected void doMirror(boolean rightToLeft) {
 		if(isSelectedIk() && getSelectedBoneName().isEmpty()){
 			IKData ik=getCurrentIkData();
 			for(String name:ik.getBones()){
@@ -3310,48 +3322,92 @@ h1.setWidth("250px");
 				if(targetName==null){
 					continue;
 				}
-				int index=ab.getBoneIndex(targetName);
+				
+				String srcBoneName;
+				String destBoneName;
+				
+				if(isRightBone(name)){
+					if(rightToLeft){
+						srcBoneName=name;
+						destBoneName=targetName;
+					}else{
+						srcBoneName=targetName;
+						destBoneName=name;
+					}
+				}else{
+					if(rightToLeft){
+						srcBoneName=targetName;
+						destBoneName=name;
+					}else{
+						srcBoneName=name;
+						destBoneName=targetName;
+					}
+				}
+				
+				
+				
+				
+				int index=ab.getBoneIndex(srcBoneName);
 				if(index!=-1){
 					Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
-					rotToBone(name, angle.getX(), -angle.getY(), -angle.getZ());
+					rotToBone(destBoneName, angle.getX(), -angle.getY(), -angle.getZ(),false);
 				}
 			}
-			//move ik pos
-			IKData targetIk=getIk(getMirroredName(ik.getName()));
-			if(targetIk!=null){
-					Vector3 root=ab.getBonePosition(0);
-					Vector3 targetPos=targetIk.getTargetPos().clone().subSelf(root);
-					targetPos.setX(targetPos.getX()*-1);
-					
-					targetPos.addSelf(root);
-					ik.getTargetPos().set(targetPos.getX(),targetPos.getY(),targetPos.getZ());
-					doPoseByMatrix(ab);
-			}
+			//
+			//Vector3 lastPosition=ik.getTargetPos().clone();
+			fitIkOnBone();
 			
 			
-		}else{//single bone
+			doPoseByMatrix(ab);//do it only once
+			updateBoneRanges();//possible changed
+			
+			switchSelectionIk(ik.getLastBoneName());//recreate ik pose otherwise use old pose
+			
+			//ik.getTargetPos().copy(lastPosition);//restore position,usually user continue editing.but i change my mind ,when set opposite selection current ik pos make bad effect
+			
+		}else{//single selected bone
 		String name=getSelectedBoneName();
 		if(name==null){
+			//somehow not selected
 			return;
 		}
-			//h mirror
+			
 			String targetName=getMirroredName(name);
 			LogUtils.log("mirror:"+targetName);
 			if(targetName==null){
 				return;
 			}
 			
-			int index=ab.getBoneIndex(targetName);
-			if(index!=-1){
-				logger.fine("mirror:"+index);
-				Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
-				rotationBoneXRange.setValue((int) angle.getX());
-				rotationBoneYRange.setValue((int) angle.getY()*-1);
-				rotationBoneZRange.setValue((int) angle.getZ()*-1);
-				rotToBone();
+			int targetBoneIndex=ab.getBoneIndex(targetName);
+			if(targetBoneIndex!=-1){
+				if(isRightBone(name)){
+					if(rightToLeft){
+						rotToBone(targetName, rotationBoneXRange.getValue(),-rotationBoneYRange.getValue(),-rotationBoneZRange.getValue(),true);
+					}else{
+						//copy from left
+						Vector3 angle=ab.getBoneAngleAndMatrix(targetBoneIndex).getAngle();
+						rotationBoneXRange.setValue((int) angle.getX());
+						rotationBoneYRange.setValue((int) angle.getY()*-1);
+						rotationBoneZRange.setValue((int) angle.getZ()*-1);
+						rotToBone();
+					}
+				}else{//left bone
+					if(rightToLeft){
+						Vector3 angle=ab.getBoneAngleAndMatrix(targetBoneIndex).getAngle();
+						rotationBoneXRange.setValue((int) angle.getX());
+						rotationBoneYRange.setValue((int) angle.getY()*-1);
+						rotationBoneZRange.setValue((int) angle.getZ()*-1);
+						rotToBone();
+					}else{
+						rotToBone(targetName, rotationBoneXRange.getValue(),-rotationBoneYRange.getValue(),-rotationBoneZRange.getValue(),true);
+					}
+				}
+				
 			}
 		}
 	}
+	
+	
 
 	protected void updateBonesVisible() {
 		if(bone3D!=null){
@@ -3383,7 +3439,7 @@ h1.setWidth("250px");
 		if(name.indexOf("left")!=-1){
 			return name.replace("left", "right");
 		}
-		//makehuman bones
+		//makehuman 19 bones
 		if(name.startsWith("r")){
 			return "l"+name.substring(1);
 		}
@@ -3393,6 +3449,24 @@ h1.setWidth("250px");
 		
 		return null;
 	}
+	
+	
+	private boolean isRightBone(String name){
+		if(name.indexOf("Right")!=-1){
+			return true;
+		}
+		if(name.indexOf("right")!=-1){
+			return true;
+		}
+		
+		//makehuman 19 bones
+		if(name.startsWith("r")){
+			return true;
+		}
+		
+		return false;
+	}
+	
 
 	private JsArray<Material> loadedMaterials;
 	JSONModelFile lastLoadedModel;
@@ -4246,8 +4320,13 @@ h1.setWidth("250px");
 		}
 	}
 
-	private void rotToBone(String name,double x,double y,double z){
+	private void rotToBone(String name,double x,double y,double z,boolean doPoseByMatrix){
 		int index=ab.getBoneIndex(name);
+		if(index==-1){
+			LogUtils.log("rotToBone:invalid bone called name="+name);
+			return ;
+		}
+		
 		//Matrix4 mx=ab.getBoneMatrix(name);
 		Vector3 degAngles=THREE.Vector3(x,y,z);
 		Vector3 angles=GWTThreeUtils.degreeToRagiant(degAngles);
@@ -4267,14 +4346,26 @@ h1.setWidth("250px");
 		ab.getBoneAngleAndMatrix(index).setMatrix(rotMx);
 		ab.getBoneAngleAndMatrix(index).setAngle(degAngles);
 	
-		doPoseByMatrix(ab);
+		if(doPoseByMatrix){
+			doPoseByMatrix(ab);
+		}
 	}
 	
+	
+	//update current selection angles
 	private void rotToBone(){
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
-		int index=ab.getBoneIndex(name);
-		//Matrix4 mx=ab.getBoneMatrix(name);
-		Vector3 degAngles=THREE.Vector3(rotationBoneXRange.getValue(),rotationBoneYRange.getValue(),rotationBoneZRange.getValue());
+		rotToBone(name,rotationBoneXRange.getValue(),rotationBoneYRange.getValue(),rotationBoneZRange.getValue(),true);
+	}
+	
+	/*
+		private void rotToBone(String boneName,Vector3 degAngles,boolean doPoseByMatrix){
+			
+		int index=ab.getBoneIndex(boneName);
+		if(index==-1){
+			LogUtils.log("rotToBone:invalid bone called name="+boneName);
+			return ;
+		}
 		Vector3 angles=GWTThreeUtils.degreeToRagiant(degAngles);
 		//log("set-angle:"+ThreeLog.get(GWTThreeUtils.radiantToDegree(angles)));
 		//mx.setRotationFromEuler(angles, "XYZ");
@@ -4292,8 +4383,11 @@ h1.setWidth("250px");
 		ab.getBoneAngleAndMatrix(index).setMatrix(rotMx);
 		ab.getBoneAngleAndMatrix(index).setAngle(degAngles);
 		//log("set angle:"+ThreeLog.get(degAngles));
-		doPoseByMatrix(ab);
+		if(doPoseByMatrix){
+			doPoseByMatrix(ab);
+		}
 	}
+	*/
 	
 	private void updateBoneRanges(){
 	updateBoneRotationRanges();
