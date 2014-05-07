@@ -5805,7 +5805,7 @@ private MenuItem contextMenuHidePrefIks;
 		}	
 	@Override
 	public String getHtml(){
-	String html="Pose Editor ver."+version+" "+super.getHtml();
+	String html="Pose Editor ver."+version+" "+super.getHtml()+" 3D-Models created by <a href='http://makehuman.org'>Makehuman</a>";
 
 	return html;	
 	}

@@ -1,1 +1,2 @@
-tmp.png,-1
+tshirt.png,-1
+tmp.png,-2
