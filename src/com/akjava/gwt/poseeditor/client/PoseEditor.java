@@ -988,7 +988,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	int ikdataIndex=1;
 	private List<IKData> ikdatas=new ArrayList<IKData>();
 
-	private String currentSelectionIkName;
+	private String currentSelectionIkName;//TODO not use last bone name
 	Mesh selectionMesh;
 	final Projector projector=THREE.Projector();
 	@Override
@@ -1287,7 +1287,18 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikBar.addItem("Fit ik on bone", new Command(){
 			@Override
 			public void execute() {
-				fitIkOnBone();
+				
+				if(isSelectedIk()){
+					//only do selected ik
+					Vector3 pos=ab.getBonePosition(getCurrentIkData().getLastBoneName());
+					getCurrentIkData().getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
+				}else{
+					fitIkOnBone();//do all
+				}
+				
+				
+				
+				
 				doPoseByMatrix(ab);//really need?
 				hideContextMenu();	
 			}});
@@ -1295,8 +1306,15 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		ikBar.addItem("Follow target", new Command(){
 			@Override
 			public void execute() {
+				if(isSelectedIk()){
+					if(existBone(getCurrentIkData().getLastBoneName())){
+						getCurrentIkData().getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(getCurrentIkData().getLastBoneName())));
+						//doPoseByMatrix(ab);
+					}
+				}else{
+					followTarget();//do all
+				}
 				
-				followTarget();
 				doPoseByMatrix(ab);
 				hideContextMenu();
 			}});
@@ -4026,7 +4044,9 @@ h1.setWidth("250px");
 		
 		pedSelectionListBox.setValue(ped);
 		
-		updatePoseIndex(Math.max(0,poseFrameDataIndex-1));//new label
+		//when new file 0 is natural
+		updatePoseIndex(0);
+		//updatePoseIndex(Math.max(0,poseFrameDataIndex-1));//new label
 		updateSaveButtons();
 	}
 	
