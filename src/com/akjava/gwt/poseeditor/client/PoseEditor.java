@@ -2819,21 +2819,13 @@ h1.setWidth("250px");
 				
 			}
 		});
-		xlockCheck.setTitle("lock this axis:usually work with alt key drag");
+		xlockCheck.setTitle("lock this axis");
 		
 		rotationBoneXRange = InputRangeWidget.createInputRange(-180,180,0);
 		boneRotationsPanel.add(HTML5Builder.createRangeLabel("X-Rotate:", rotationBoneXRange));
 		boneRotationsPanel.add(h1b);
 		h1b.add(rotationBoneXRange);
-		Button resetB1=new Button("Reset");
-		resetB1.addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				rotationBoneXRange.setValue(0);
-				rotToBone();
-			}
-		});
-		h1b.add(resetB1);
+		createRangeControlers(rotationBoneXRange,h1b);
 		rotationBoneXRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
 			public void onMouseUp(MouseUpEvent event) {
@@ -2859,21 +2851,16 @@ h1.setWidth("250px");
 				
 			}
 		});
-		ylockCheck.setTitle("lock this axis:usually work with alt key drag");
+		ylockCheck.setTitle("lock this axis");
 		
 		rotationBoneYRange = InputRangeWidget.createInputRange(-180,180,0);
 		boneRotationsPanel.add(HTML5Builder.createRangeLabel("Y-Rotate:", rotationBoneYRange));
 		boneRotationsPanel.add(h2b);
 		h2b.add(rotationBoneYRange);
-		Button reset2b=new Button("Reset");
-		reset2b.addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				rotationBoneYRange.setValue(0);
-				rotToBone();
-			}
-		});
-		h2b.add(reset2b);
+		
+		createRangeControlers(rotationBoneYRange,h2b);
+		
+		
 		rotationBoneYRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
 			public void onMouseUp(MouseUpEvent event) {
@@ -2900,7 +2887,7 @@ h1.setWidth("250px");
 				
 			}
 		});
-		zlockCheck.setTitle("lock this axis:usually work with alt key drag");
+		zlockCheck.setTitle("lock this axis");
 		
 		
 		rotationBoneZRange = InputRangeWidget.createInputRange(-180,180,0);
@@ -3167,7 +3154,76 @@ h1.setWidth("250px");
 	}
 	*/
 	
-	private int screenShotIndex;
+	
+	private void createRangeControlers(final InputRangeWidget range,HorizontalPanel parent){
+		Button minus3b=new Button("-");
+		minus3b.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				range.setValue(range.getValue()-1);
+				rotToBone();
+				if(event.isAltKeyDown()){
+					execIk();
+				}
+			}
+		});
+		parent.add(minus3b);
+		
+		
+		List<Integer> angles=Lists.newArrayList(-180,-135,-90,-45,0,45,90,135,180);
+		final ValueListBox<Integer> vlist=new ValueListBox<Integer>(new Renderer<Integer>() {
+
+			@Override
+			public String render(Integer object) {
+				if(object==null){
+					return "";
+				}
+				return String.valueOf(object);
+			}
+
+			@Override
+			public void render(Integer object, Appendable appendable) throws IOException {
+				// TODO Auto-generated method stub
+				
+			}
+		});
+		vlist.setValue(null);
+		vlist.setAcceptableValues(angles);
+		vlist.addValueChangeHandler(new ValueChangeHandler<Integer>() {
+
+			@Override
+			public void onValueChange(ValueChangeEvent<Integer> event) {
+				if(event.getValue()==null){
+					return;
+				}
+				range.setValue(event.getValue());
+				rotToBone();
+				vlist.setValue(null);//reset to
+				/*
+				if(event.isAltKeyDown()){
+					execIk();
+				}
+				*/
+			}
+		});
+		
+		parent.add(vlist);
+		Button plus3b=new Button("+");
+		plus3b.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				range.setValue(range.getValue()+1);
+				rotToBone();
+				if(event.isAltKeyDown()){
+					execIk();
+				}
+			}
+		});
+		parent.add(plus3b);
+	}
+	
+	
+	
 	
 	
 	protected void doSwap() {
