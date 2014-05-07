@@ -1758,9 +1758,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 
 	
 	private String  lastSelectionIkName;
+	
+	private long lastClicked;
 	@Override
 	public void onMouseDown(MouseDownEvent event) {
-		LogUtils.log("onMouseDown:");
 		logger.fine("onMouse down");
 		
 		
@@ -1775,8 +1776,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		if(event.getNativeButton()==NativeEvent.BUTTON_MIDDLE){
 			return;
 		}
-		
-		doMouseDown(event.getX(),event.getY(),false);
+		long t=System.currentTimeMillis();
+		boolean doubleclick=t<lastClicked+200;//onDoubleClick called after mouse up,it's hard to use
+		doMouseDown(event.getX(),event.getY(),doubleclick);
+		lastClicked=t;
 	}
 	
 	private void doMouseDown(int x,int y,boolean selectBoneFirst){
@@ -5880,10 +5883,11 @@ private MenuItem contextMenuHidePrefIks;
 		
 	}
 
+	//this called after mouse up and it's hard to use
 	@Override
 	public void onDoubleClick(DoubleClickEvent event) {
 		LogUtils.log("onDoubleClick:");
 		//usually called after onMouseDown?
-		doMouseDown(event.getX(),event.getY(),true);
+		//doMouseDown(event.getX(),event.getY(),true);
 	}
 }
