@@ -1274,10 +1274,16 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		rootBar.addItem("Ik",ikBar);
 		
 	
-		ikBar.addItem("Exec", new Command(){
+		ikBar.addItem("Exec hard", new Command(){
 			@Override
 			public void execute() {
 				execIk();
+				hideContextMenu();
+			}});
+		ikBar.addItem("Exec mild", new Command(){
+			@Override
+			public void execute() {
+				execIk(5,5);
 				hideContextMenu();
 			}});
 		
@@ -1585,8 +1591,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	}
 
 	protected void execIk() {
+		execIk(45,10);
+	}
+	protected void execIk(int perLimit,int loop) {
+		
 		for(IKData ik:getAvaiableIkdatas()){
-			doPoseIkk(0,false,45,ik,10);
+			doPoseIkk(0,false,perLimit,ik,loop);
 		}
 	}
 
@@ -2357,11 +2367,17 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 			if(event.isAltKeyDown()){
 				//switchSelectionIk(null);
 				//effect-ik
+				execIk(5, 1);
+				/*
 				for(IKData ik:getAvaiableIkdatas()){
+					
+					
 						if(ik!=getCurrentIkData()){//no need re-ik root?
 						doPoseIkk(0,false,5,ik,1);
 						}
-					}
+						
+					
+					}*/
 				}else{//ik-follow
 					if(boneIndex==0){
 					Vector3 moved=ab.getBonePosition(boneIndex);
@@ -2383,10 +2399,13 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 				if(event.isAltKeyDown()){
 				//	switchSelectionIk(null);
 				//effect-ik
+					/*
 				for(IKData ik:getAvaiableIkdatas()){
 					
 					doPoseIkk(0,false,5,ik,1);
 					}
+					*/
+					execIk(5, 1);
 				}else{
 					//Vector3 rootPos=ab.getBonePosition(0);
 					
@@ -2935,137 +2954,7 @@ h1.setWidth("250px");
 		boneRotationsPanel.add(h3b);
 		h3b.add(rotationBoneZRange);
 		
-		Button minus3b=new Button("-");
-		minus3b.addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				rotationBoneZRange.setValue(rotationBoneZRange.getValue()-1);
-				rotToBone();
-				if(event.isAltKeyDown()){
-					execIk();
-				}
-			}
-		});
-		h3b.add(minus3b);
-		
-		
-		List<Integer> angles=Lists.newArrayList(-180,-135,-90,-45,0,45,90,135,180);
-		final ValueListBox<Integer> vlist=new ValueListBox<Integer>(new Renderer<Integer>() {
-
-			@Override
-			public String render(Integer object) {
-				if(object==null){
-					return "";
-				}
-				return String.valueOf(object);
-			}
-
-			@Override
-			public void render(Integer object, Appendable appendable) throws IOException {
-				// TODO Auto-generated method stub
-				
-			}
-		});
-		vlist.setValue(null);
-		vlist.setAcceptableValues(angles);
-		vlist.addValueChangeHandler(new ValueChangeHandler<Integer>() {
-
-			@Override
-			public void onValueChange(ValueChangeEvent<Integer> event) {
-				if(event.getValue()==null){
-					return;
-				}
-				rotationBoneZRange.setValue(event.getValue());
-				rotToBone();
-				vlist.setValue(null);//reset to
-				/*
-				if(event.isAltKeyDown()){
-					execIk();
-				}
-				*/
-			}
-		});
-		
-		h3b.add(vlist);
-		/*
-		Button reset3b1=new Button("-90");
-		reset3b1.addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				rotationBoneZRange.setValue(-90);
-				rotToBone();
-				if(event.isAltKeyDown()){
-					execIk();
-				}
-			}
-		});
-		h3b.add(reset3b1);
-		
-		Button reset3b2=new Button("-45");
-		reset3b2.addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				rotationBoneZRange.setValue(-45);
-				rotToBone();
-				if(event.isAltKeyDown()){
-					execIk();
-				}
-			}
-		});
-		h3b.add(reset3b2);
-		
-		Button reset3b=new Button("0");
-		reset3b.addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				rotationBoneZRange.setValue(0);
-				rotToBone();
-				if(event.isAltKeyDown()){
-					execIk();
-				}
-			}
-		});
-		h3b.add(reset3b);
-		
-		Button reset3b3=new Button("45");
-		reset3b3.addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				rotationBoneZRange.setValue(45);
-				rotToBone();
-				if(event.isAltKeyDown()){
-					execIk();
-				}
-			}
-		});
-		h3b.add(reset3b3);
-		
-		Button reset3b4=new Button("90");
-		reset3b4.addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				rotationBoneZRange.setValue(90);
-				rotToBone();
-				if(event.isAltKeyDown()){
-					execIk();
-				}
-			}
-		});
-		h3b.add(reset3b4);
-		*/
-		
-		Button plus3b=new Button("+");
-		plus3b.addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				rotationBoneZRange.setValue(rotationBoneZRange.getValue()+1);
-				rotToBone();
-				if(event.isAltKeyDown()){
-					execIk();
-				}
-			}
-		});
-		h3b.add(plus3b);
+		createRangeControlers(rotationBoneZRange,h3b);
 		
 		rotationBoneZRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
@@ -3203,7 +3092,7 @@ h1.setWidth("250px");
 				range.setValue(range.getValue()-1);
 				rotToBone();
 				if(event.isAltKeyDown()){
-					execIk();
+					execIk(5,1);
 				}
 			}
 		});
@@ -3255,7 +3144,7 @@ h1.setWidth("250px");
 				range.setValue(range.getValue()+1);
 				rotToBone();
 				if(event.isAltKeyDown()){
-					execIk();
+					execIk(5,1);
 				}
 			}
 		});
@@ -5906,7 +5795,7 @@ private MenuItem contextMenuHidePrefIks;
 	//this called after mouse up and it's hard to use
 	@Override
 	public void onDoubleClick(DoubleClickEvent event) {
-		LogUtils.log("onDoubleClick:");
+		
 		//usually called after onMouseDown?
 		//doMouseDown(event.getX(),event.getY(),true);
 	}

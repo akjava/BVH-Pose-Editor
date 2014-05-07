@@ -1,1 +1,2 @@
-tmp1.js,-1
+model001_female2661_bone19.js,-1
+model001_female2548_bone19.js,-2

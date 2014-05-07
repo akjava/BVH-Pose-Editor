@@ -1,2 +1,3 @@
-tshirt.png,-1
-tmp.png,-2
+blondhair_tshirt.png,-1
+asian_blondhair_tshirt.png,-2
+asian_blackhair_tshirt.png,-3
