@@ -1,2 +1,1 @@
-model001_female1848_bone19.js,-1
-model001_proxy837_bone19.js,-2
+tmp1.js,-1

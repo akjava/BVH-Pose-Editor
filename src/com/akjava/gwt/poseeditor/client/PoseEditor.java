@@ -836,7 +836,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			}
 		});
 		VerticalPanel datasRoot=new VerticalPanel();
-		tabPanel.add(datasRoot,"Datas");
+		tabPanel.add(datasRoot,"Motion & Pose");
 		
 		HorizontalPanel dataButtons=new HorizontalPanel();
 		datasRoot.add(dataButtons);
@@ -909,7 +909,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		//storageControler.setValue(PreferenceTabPanel.KEY_MODEL_SELECTION, 0);
 		preferencePanel=new PreferenceTabPanel(storageControler,this);
-		tabPanel.add(preferencePanel,"Preference");
+		tabPanel.add(preferencePanel,"Model & Texture");
 		
 		//about
 		String html="";
@@ -1593,8 +1593,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				
 				
 				
-				
+				fitIkOnBone();
 				doPoseByMatrix(ab);
+				
 				hideContextMenu();
 		
 			}});
@@ -1824,6 +1825,7 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 			selectIk(selection,event.getX(),event.getY());
 			lastSelectionIsIk=true;
 			lastSelectionIkName=selection.getName();
+			updateBoneRanges();
 			return;
 			}
 		}
@@ -1842,6 +1844,7 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 		selectIk(lastIk,event.getX(),event.getY());
 		lastSelectionIsIk=true;
 		lastSelectionIkName=lastIk.getName();
+		updateBoneRanges();
 		return;
 	}
 	
@@ -1852,6 +1855,7 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 			selectIk(selection,event.getX(),event.getY());
 			lastSelectionIsIk=true;
 			lastSelectionIkName=selection.getName();
+			updateBoneRanges();
 			return;
 		}
 	}
@@ -2726,7 +2730,7 @@ h1.setWidth("250px");
 		bonePositionsPanel.setVisible(true);
 		
 		HorizontalPanel h1bpos=new HorizontalPanel();
-		positionXBoneRange = InputRangeWidget.createInputRange(-300,300,0);
+		positionXBoneRange = InputRangeWidget.createInputRange(-60000/posDivided,60000/posDivided,0);
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("X-Pos:", positionXBoneRange,10));
 		bonePositionsPanel.add(h1bpos);
 		h1bpos.add(positionXBoneRange);
@@ -2748,7 +2752,7 @@ h1.setWidth("250px");
 		
 		HorizontalPanel h2bpos=new HorizontalPanel();
 		
-		positionYBoneRange = InputRangeWidget.createInputRange(-300,300,0);
+		positionYBoneRange = InputRangeWidget.createInputRange(-60000/posDivided,60000/posDivided,0);
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Y-Pos:", positionYBoneRange,10));
 		bonePositionsPanel.add(h2bpos);
 		h2bpos.add(positionYBoneRange);
@@ -2770,7 +2774,7 @@ h1.setWidth("250px");
 		
 		
 		HorizontalPanel h3bpos=new HorizontalPanel();
-		positionZBoneRange = InputRangeWidget.createInputRange(-300,300,0);
+		positionZBoneRange = InputRangeWidget.createInputRange(-60000/posDivided,60000/posDivided,0);
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Z-Pos:", positionZBoneRange,10));
 		bonePositionsPanel.add(h3bpos);
 		h3bpos.add(positionZBoneRange);

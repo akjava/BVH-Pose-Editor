@@ -1,5 +1,1 @@
-female001_texture1.jpg,-1
-female001_texture2.jpg,-2
-female002_texture1.jpg,-3
-female002_texture2.jpg,-4
-male001_texture1.jpg,-5
+tmp.png,-1
