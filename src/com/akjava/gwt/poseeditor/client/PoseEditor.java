@@ -151,8 +151,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	protected JsArray<AnimationBone> bones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
-	private String version="5.0.1(for three.r66)";
-	private Vector3 zero=THREE.Vector3();
+	private String version="6.0(for three.r66)";
 	
 	private static boolean debug;
 
@@ -593,7 +592,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		
 		//for initialize texture
-		texture=ImageUtils.loadTexture("female001_texture1.jpg");//initial one   //TODO change this.
+		texture=ImageUtils.loadTexture("tshirt.png");//initial one   //TODO change this.
 		//generateTexture();
 		
 		//initial model to avoid async use clientbundle same as "tpose.bvh"
@@ -944,6 +943,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		for(int i=0;i<getCurrentIkData().getBones().size();i++){
 			boneNamesBox.addItem(getCurrentIkData().getBones().get(i));
 		}
+		
+		boneNamesBox.addItem(getCurrentIkData().getLastBoneName());//need this too
+		
 		boneNamesBox.setSelectedIndex(0);
 		}else if(selectedBone!=null){
 			setEnableBoneRanges(true,true);
@@ -1754,14 +1756,13 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		return initialPoseFrameData;
 	}
 
-	private boolean lastSelectionIsIk;
+	
 	private String  lastSelectionIkName;
 	@Override
 	public void onMouseDown(MouseDownEvent event) {
+		LogUtils.log("onMouseDown:");
 		logger.fine("onMouse down");
-		mouseDown=true;
-		mouseDownX=event.getX();
-		mouseDownY=event.getY();
+		
 		
 		if(event.getNativeButton()==NativeEvent.BUTTON_RIGHT){
 		//	showContextMenu(mouseDownX, mouseDownY);
@@ -1775,6 +1776,13 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			return;
 		}
 		
+		doMouseDown(event.getX(),event.getY(),false);
+	}
+	
+	private void doMouseDown(int x,int y,boolean selectBoneFirst){
+		mouseDown=true;
+		mouseDownX=x;
+		mouseDownY=y;
 		
 		//log(mouseDownX+","+mouseDownY+":"+screenWidth+"x"+screenHeight);
 		
@@ -1807,13 +1815,13 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		}
 		
 		
-JsArray<Intersect> intersects=projector.gwtPickIntersects(event.getX(), event.getY(), screenWidth, screenHeight,camera,targets);
+JsArray<Intersect> intersects=projector.gwtPickIntersects(x, y, screenWidth, screenHeight,camera,targets);
 		//log("intersects-length:"+intersects.length());
 long t=System.currentTimeMillis();
 List<Object3D> selections=convertSelections(intersects);
 
 
-if(lastSelectionIsIk){//trying every click change ik and bone if both intersected
+if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	//check bone first
 	Object3D lastIk=null;
 	
@@ -1822,8 +1830,8 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 			if(selection.getName().equals(lastSelectionIkName)){
 				lastIk=selection;
 			}else{
-			selectIk(selection,event.getX(),event.getY());
-			lastSelectionIsIk=true;
+			selectIk(selection,x,y);
+			
 			lastSelectionIkName=selection.getName();
 			updateBoneRanges();
 			return;
@@ -1833,16 +1841,16 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 	
 	for(Object3D selection:selections){
 		if(!selection.getName().isEmpty() && !selection.getName().startsWith("ik:")){
-			selectBone(selection,event.getX(),event.getY());
-			lastSelectionIsIk=false;
+			selectBone(selection,x,y);
+			
 			return;
 		}
 	}
 	
 	
 	if(lastIk!=null){//when ik selected,select another ik or bone first
-		selectIk(lastIk,event.getX(),event.getY());
-		lastSelectionIsIk=true;
+		selectIk(lastIk,x,y);
+		
 		lastSelectionIkName=lastIk.getName();
 		updateBoneRanges();
 		return;
@@ -1852,8 +1860,8 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 	//ik first
 	for(Object3D selection:selections){
 		if(selection.getName().startsWith("ik:")){
-			selectIk(selection,event.getX(),event.getY());
-			lastSelectionIsIk=true;
+			selectIk(selection,x,y);
+			
 			lastSelectionIkName=selection.getName();
 			updateBoneRanges();
 			return;
@@ -1862,8 +1870,8 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 	
 	for(Object3D selection:selections){
 		if(!selection.getName().isEmpty() && !selection.getName().startsWith("ik:")){
-			selectBone(selection,event.getX(),event.getY());
-			lastSelectionIsIk=false;
+			selectBone(selection,x,y);
+			
 			return;
 		}
 	}
@@ -1875,7 +1883,7 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 		selectedBone=null;
 		selectionMesh.setVisible(false);
 		switchSelectionIk(null);
-		lastSelectionIsIk=false;
+		
 		logger.fine("onMouse down-end1");
 	}
 	private String selectedBone;
@@ -2411,8 +2419,7 @@ if(lastSelectionIsIk){//trying every click change ik and bone if both intersecte
 			cameraZ=(double)tmp;
 			mouseLast=t;
 		}
-		//usually after wheel you hope select ik again
-		lastSelectionIsIk=false;
+		
 	}
 	private double czoom;
 	
@@ -5875,7 +5882,8 @@ private MenuItem contextMenuHidePrefIks;
 
 	@Override
 	public void onDoubleClick(DoubleClickEvent event) {
-		// TODO Auto-generated method stub
-		
+		LogUtils.log("onDoubleClick:");
+		//usually called after onMouseDown?
+		doMouseDown(event.getX(),event.getY(),true);
 	}
 }
