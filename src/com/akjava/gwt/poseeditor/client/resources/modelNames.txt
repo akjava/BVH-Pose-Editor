@@ -1,2 +1,4 @@
 model001_female2661_bone19.js,-1
-model001_female2548_bone19.js,-2
+model001_proxy1487_bone19.js,-2
+model001_female2548_bone19.js,-3
+model001_proxy837_bone19.js,-4
