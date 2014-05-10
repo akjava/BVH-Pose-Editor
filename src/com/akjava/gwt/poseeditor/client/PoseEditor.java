@@ -592,7 +592,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		
 		//for initialize texture
-		texture=ImageUtils.loadTexture("tshirt.png");//initial one   //TODO change this.
+		texture=ImageUtils.loadTexture("blondhair_tshirt.png");//initial one   //TODO change this.
 		//generateTexture();
 		
 		//initial model to avoid async use clientbundle same as "tpose.bvh"
@@ -2491,7 +2491,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	@Override
 	public void createControl(DropVerticalPanelBase parent) {
 HorizontalPanel h1=new HorizontalPanel();
-h1.setWidth("250px");
+
 
 		rotationXRange = InputRangeWidget.createInputRange(-180,180,0);
 		parent.add(HTML5Builder.createRangeLabel("X-Rotate:", rotationXRange));
