@@ -2699,6 +2699,8 @@ HorizontalPanel h1=new HorizontalPanel();
 	
 		//
 		HorizontalPanel boneInfo=new HorizontalPanel();
+		boneInfo.setWidth("250px");
+		
 		parent.add(boneInfo);
 		boneInfo.add(new Label("Bone"));
 		rotateAndPosList = new ListBox();
@@ -3276,9 +3278,11 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			
 			doPoseByMatrix(ab);//do it only once
-			updateBoneRanges();//possible changed
+			
 			
 			switchSelectionIk(ik.getLastBoneName());//recreate ik pose otherwise use old pose
+			
+			updateBoneRanges();//possible changed
 			
 			//ik.getTargetPos().copy(lastPosition);//restore position,usually user continue editing.but i change my mind ,when set opposite selection current ik pos make bad effect
 			

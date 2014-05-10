@@ -1,15 +1,17 @@
 BVH Pose Editor
 
-[Updated]
-support three.js r64
-
+[Updated] 2014.05.08
+support three.js r66
+now all model based Makehuman & second-life 19bone(i don't know official name)
+sadly old model & bone(bvh) not work right now.
+it would be fixed next release.
 
 Licensed Apache2.0
 included Three.js & stats.js & GWT-Three.js Wrapper is Under MIT License
 
-still alpha,any question or suggestion or but let me know
+any question or suggestion post issue or comment on Google+
 
-English Web Site
+English Web Site(based old version)
 http://webgl.akjava.com
 
 Base Bone come from
