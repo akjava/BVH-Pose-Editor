@@ -148,7 +148,7 @@ import com.google.gwt.user.client.ui.VerticalPanel;
 public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceListener{
 	public static Logger logger = Logger.getLogger(PoseEditor.class.getName());
 	private BVH bvh;
-	protected JsArray<AnimationBone> bones;
+	protected JsArray<AnimationBone> animationBones;
 	private AnimationData animationData;
 	public static DateTimeFormat dateFormat=DateTimeFormat.getFormat("yy/MM/dd HH:mm");
 	private String version="6.0(for three.r66)";
@@ -1633,13 +1633,41 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		rootBoneBar.addItem("initial Position", new Command(){
 			@Override
 			public void execute() {
-				ab.getBoneAngleAndMatrix(0).setPosition(getInitialPoseFrameData().getPositions().get(0).clone());
+				
+				JsArrayNumber rootPos=animationBones.get(0).getPos();
+				double rootX=0;
+				double rootY=0;
+				double rootZ=0;
+				if(rootPos!=null && rootPos.length()==3){
+					rootX=rootPos.get(0);
+					rootY=rootPos.get(1);
+					rootZ=rootPos.get(2);
+				}
+				
+				
+				ab.getBoneAngleAndMatrix(0).getPosition().set(rootX, rootY, rootZ);//bone pos
 				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				fitIkOnBone();
 				doPoseByMatrix(ab);
+				
 				hideContextMenu();
 		
 			}});
 
+		rootBoneBar.addItem("initial Pose", new Command(){
+			@Override
+			public void execute() {
+				//store position
+				Vector3 lastPosition=ab.getBoneAngleAndMatrix(0).getPosition().clone();
+				
+				List<AngleAndPosition> angleAndPositions=AnimationBonesData.cloneAngleAndMatrix(initialPoseFrameData.getAngleAndMatrixs());
+				angleAndPositions.get(0).getPosition().copy(lastPosition);
+				angleAndPositions.get(0).updateMatrix();
+				
+				selectFrameData(angleAndPositions);
+				hideContextMenu();
+		
+			}});
 		
 		
 
@@ -4080,7 +4108,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		BVH exportBVH=new BVH();
 		
 		BVHConverter converter=new BVHConverter();
-		BVHNode node=converter.convertBVHNode(bones);
+		BVHNode node=converter.convertBVHNode(animationBones);
 		
 		exportBVH.setHiearchy(node);
 		
@@ -4093,7 +4121,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		//TODO post issue
 		//this is temporaly fix,first frame contain root pos and must sub position
-		JsArrayNumber rootPos=bones.get(0).getPos();
+		JsArrayNumber rootPos=animationBones.get(0).getPos();
 		double rootX=0;
 		double rootY=0;
 		double rootZ=0;
@@ -4184,13 +4212,17 @@ HorizontalPanel h1=new HorizontalPanel();
 		poseFrameDataIndex=index;
 		PoseFrameData pfd=getSelectedPoseEditorData().getPoseFrameDatas().get(index);
 		
-		if(pfd.getAngleAndMatrixs().size()!=bones.length()){
+		if(pfd.getAngleAndMatrixs().size()!=animationBones.length()){
 			Window.alert("difference- bone.not compatiple this frame.\nso push new button.");
 			return;
 		}
 		
+		selectFrameData(AnimationBonesData.cloneAngleAndMatrix(pfd.getAngleAndMatrixs()));
 		
-		currentMatrixs=AnimationBonesData.cloneAngleAndMatrix(pfd.getAngleAndMatrixs());
+	}
+	
+	private void selectFrameData(List<AngleAndPosition> angleAndPositions) {	
+		currentMatrixs=angleAndPositions;
 		ab.setBonesAngleAndMatrixs(currentMatrixs);
 		//update
 		
@@ -4545,15 +4577,15 @@ private List<String> boneList=new ArrayList<String>();
 	}
 	
 	private void setBone(JsArray<AnimationBone> bo){
-		bones=bo;
+		animationBones=bo;
 		AnimationDataConverter dataConverter=new AnimationDataConverter();
 		dataConverter.setSkipFirst(false);
 		
-		animationData = dataConverter.convertJsonAnimation(bones,bvh);//use for first pose
+		animationData = dataConverter.convertJsonAnimation(animationBones,bvh);//use for first pose
 		
 		boneList.clear();
-		for(int i=0;i<bones.length();i++){
-			boneList.add(bones.get(i).getName());
+		for(int i=0;i<animationBones.length();i++){
+			boneList.add(animationBones.get(i).getName());
 			//log(bones.get(i).getName()+","+ThreeLog.get(GWTThreeUtils.jsArrayToVector3(bones.get(i).getPos())));
 		}
 	}
@@ -4794,10 +4826,10 @@ private void initializeAnimationData(int index,boolean resetMatrix){
 
 	//initialize AnimationBone
 	if(ab==null){
-	baseMatrixs=AnimationBonesData.boneToAngleAndMatrix(bones, animationData, index);
-	ab=new AnimationBonesData(bones,AnimationBonesData.cloneAngleAndMatrix(baseMatrixs) );
+	baseMatrixs=AnimationBonesData.boneToAngleAndMatrix(animationBones, animationData, index);
+	ab=new AnimationBonesData(animationBones,AnimationBonesData.cloneAngleAndMatrix(baseMatrixs) );
 	currentMatrixs=null;
-	for(int i=0;i<bones.length();i++){
+	for(int i=0;i<animationBones.length();i++){
 		//	log(bones.get(i).getName()+":"+ThreeLog.get(baseMatrixs.get(i).getPosition()));
 		}
 	}
@@ -5181,7 +5213,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
 	List<AngleAndPosition> boneMatrix=animationBonesData.getBonesAngleAndMatrixs();
 		
-		bonePath=boneToPath(bones);
+		bonePath=boneToPath(animationBones);
 		if(bone3D!=null){
 			root.remove(bone3D);
 		}
@@ -5207,7 +5239,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
 		List<Matrix4> moveMatrix=new ArrayList<Matrix4>(); 
 		List<Vector3> bonePositions=new ArrayList<Vector3>();
-		for(int i=0;i<bones.length();i++){
+		for(int i=0;i<animationBones.length();i++){
 			Matrix4 mv=boneMatrix.get(i).getMatrix();
 			double bsize=baseBoneCoreSize;
 			if(i==0){//root is better 
@@ -5227,7 +5259,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			//Vector3 rot=GWTThreeUtils.rotationToVector3(GWTThreeUtils.jsArrayToQuaternion(bones.get(i).getRotq()));
 			Vector3 rot=GWTThreeUtils.degreeToRagiant(ab.getBoneAngleAndMatrix(i).getAngle());
 			List<Integer> path=bonePath.get(i);
-			String boneName=bones.get(i).getName();
+			String boneName=animationBones.get(i).getName();
 			//log(boneName);
 			mesh.setName(boneName);
 			
@@ -5244,9 +5276,9 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			
 			
 			
-			if(bones.get(i).getParent()!=-1){
+			if(animationBones.get(i).getParent()!=-1){
 				
-			Vector3 ppos=bonePositions.get(bones.get(i).getParent());	
+			Vector3 ppos=bonePositions.get(animationBones.get(i).getParent());	
 			//pos.addSelf(ppos);
 			
 			//log(boneName+":"+ThreeLog.get(pos)+","+ThreeLog.get(ppos));	
@@ -5348,7 +5380,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 				WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_ROOT_ALL, bodyIndices, bodyWeight);
 				*/
 				
-				WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_FROM_GEOMETRY, bodyIndices, bodyWeight);
+				WeightBuilder.autoWeight(baseGeometry, animationBones, WeightBuilder.MODE_FROM_GEOMETRY, bodyIndices, bodyWeight);
 				
 				/*
 				List<String> lines=new ArrayList<String>();
@@ -5362,7 +5394,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 				
 			}else{
 				LogUtils.log("auto-weight :sometime this broke models.you can use ModelWeight Apps");
-				WeightBuilder.autoWeight(baseGeometry, bones, WeightBuilder.MODE_NearParentAndChildren, bodyIndices, bodyWeight);
+				WeightBuilder.autoWeight(baseGeometry, animationBones, WeightBuilder.MODE_NearParentAndChildren, bodyIndices, bodyWeight);
 				}
 			}else{
 				root.remove(bodyMesh);
@@ -5562,7 +5594,7 @@ private MenuItem contextMenuHidePrefIks;
 		
 		
 		
-		bonePath=boneToPath(bones);
+		bonePath=boneToPath(animationBones);
 		if(bone3D!=null){
 			root.remove(bone3D);
 		}
@@ -5577,14 +5609,14 @@ private MenuItem contextMenuHidePrefIks;
 		
 		List<Matrix4> moveMatrix=new ArrayList<Matrix4>(); 
 		List<Vector3> bonePositions=new ArrayList<Vector3>();
-		for(int i=0;i<bones.length();i++){
+		for(int i=0;i<animationBones.length();i++){
 			MatrixAndVector3 mv=boneMatrix.get(i);
 			Mesh mesh=THREE.Mesh(THREE.CubeGeometry(.2, .2, .2),THREE.MeshLambertMaterial().color(0xff0000).build());
 			bone3D.add(mesh);
 			
 			Vector3 pos=mv.getPosition().clone();
 			List<Integer> path=bonePath.get(i);
-			String boneName=bones.get(i).getName();
+			String boneName=animationBones.get(i).getName();
 			//log(boneName);
 			
 			Matrix4 tmpmx=boneMatrix.get(path.get(path.size()-1)).getMatrix();
@@ -5604,8 +5636,8 @@ private MenuItem contextMenuHidePrefIks;
 			
 			
 			
-			if(bones.get(i).getParent()!=-1){
-			Vector3 ppos=bonePositions.get(bones.get(i).getParent());	
+			if(animationBones.get(i).getParent()!=-1){
+			Vector3 ppos=bonePositions.get(animationBones.get(i).getParent());	
 			//pos.addSelf(ppos);
 			
 			Line line=GWTGeometryUtils.createLineMesh(pos, ppos, 0xffffff);
