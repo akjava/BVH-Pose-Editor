@@ -2,7 +2,7 @@ BVH Pose Editor
 
 [Updated] 2014.05.08
 support three.js r66
-now all model based Makehuman & second-life 19bone(i don't know official name)
+now all model based Makehuman & second-life 19bone(I'm not sure how this bone called)
 sadly old model & bone(bvh) not work right now.
 it would be fixed next release.
 
@@ -22,3 +22,20 @@ Bugs
 Only Tested on Chrome
 
 there are gimbal lock problem when angle over 90
+
+Aboud Models
+Model file name is model{number}_{makehuman-topology-name}{total-vertices-count}_bone{bone-number}.js
+Model001 is almost default Makehuman 1.0 just changed 100% Caucasian & 100% female.
+the name is like proxy or female is topology name on makehuman.
+
+but female-topology model is modified for bone-animation with blender.
+
+after that I t-posed with makehuman's tools.more detail see here. 
+http://forum.makehuman.org/viewtopic.php?f=14&t=9884
+
+total-vertices-count is total vertices count.
+I merged body and eye,in option some model has cloth.
+
+and texture is packed because of right-now only single geometry works.
+
+bone-number is just bone numbers because of second-life-xxx is seems long name.
