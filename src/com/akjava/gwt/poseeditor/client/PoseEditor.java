@@ -2796,6 +2796,18 @@ HorizontalPanel h1=new HorizontalPanel();
 		HorizontalPanel mButtons=new HorizontalPanel();
 		parent.add(mButtons);
 		
+		//because it' natural from front-view
+		Button rightToLeft=new Button("R > L");
+		rightToLeft.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				doMirror(true);
+				
+			}
+		});
+		mButtons.add(rightToLeft);
+		
+		
 		Button mirror=new Button("L > R");
 		mirror.addClickHandler(new ClickHandler() {
 			@Override
@@ -2806,15 +2818,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		mButtons.add(mirror);
 		
-		Button rightToLeft=new Button("R > L");
-		rightToLeft.addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				doMirror(true);
-				
-			}
-		});
-		mButtons.add(rightToLeft);
+		
 		
 		Button swap=new Button("do Swap");
 		swap.addClickHandler(new ClickHandler() {
