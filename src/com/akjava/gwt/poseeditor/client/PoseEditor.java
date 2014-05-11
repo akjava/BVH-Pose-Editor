@@ -437,11 +437,18 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		this.renderer=renderer;
 		
 		//maybe canvas is transparent
-		canvas.setClearColorHex(0x333333);//qustion
 		
-		//canvas.getElement().getStyle().setBackgroundColor("rgba(0, 0, 0, 0)");
-		//renderer.setClearColor(0, 0);
-	
+		
+		
+		
+		//renderer has already setted 0x333333.this is somekind confirm?
+		
+		//canvas.setClearColorHex(0x333333);//qustion,what happen if no canvas.
+		
+		//recently i feel this is good,less flick and 
+		renderer.setClearColor(0, 0);
+		canvas.getElement().getStyle().setBackgroundColor("#333");
+		
 		dragObjectControler=new GWTDragObjectControler(scene,projector);
 		
 		
@@ -460,9 +467,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		//background;
 		Geometry geo=THREE.PlaneGeometry(1000/posDivided, 1000/posDivided,20,20);
-		Mesh mesh=THREE.Mesh(geo, THREE.MeshBasicMaterial().color(0xaaaaaa).wireFrame().build());
-		mesh.setRotation(Math.toRadians(-90), 0, 0);
-		root.add(mesh);
+		backgroundMesh = THREE.Mesh(geo, THREE.MeshBasicMaterial().color(0xaaaaaa).wireFrame().build());
+		backgroundMesh.setRotation(Math.toRadians(-90), 0, 0);
+		root.add(backgroundMesh);
 		
 		//line removed,because of flicking
 		//Object3D xline=GWTGeometryUtils.createLineMesh(THREE.Vector3(-50, 0, 0.001), THREE.Vector3(50, 0, 0.001), 0x880000,3);
@@ -2516,6 +2523,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	private CheckBox showBonesCheck,showIkCheck,smallCheck;
 	
 	private int posDivided=10;	//how small 10 or 100
+	private CheckBox showTileCheck;
 	@Override
 	public void createControl(DropVerticalPanelBase parent) {
 HorizontalPanel h1=new HorizontalPanel();
@@ -2705,6 +2713,17 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		showIkCheck.setValue(true);
+		
+		
+		showTileCheck = new CheckBox("Tile");
+		shows.add(showTileCheck);
+		showTileCheck.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				backgroundMesh.setVisible(showTileCheck.getValue());
+			}
+		});
+		showTileCheck.setValue(true);
 		
 		//dont need now
 		/*
@@ -2996,7 +3015,17 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
-		
+		/*
+		Button test=new Button("image",new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				String url=canvas.getRenderer().gwtPngDataUrl();//can'i snap shot with it.
+				Window.open(url, "test", null);
+			}
+		});
+		parent.add(test);
+		*/
 		
 		/*
 		 * crash so oftern if you use don't forget add
@@ -5587,6 +5616,7 @@ private Button saveButton;
 private VerticalPanel bonePostionAndRotationContainer;
 private MenuItem contextMenuShowPrevFrame;
 private MenuItem contextMenuHidePrefIks;
+private Mesh backgroundMesh;
 ;
 
 /**
