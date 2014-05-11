@@ -3162,7 +3162,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		parent.add(minus3b);
 		
 		
-		List<Integer> angles=Lists.newArrayList(-180,-135,-90,-45,0,45,90,135,180);
+		List<Integer> angles=Lists.newArrayList(-180,-135,-90,-60,-45,0,45,60,90,135,180);
 		final ValueListBox<Integer> vlist=new ValueListBox<Integer>(new Renderer<Integer>() {
 
 			@Override
