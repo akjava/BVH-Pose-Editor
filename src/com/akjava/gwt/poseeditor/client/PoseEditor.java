@@ -5254,7 +5254,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			bone3D.add(mesh);
 			
 			Vector3 pos=THREE.Vector3();
-			pos.setFromMatrixPosition(boneMatrix.get(i).getMatrix());
+			pos.setFromMatrixPosition(mv);
 			
 			//Vector3 rot=GWTThreeUtils.rotationToVector3(GWTThreeUtils.jsArrayToQuaternion(bones.get(i).getRotq()));
 			Vector3 rot=GWTThreeUtils.degreeToRagiant(ab.getBoneAngleAndMatrix(i).getAngle());
@@ -5265,15 +5265,17 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			
 			
 			Matrix4 matrix=THREE.Matrix4();
-			for(int j=0;j<path.size()-1;j++){//last is boneself
-			//	log(""+path.get(j));
+			for(int j=0;j<path.size()-1;j++){//last is boneself,no need for bone-pos
 				Matrix4 mx=boneMatrix.get(path.get(j)).getMatrix();
 				matrix.multiplyMatrices(matrix, mx);
 			}
-			matrix.multiplyVector3(pos);
+			pos.applyProjection(matrix);//set pos before last bone matrixed.
+			//matrix.multiplyVector3(pos);
+			
+			//but need for transform
 			matrix.multiplyMatrices(matrix, boneMatrix.get(path.get(path.size()-1)).getMatrix());//last one
 			moveMatrix.add(matrix);
-			
+			//maybe this position use for end-sites.
 			
 			
 			if(animationBones.get(i).getParent()!=-1){

@@ -9,7 +9,6 @@ public static PoseEditorBundles INSTANCE=GWT.create(PoseEditorBundles.class);
 	TextResource modelNames();
 	TextResource textureNames();
 	@Source("tpose.bvh")
-	//@Source("aaa.bvh")
 	TextResource pose();
 
 }
