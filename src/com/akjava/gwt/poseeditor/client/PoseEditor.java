@@ -69,6 +69,7 @@ import com.akjava.gwt.three.client.js.core.Object3D;
 import com.akjava.gwt.three.client.js.core.Projector;
 import com.akjava.gwt.three.client.js.extras.GeometryUtils;
 import com.akjava.gwt.three.client.js.extras.ImageUtils;
+import com.akjava.gwt.three.client.js.extras.helpers.GridHelper;
 import com.akjava.gwt.three.client.js.lights.Light;
 import com.akjava.gwt.three.client.js.loaders.JSONLoader.JSONLoadHandler;
 import com.akjava.gwt.three.client.js.materials.Material;
@@ -466,10 +467,19 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		scene.add(root);
 		
 		//background;
-		Geometry geo=THREE.PlaneGeometry(1000/posDivided, 1000/posDivided,20,20);
-		backgroundMesh = THREE.Mesh(geo, THREE.MeshBasicMaterial().color(0xaaaaaa).wireFrame().build());
-		backgroundMesh.setRotation(Math.toRadians(-90), 0, 0);
-		root.add(backgroundMesh);
+		//Geometry geo=THREE.PlaneGeometry(1000/posDivided, 1000/posDivided,20,20);
+		
+		//backgroundMesh = THREE.Mesh(geo, THREE.MeshBasicMaterial().color(0xaaaaaa).wireFrame().build());
+		//backgroundMesh=THREE.GridHelper(1000/posDivided, 40);
+		//backgroundMesh.setRotation(Math.toRadians(-90), 0, 0);
+		
+		
+		int size=1000/posDivided;
+		int step=size/20;
+		step=Math.max(1, step);
+		
+		backgroundGrid = THREE.GridHelper(1000/posDivided, step);
+		root.add(backgroundGrid);
 		
 		//line removed,because of flicking
 		//Object3D xline=GWTGeometryUtils.createLineMesh(THREE.Vector3(-50, 0, 0.001), THREE.Vector3(50, 0, 0.001), 0x880000,3);
@@ -2720,7 +2730,8 @@ HorizontalPanel h1=new HorizontalPanel();
 		showTileCheck.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				backgroundMesh.setVisible(showTileCheck.getValue());
+				Object3DUtils.setVisibleAll(backgroundGrid,showTileCheck.getValue());
+				//backgroundGrid.setVisible(showTileCheck.getValue());
 			}
 		});
 		showTileCheck.setValue(true);
@@ -5620,7 +5631,8 @@ private Button saveButton;
 private VerticalPanel bonePostionAndRotationContainer;
 private MenuItem contextMenuShowPrevFrame;
 private MenuItem contextMenuHidePrefIks;
-private Mesh backgroundMesh;
+
+private GridHelper backgroundGrid;
 ;
 
 /**
