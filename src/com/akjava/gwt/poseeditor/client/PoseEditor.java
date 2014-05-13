@@ -3898,14 +3898,27 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
-		Button paste=new Button("Paste");
-		upperPanel.add(paste);
-		paste.addClickHandler(new ClickHandler() {
+		Button pasteBefore=new Button("Paste Before");
+		upperPanel.add(pasteBefore);
+		pasteBefore.addClickHandler(new ClickHandler() {
 			
 			@Override
 			public void onClick(ClickEvent event) {
 				
-				doPaste();
+				doPasteBefore();
+				getSelectedPoseEditorData().setModified(true);
+				updateSaveButtons();
+			}
+		});
+		
+		Button pasteAfter=new Button("Paste After");
+		upperPanel.add(pasteAfter);
+		pasteAfter.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				
+				doPasteAfter();
 				getSelectedPoseEditorData().setModified(true);
 				updateSaveButtons();
 			}
@@ -4202,8 +4215,15 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	
 
-
-	protected void doPaste() {
+	protected void doPasteBefore() {
+		if(clipboard!=null){
+			int index=Math.max(0, currentFrameRange.getValue()-1);
+			getSelectedPoseEditorData().getPoseFrameDatas().add(index,clipboard.clone());
+			updatePoseIndex(index);
+		}
+	}
+	
+	protected void doPasteAfter() {
 		if(clipboard!=null){
 			getSelectedPoseEditorData().getPoseFrameDatas().add(currentFrameRange.getValue()+1,clipboard.clone());
 			updatePoseIndex(currentFrameRange.getValue()+1);
