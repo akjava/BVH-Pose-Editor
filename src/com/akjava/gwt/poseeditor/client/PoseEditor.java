@@ -118,6 +118,7 @@ import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.i18n.client.DateTimeFormat;
+import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.json.client.JSONNumber;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
@@ -141,6 +142,7 @@ import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.ValueListBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import com.google.gwt.user.client.ui.Widget;
 
 
 /**
@@ -951,11 +953,23 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 
 	public static Map<String,BoneLimit> boneLimits=new HashMap<String,BoneLimit>();
 	
+	NumberFormat numberFormat= NumberFormat.getFormat("000.0");
+	 
+	private void updateIkPositionLabel(){
+		//i'm not sure why value x 10 times;
+		ikPositionLabelX.setText("Ik-X:"+numberFormat.format(getCurrentIkData().getTargetPos().getX()*10));
+		ikPositionLabelY.setText("Ik-Y:"+numberFormat.format(getCurrentIkData().getTargetPos().getY()*10));
+		ikPositionLabelZ.setText("Ik-Z:"+numberFormat.format(getCurrentIkData().getTargetPos().getZ()*10));
+	}
 	private void updateIkLabels(){
 		//log(""+boneNamesBox);
 		boneNamesBox.clear();
 		if(currentSelectionIkName!=null){
-			setEnableBoneRanges(false,false);//no root
+			setEnableBoneRanges(false,false,true);//no root
+			
+			updateIkPositionLabel();
+			
+			//getCurrentIkData().getTargetPos().getX()
 			boneNamesBox.addItem("");
 		for(int i=0;i<getCurrentIkData().getBones().size();i++){
 			boneNamesBox.addItem(getCurrentIkData().getBones().get(i));
@@ -965,12 +979,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		boneNamesBox.setSelectedIndex(0);
 		}else if(selectedBone!=null){
-			setEnableBoneRanges(true,true);
+			setEnableBoneRanges(true,true,false);
 			boneNamesBox.addItem(selectedBone);
 			boneNamesBox.setSelectedIndex(0);
 			updateBoneRanges();
 		}else{
-			setEnableBoneRanges(false,false);
+			setEnableBoneRanges(false,false,false);//no selection
 		}
 		
 		
@@ -989,7 +1003,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		}
 	}
 	
-	private void setEnableBoneRanges(boolean rotate,boolean pos){
+	private void setEnableBoneRanges(boolean rotate,boolean pos,boolean ikPos){
 		bonePositionsPanel.setVisible(pos);
 		boneRotationsPanel.setVisible(rotate);
 		
@@ -1000,6 +1014,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		positionXBoneRange.setEnabled(pos);
 		positionYBoneRange.setEnabled(pos);
 		positionZBoneRange.setEnabled(pos);
+		
+		//ik pos
+		ikPositionsPanel.setVisible(ikPos);
+
+		//TODO x,y
 	}
 	
 	int ikdataIndex=1;
@@ -2194,7 +2213,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 					doPoseIkk(0,true,1,getCurrentIkData(),5);
 				}
 				
-				
+				updateIkPositionLabel();
 			}else if(isSelectedBone()){
 				logger.info("selected bone");
 				if(event.isShiftKeyDown()){//move position
@@ -2396,6 +2415,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 				doPoseIkk(0,true,1,getCurrentIkData(),5);
 			}
 			
+			updateIkPositionLabel();
 		}else if(isSelectedBone()){
 			if(event.isShiftKeyDown()){//move
 			int diff=event.getDeltaY();
@@ -2534,6 +2554,10 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	
 	private int posDivided=10;	//how small 10 or 100
 	private CheckBox showTileCheck;
+	private VerticalPanel ikPositionsPanel;
+	private Label ikPositionLabelY;
+	private Label ikPositionLabelZ;
+
 	@Override
 	public void createControl(DropVerticalPanelBase parent) {
 HorizontalPanel h1=new HorizontalPanel();
@@ -2848,6 +2872,19 @@ HorizontalPanel h1=new HorizontalPanel();
 		parent.add(bonePostionAndRotationContainer);
 		
 		
+		//ikspos
+		ikPositionsPanel = new VerticalPanel();
+		bonePostionAndRotationContainer.add(ikPositionsPanel);
+		ikPositionsPanel.setVisible(false);
+		
+		ikPositionLabelX = new Label();
+		ikPositionsPanel.add(ikPositionLabelX);
+		ikPositionLabelY = new Label();
+		ikPositionsPanel.add(ikPositionLabelY);
+		ikPositionLabelZ = new Label();
+		ikPositionsPanel.add(ikPositionLabelZ);
+		
+		
 		
 		//positions
 		bonePositionsPanel = new VerticalPanel();
@@ -2928,7 +2965,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		HorizontalPanel rotButtons=new HorizontalPanel();
 		boneRotationsPanel.add(rotButtons);
-		Button resetAll=new Button("Reset",new ClickHandler() {
+		Button resetAll=new Button("Reset All Rotation",new ClickHandler() {
 			
 			@Override
 			public void onClick(ClickEvent event) {
@@ -4408,6 +4445,8 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	*/
 	
+	
+	
 	private void updateBoneRanges(){
 	updateBoneRotationRanges();
 	updateBonePositionRanges();
@@ -4415,11 +4454,10 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	private void updateBoneRotationRanges(){
 		if(isSelectEmptyBoneListBox()){
-			
-			setEnableBoneRanges(false,false);//no root
+			setEnableBoneRanges(false,false,true);
 			return;
 		}else{
-			setEnableBoneRanges(true,true);
+			setEnableBoneRanges(true,true,false);
 		}
 		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
 		
@@ -5653,6 +5691,7 @@ private MenuItem contextMenuShowPrevFrame;
 private MenuItem contextMenuHidePrefIks;
 
 private GridHelper backgroundGrid;
+private Label ikPositionLabelX;
 ;
 
 /**
