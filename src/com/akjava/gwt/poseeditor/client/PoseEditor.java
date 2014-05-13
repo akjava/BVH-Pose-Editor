@@ -661,6 +661,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 					int code=event.getNativeKeyCode();
 					if(code==45){//Add last
 						insertFrame(getSelectedPoseEditorData().getPoseFrameDatas().size(),false);
+					}else if(code==32){//space
+						touchGroundZero();
 					}else{
 						//LogUtils.log(event.getNativeKeyCode());
 					}
@@ -1688,25 +1690,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			@Override
 			public void execute() {
 				
-				bodyMesh.getGeometry().computeBoundingBox();
-				LogUtils.log(bodyMesh.getGeometry());
-				BoundingBox box=bodyMesh.getGeometry().getBoundingBox();
-				
-				
-				Vector3 currentRoot=ab.getBonePosition(0);
-				currentRoot.setY(currentRoot.getY()-box.getMin().getY());
-				
-				logger.fine("min:"+ThreeLog.get(box.getMin()));
-				logger.fine("max:"+ThreeLog.get(box.getMax()));
-				ab.getBoneAngleAndMatrix(0).getPosition().setY(currentRoot.getY());
-				ab.getBoneAngleAndMatrix(0).updateMatrix();
-				
-				
-				
-				fitIkOnBone();
-				doPoseByMatrix(ab);
-				
-				hideContextMenu();
+				touchGroundZero();
 		
 			}});
 		
@@ -1990,6 +1974,28 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			}});
 			*/
 	}
+	protected void touchGroundZero() {
+		bodyMesh.getGeometry().computeBoundingBox();
+		LogUtils.log(bodyMesh.getGeometry());
+		BoundingBox box=bodyMesh.getGeometry().getBoundingBox();
+		
+		
+		Vector3 currentRoot=ab.getBonePosition(0);
+		currentRoot.setY(currentRoot.getY()-box.getMin().getY());
+		
+		logger.fine("min:"+ThreeLog.get(box.getMin()));
+		logger.fine("max:"+ThreeLog.get(box.getMax()));
+		ab.getBoneAngleAndMatrix(0).getPosition().setY(currentRoot.getY());
+		ab.getBoneAngleAndMatrix(0).updateMatrix();
+		
+		
+		
+		fitIkOnBone();
+		doPoseByMatrix(ab);
+		
+		hideContextMenu();
+	}
+
 	//TODO future
 	private boolean isShowPrevIk;
 	
