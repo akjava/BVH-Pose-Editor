@@ -1782,6 +1782,24 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 			}});
 		
+		
+		rootBoneBar.addItem("Move to Current Frame Position", new Command(){
+			@Override
+			public void execute() {
+				
+				//get not modified position
+				PoseFrameData prevFrameData=getSelectedPoseEditorData().getPoseFrameDatas().get(poseFrameDataIndex);
+				Vector3 prevFramePosition=prevFrameData.getAngleAndMatrixs().get(0).getPosition();
+				
+				ab.getBoneAngleAndMatrix(0).getPosition().copy(prevFramePosition);
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				fitIkOnBone();
+				doPoseByMatrix(ab);
+				
+				hideContextMenu();
+		
+			}});
+		
 		rootBoneBar.addItem("Move to Next Frame Position", new Command(){
 			@Override
 			public void execute() {
