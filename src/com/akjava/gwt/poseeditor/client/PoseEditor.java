@@ -641,6 +641,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			
 			@Override
 			public void onKeyDown(KeyDownEvent event) {
+				if(event.getNativeKeyCode()==KeyCodes.KEY_SHIFT || event.getNativeKeyCode()==KeyCodes.KEY_ALT){
+					return;//ignore them.
+				}
+				
 				if(event.getNativeKeyCode()==KeyCodes.KEY_ENTER){
 					
 					if(bone3D!=null && bone3D.getChildren().length()>0){
@@ -658,7 +662,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 					if(code==45){//Add last
 						insertFrame(getSelectedPoseEditorData().getPoseFrameDatas().size(),false);
 					}else{
-						LogUtils.log(event.getNativeKeyCode());
+						//LogUtils.log(event.getNativeKeyCode());
 					}
 					
 				}
@@ -1745,9 +1749,119 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 			}});
 		
+		rootBoneBar.addItem("Move to Prev Frame Position", new Command(){
+			@Override
+			public void execute() {
+				
+				if(poseFrameDataIndex<=0){
+					LogUtils.log("<=0:"+poseFrameDataIndex);
+					hideContextMenu();
+					//no frame
+					return;
+				}
+				
+				if(poseFrameDataIndex>=getSelectedPoseEditorData().getPoseFrameDatas().size()){
+					//something invalid
+					LogUtils.log("invalid range");
+					hideContextMenu();
+					return ;
+				}
+				
+				PoseFrameData prevFrameData=getSelectedPoseEditorData().getPoseFrameDatas().get(poseFrameDataIndex-1);
+				Vector3 prevFramePosition=prevFrameData.getAngleAndMatrixs().get(0).getPosition();
+				
+				
+				
+				
+				ab.getBoneAngleAndMatrix(0).getPosition().copy(prevFramePosition);
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				fitIkOnBone();
+				doPoseByMatrix(ab);
+				
+				hideContextMenu();
 		
+			}});
+		
+		rootBoneBar.addItem("Move to Next Frame Position", new Command(){
+			@Override
+			public void execute() {
+				
+				if(poseFrameDataIndex<0){
+					hideContextMenu();
+					//no frame
+					return;
+				}
+				
+				if(poseFrameDataIndex>=getSelectedPoseEditorData().getPoseFrameDatas().size()){
+					//something invalid
+					LogUtils.log("invalid range");
+					hideContextMenu();
+					return ;
+				}
+				
+				if(poseFrameDataIndex==getSelectedPoseEditorData().getPoseFrameDatas().size()-1){
+					//at last frame
+					hideContextMenu();
+					return;
+				}
+				
+				PoseFrameData prevFrameData=getSelectedPoseEditorData().getPoseFrameDatas().get(poseFrameDataIndex+1);
+				Vector3 prevFramePosition=prevFrameData.getAngleAndMatrixs().get(0).getPosition();
+				
+				ab.getBoneAngleAndMatrix(0).getPosition().copy(prevFramePosition);
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				fitIkOnBone();
+				doPoseByMatrix(ab);
+				
+				hideContextMenu();
+		
+			}});
+		
+		rootBoneBar.addItem("Move to center of Prev & Next Frame Position", new Command(){
+			@Override
+			public void execute() {
+				
+				if(poseFrameDataIndex<=0){//need prev
+					hideContextMenu();
+					//no frame
+					return;
+				}
+				
+				if(poseFrameDataIndex>=getSelectedPoseEditorData().getPoseFrameDatas().size()){
+					//something invalid
+					LogUtils.log("invalid range");
+					hideContextMenu();
+					return ;
+				}
+				
+				if(poseFrameDataIndex==getSelectedPoseEditorData().getPoseFrameDatas().size()-1){
+					//at last frame
+					hideContextMenu();
+					return;
+				}
+				
+				PoseFrameData prevFrameData=getSelectedPoseEditorData().getPoseFrameDatas().get(poseFrameDataIndex-1);
+				Vector3 prevFramePosition=prevFrameData.getAngleAndMatrixs().get(0).getPosition();
+				
+				PoseFrameData nextFrameData=getSelectedPoseEditorData().getPoseFrameDatas().get(poseFrameDataIndex+1);
+				Vector3 nextFramePosition=nextFrameData.getAngleAndMatrixs().get(0).getPosition();
+				
+				prevFramePosition.clone().add(nextFramePosition).divideScalar(2);
+				
+				ab.getBoneAngleAndMatrix(0).getPosition().copy(prevFramePosition);
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				fitIkOnBone();
+				doPoseByMatrix(ab);
+				
+				hideContextMenu();
+		
+			}});
+		
+		
+		MenuBar moveToIk=new MenuBar(true);
+		rootBoneBar.addItem("Move to selection IK-Pos", moveToIk);
 
-		rootBoneBar.addItem("Move to selection IK-X", new Command(){
+		moveToIk.addItem("Pos-X", new Command(){
 			@Override
 			public void execute() {
 				if(!isSelectedIk()){
@@ -1765,7 +1879,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				doPoseByMatrix(ab);
 				hideContextMenu();
 			}});
-		rootBoneBar.addItem("Move to selection IK-Y", new Command(){
+		moveToIk.addItem("Pos-Y", new Command(){
 			@Override
 			public void execute() {
 				if(!isSelectedIk()){
@@ -1783,7 +1897,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				doPoseByMatrix(ab);
 				hideContextMenu();
 			}});
-		rootBoneBar.addItem("Move to selection IK-Z", new Command(){
+		moveToIk.addItem("Pos-Z", new Command(){
 			@Override
 			public void execute() {
 				if(!isSelectedIk()){
@@ -1802,7 +1916,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				hideContextMenu();
 			}});
 		
-		rootBoneBar.addItem("Move to selection IK", new Command(){
+		moveToIk.addItem("Pos-All", new Command(){
 			@Override
 			public void execute() {
 				if(!isSelectedIk()){
@@ -4217,7 +4331,7 @@ HorizontalPanel h1=new HorizontalPanel();
 
 	protected void doPasteBefore() {
 		if(clipboard!=null){
-			int index=Math.max(0, currentFrameRange.getValue()-1);
+			int index=Math.max(0, poseFrameDataIndex);//same means insert before
 			getSelectedPoseEditorData().getPoseFrameDatas().add(index,clipboard.clone());
 			updatePoseIndex(index);
 		}
@@ -4422,6 +4536,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		currentFrameLabel.setText((index+1)+"/"+getSelectedPoseEditorData().getPoseFrameDatas().size());
 		
 		if(!needSelect){
+			poseFrameDataIndex=index;	//need set poseFrameDataIndex,
 			return;//no need select maybe still add or replacing
 		}
 		//check in range
