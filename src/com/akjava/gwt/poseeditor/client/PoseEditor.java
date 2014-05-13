@@ -2896,15 +2896,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("X-Pos:", positionXBoneRange,10));
 		bonePositionsPanel.add(h1bpos);
 		h1bpos.add(positionXBoneRange);
-		Button resetB1pos=new Button("Reset");
-		resetB1pos.addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				positionXBoneRange.setValue(0);
-				positionToBone();
-			}
-		});
-		h1bpos.add(resetB1pos);
+		createPosRangeControlers(positionXBoneRange,h1bpos);
 		positionXBoneRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
 			public void onMouseUp(MouseUpEvent event) {
@@ -2918,15 +2910,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Y-Pos:", positionYBoneRange,10));
 		bonePositionsPanel.add(h2bpos);
 		h2bpos.add(positionYBoneRange);
-		Button reset2bpos=new Button("Reset");
-		reset2bpos.addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				positionYBoneRange.setValue(0);
-				positionToBone();
-			}
-		});
-		h2bpos.add(reset2bpos);
+		createPosRangeControlers(positionYBoneRange,h2bpos);
 		positionYBoneRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
 			public void onMouseUp(MouseUpEvent event) {
@@ -2940,6 +2924,10 @@ HorizontalPanel h1=new HorizontalPanel();
 		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Z-Pos:", positionZBoneRange,10));
 		bonePositionsPanel.add(h3bpos);
 		h3bpos.add(positionZBoneRange);
+		
+		createPosRangeControlers(positionZBoneRange,h3bpos);
+		
+		/*
 		Button reset3bpos=new Button("Reset");
 		reset3bpos.addClickHandler(new ClickHandler() {
 			@Override
@@ -2949,6 +2937,9 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		h3bpos.add(reset3bpos);
+		*/
+		
+		
 		positionZBoneRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
 			public void onMouseUp(MouseUpEvent event) {
@@ -3005,7 +2996,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		boneRotationsPanel.add(HTML5Builder.createRangeLabel("X-Rotate:", rotationBoneXRange));
 		boneRotationsPanel.add(h1b);
 		h1b.add(rotationBoneXRange);
-		createRangeControlers(rotationBoneXRange,h1b);
+		createRotRangeControlers(rotationBoneXRange,h1b);
 		rotationBoneXRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
 			public void onMouseUp(MouseUpEvent event) {
@@ -3038,7 +3029,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		boneRotationsPanel.add(h2b);
 		h2b.add(rotationBoneYRange);
 		
-		createRangeControlers(rotationBoneYRange,h2b);
+		createRotRangeControlers(rotationBoneYRange,h2b);
 		
 		
 		rotationBoneYRange.addMouseUpHandler(new MouseUpHandler() {
@@ -3075,7 +3066,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		boneRotationsPanel.add(h3b);
 		h3b.add(rotationBoneZRange);
 		
-		createRangeControlers(rotationBoneZRange,h3b);
+		createRotRangeControlers(rotationBoneZRange,h3b);
 		
 		rotationBoneZRange.addMouseUpHandler(new MouseUpHandler() {
 			@Override
@@ -3214,14 +3205,81 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	*/
 	
+	private void createPosRangeControlers(final InputRangeWidget range,HorizontalPanel parent){
+		Button minus3b=new Button("-");
+		minus3b.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				range.setValue(range.getValue()-10);
+				positionToBone();
+				if(event.isAltKeyDown()){
+					execIk(5,1);
+				}
+			}
+		});
+		parent.add(minus3b);
+		
+		Button minus=new Button("-.");
+		minus.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				range.setValue(range.getValue()-1);
+				positionToBone();
+				if(event.isAltKeyDown()){
+					execIk(5,1);
+				}
+			}
+		});
+		parent.add(minus);
+		
+		Button zero=new Button("0");
+		zero.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				range.setValue(0);
+				positionToBone();
+				if(event.isAltKeyDown()){
+					execIk(5,1);
+				}
+			}
+		});
+		parent.add(zero);
+		
+		Button plus3b=new Button("+.");
+		plus3b.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				range.setValue(range.getValue()+1);
+				positionToBone();
+				if(event.isAltKeyDown()){
+					execIk(5,1);
+				}
+			}
+		});
+		parent.add(plus3b);
+		
+		
+		Button plus=new Button("+");
+		plus.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				range.setValue(range.getValue()+10);
+				positionToBone();
+				if(event.isAltKeyDown()){
+					execIk(5,1);
+				}
+			}
+		});
+		parent.add(plus);
+	}
 	
-	private void createRangeControlers(final InputRangeWidget range,HorizontalPanel parent){
+	private void createRotRangeControlers(final InputRangeWidget range,HorizontalPanel parent){
 		Button minus3b=new Button("-");
 		minus3b.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
 				range.setValue(range.getValue()-1);
-				rotToBone();
+				positionToBone();
 				if(event.isAltKeyDown()){
 					execIk(5,1);
 				}
