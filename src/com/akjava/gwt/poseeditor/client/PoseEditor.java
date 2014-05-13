@@ -2787,7 +2787,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		boneNames.add(boneNamesBox);
 		ikLockCheck = new CheckBox("ik-lock");
-		ikLockCheck.setTitle("only work on + ALT mild IK");
+		
 		boneNames.add(ikLockCheck);
 		ikLockCheck.addClickHandler(new ClickHandler() {
 			
@@ -2846,6 +2846,8 @@ HorizontalPanel h1=new HorizontalPanel();
 		bonePostionAndRotationContainer.setSize("210px", "150px");
 		bonePostionAndRotationContainer.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		parent.add(bonePostionAndRotationContainer);
+		
+		
 		
 		//positions
 		bonePositionsPanel = new VerticalPanel();
@@ -2923,6 +2925,24 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		boneRotationsPanel = new VerticalPanel();
 		bonePostionAndRotationContainer.add(boneRotationsPanel);
+		
+		HorizontalPanel rotButtons=new HorizontalPanel();
+		boneRotationsPanel.add(rotButtons);
+		Button resetAll=new Button("Reset",new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				rotationBoneXRange.setValue(0);
+				rotationBoneYRange.setValue(0);
+				rotationBoneZRange.setValue(0);
+				rotToBone();
+				
+				if(event.isAltKeyDown()){
+					execIk(5,1);
+				}
+			}
+		});
+		boneRotationsPanel.add(resetAll);
 		
 		HorizontalPanel h1b=new HorizontalPanel();
 		
