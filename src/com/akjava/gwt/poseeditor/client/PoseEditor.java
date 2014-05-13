@@ -84,6 +84,7 @@ import com.akjava.gwt.three.client.js.scenes.Scene;
 import com.akjava.gwt.three.client.js.textures.Texture;
 import com.akjava.lib.common.utils.FileNames;
 import com.akjava.lib.common.utils.ValuesUtils;
+import com.google.common.base.Ascii;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -100,6 +101,11 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.ContextMenuEvent;
 import com.google.gwt.event.dom.client.ContextMenuHandler;
 import com.google.gwt.event.dom.client.DoubleClickEvent;
+import com.google.gwt.event.dom.client.KeyCodes;
+import com.google.gwt.event.dom.client.KeyDownEvent;
+import com.google.gwt.event.dom.client.KeyDownHandler;
+import com.google.gwt.event.dom.client.KeyUpEvent;
+import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.event.dom.client.LoadEvent;
 import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseMoveEvent;
@@ -625,9 +631,43 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		updateDatasPanel();
 		
 		
+		//
+		addShortcuts();
 		
 	}
 	
+	private void addShortcuts() {
+		canvas.addKeyDownHandler(new KeyDownHandler() {
+			
+			@Override
+			public void onKeyDown(KeyDownEvent event) {
+				if(event.getNativeKeyCode()==KeyCodes.KEY_ENTER){
+					
+					if(bone3D!=null && bone3D.getChildren().length()>0){
+						selectBone(bone3D.getChildren().get(0),0,0);
+					}
+					
+				}else if(event.getNativeKeyCode()==KeyCodes.KEY_PAGEUP){
+					doPrevFrame();
+				}else if(event.getNativeKeyCode()==KeyCodes.KEY_PAGEDOWN){
+					doNextFrame();
+				}else if(event.getNativeKeyCode()==KeyCodes.KEY_HOME){
+					doFirstFrame();
+				}else{
+					int code=event.getNativeKeyCode();
+					if(code==45){//Add last
+						insertFrame(getSelectedPoseEditorData().getPoseFrameDatas().size(),false);
+					}else{
+						LogUtils.log(event.getNativeKeyCode());
+					}
+					
+				}
+				
+			}
+		});
+		
+	}
+
 	private 	IKData createIKData(List<String> names,int iteration){
 		List<String> boneNames=Lists.newArrayList(names);
 		String last=boneNames.remove(0);//something name is strange
@@ -953,7 +993,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 
 	public static Map<String,BoneLimit> boneLimits=new HashMap<String,BoneLimit>();
 	
-	NumberFormat numberFormat= NumberFormat.getFormat("000.0");
+	NumberFormat numberFormat= NumberFormat.getFormat("0.0");
 	 
 	private void updateIkPositionLabel(){
 		//i'm not sure why value x 10 times;
@@ -3910,12 +3950,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		prev.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				int value=currentFrameRange.getValue();
-				if(value>0){
-					value--;
-					currentFrameRange.setValue(value);
-					updatePoseIndex(value);
-				}
+				doPrevFrame();
 			}
 		});
 		Button next=new Button("Next");
@@ -3923,12 +3958,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		next.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				int value=currentFrameRange.getValue();
-				if(value<getSelectedPoseEditorData().getPoseFrameDatas().size()-1){
-					value++;
-					currentFrameRange.setValue(value);
-					updatePoseIndex(value);
-				}
+				doNextFrame();
 			}
 		});
 		
@@ -3941,16 +3971,34 @@ HorizontalPanel h1=new HorizontalPanel();
 		first.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				currentFrameRange.setValue(0);
-				updatePoseIndex(0);
+				doFirstFrame();
 			}
 		});
 		
 		bottomPanel.show();
 		super.leftBottom(bottomPanel);
 	}
-	
-	
+	private void doFirstFrame() {
+		currentFrameRange.setValue(0);
+		updatePoseIndex(0);
+	}
+
+	private void doPrevFrame(){
+		int value=currentFrameRange.getValue();
+		if(value>0){
+			value--;
+			currentFrameRange.setValue(value);
+			updatePoseIndex(value);
+		}
+	}
+	private void doNextFrame(){
+		int value=currentFrameRange.getValue();
+		if(value<getSelectedPoseEditorData().getPoseFrameDatas().size()-1){
+			value++;
+			currentFrameRange.setValue(value);
+			updatePoseIndex(value);
+		}
+	}
 	
 	private int getNewDataIndex() throws StorageException{
 		int dataIndex=0;
