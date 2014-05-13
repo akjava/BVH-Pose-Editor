@@ -4068,7 +4068,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			@Override
 			public void onMouseUp(MouseUpEvent event) {
-				
+			
 				updatePoseIndex(currentFrameRange.getValue());
 			}
 		});
@@ -4533,8 +4533,17 @@ HorizontalPanel h1=new HorizontalPanel();
 		}else{
 		//poseIndex=index;
 		currentFrameRange.setMax(Math.max(0,getSelectedPoseEditorData().getPoseFrameDatas().size()-1));
+		
+		if(currentFrameRange.getValue()==index){
+			currentFrameRange.setValue(currentFrameRange.getMin());//on paste before not value change,index
+			//need change value to update range widget;
+		}
 		currentFrameRange.setValue(index);
 		currentFrameLabel.setText((index+1)+"/"+getSelectedPoseEditorData().getPoseFrameDatas().size());
+		
+		//currentFrameRange.setFocus(true);
+		
+		//LogUtils.log(currentFrameRange.getMin()+"/"+currentFrameRange.getMax()+" v="+currentFrameRange.getValue());
 		
 		if(!needSelect){
 			poseFrameDataIndex=index;	//need set poseFrameDataIndex,
