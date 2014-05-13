@@ -1817,7 +1817,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 			}});
 		
-		rootBoneBar.addItem("Move to center of Prev & Next Frame Position", new Command(){
+		rootBoneBar.addItem("Move to between Prev & Next Frame Position", new Command(){
 			@Override
 			public void execute() {
 				
@@ -1835,7 +1835,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				}
 				
 				if(poseFrameDataIndex==getSelectedPoseEditorData().getPoseFrameDatas().size()-1){
-					//at last frame
+					//need next frame
 					hideContextMenu();
 					return;
 				}
@@ -1846,9 +1846,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				PoseFrameData nextFrameData=getSelectedPoseEditorData().getPoseFrameDatas().get(poseFrameDataIndex+1);
 				Vector3 nextFramePosition=nextFrameData.getAngleAndMatrixs().get(0).getPosition();
 				
-				prevFramePosition.clone().add(nextFramePosition).divideScalar(2);
 				
-				ab.getBoneAngleAndMatrix(0).getPosition().copy(prevFramePosition);
+				Vector3 newPos=prevFramePosition.clone().add(nextFramePosition).divideScalar(2);
+				
+				ab.getBoneAngleAndMatrix(0).getPosition().copy(newPos);
 				ab.getBoneAngleAndMatrix(0).updateMatrix();
 				fitIkOnBone();
 				doPoseByMatrix(ab);
