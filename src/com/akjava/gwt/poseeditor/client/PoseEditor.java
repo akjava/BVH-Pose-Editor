@@ -1345,6 +1345,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		return Iterables.filter(ikdatas,existIkPredicate);
 	}
 	
+	
+	
 	private void createContextMenu(){
 		contextMenu=new PopupPanel();
 		MenuBar rootBar=new MenuBar(true);
@@ -1444,6 +1446,73 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 					doPoseByMatrix(ab);
 					hideContextMenu();
 				}
+			}});
+		
+		ikBar.addItem("Move to Prev Frame Ik-pos", new Command(){
+			@Override
+			public void execute() {
+				
+				if(isSelectedIk() && isCurrentHasPrevFrame()){	
+					String boneName=getCurrentIkData().getLastBoneName();
+					Vector3 pos=getBonePositionAtFrame(boneName,poseFrameDataIndex-1);
+					if(pos!=null){
+						getCurrentIkData().getTargetPos().copy(pos);
+						syncIkPosition();
+					}
+				}
+				hideContextMenu();
+				
+			}});
+		
+		ikBar.addItem("Move to Current Frame Ik-pos", new Command(){
+			@Override
+			public void execute() {
+				
+				if(isSelectedIk()){	
+					String boneName=getCurrentIkData().getLastBoneName();
+					Vector3 pos=getBonePositionAtFrame(boneName,poseFrameDataIndex);
+					if(pos!=null){
+						getCurrentIkData().getTargetPos().copy(pos);
+						syncIkPosition();
+					}
+				}
+				hideContextMenu();
+				
+			}});
+		
+		ikBar.addItem("Move to Next Frame Ik-pos", new Command(){
+			@Override
+			public void execute() {
+				
+				if(isSelectedIk() && isCurrentHasNextFrame()){	
+					String boneName=getCurrentIkData().getLastBoneName();
+					Vector3 pos=getBonePositionAtFrame(boneName,poseFrameDataIndex+1);
+					if(pos!=null){
+						getCurrentIkData().getTargetPos().copy(pos);
+						syncIkPosition();
+					}
+				}
+				hideContextMenu();
+				
+			}});
+		
+		ikBar.addItem("Move to Between Frame Ik-pos", new Command(){
+			@Override
+			public void execute() {
+				
+				if(isSelectedIk() && isCurrentHasNextFrame()  && isCurrentHasPrevFrame()){	
+					String boneName=getCurrentIkData().getLastBoneName();
+					Vector3 pos=getBonePositionAtFrame(boneName,poseFrameDataIndex-1).clone();//to modify to clone
+					Vector3 next=getBonePositionAtFrame(boneName,poseFrameDataIndex+1);
+					
+					if(pos!=null && next!=null){
+						pos.add(next).divideScalar(2);
+						getCurrentIkData().getTargetPos().copy(pos);
+						syncIkPosition();
+					}
+				}
+				hideContextMenu();
+				
 			}});
 		
 		
@@ -1657,6 +1726,58 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			}});
 		
 	}
+	
+	//line has problem,TODO find a way to fix
+	protected void syncIkPosition() {
+		for(IKData ik:getAvaiableIkdatas()){
+			Mesh ikMesh=targetMeshs.get(ik.getLastBoneName());//TODO define ik name,;
+			if(ikMesh!=null){
+				ikMesh.setPosition(ik.getTargetPos());
+				}else{
+					LogUtils.log("ikMesh not found:"+ik.getLastBoneName());
+				}
+		}
+		
+		if(isSelectedIk()){
+			selectionMesh.setPosition(getCurrentIkData().getTargetPos());
+			}
+	}
+
+	/**
+	 * 
+	 * @param boneName
+	 * @param frameIndex
+	 * @return origin ,take care of modify
+	 */
+	private Vector3 getBonePositionAtFrame(String boneName,int frameIndex){
+		if(frameIndex<0 || frameIndex>getSelectedPoseEditorData().getPoseFrameDatas().size()-1){
+			LogUtils.log("getBonePositionAtFrame:out of range frame size= "+getSelectedPoseEditorData().getPoseFrameDatas().size()+" index="+frameIndex);
+			return null;//out of frame range;
+		}
+		
+		
+		
+		if(!existBone(boneName)){
+			LogUtils.log("getBonePositionAtFrame:bone not found "+boneName);
+			return null;
+		}
+		
+		int boneIndex=ab.getBoneIndex(boneName);
+		
+		PoseFrameData frameData=getSelectedPoseEditorData().getPoseFrameDatas().get(frameIndex);
+		AnimationBonesData workingAnimationBoneData=new AnimationBonesData(animationBones, frameData.getAngleAndMatrixs());
+		
+		return workingAnimationBoneData.getBonePosition(boneIndex);
+	}
+	
+	private boolean isCurrentHasPrevFrame() {
+		return poseFrameDataIndex>0;
+	}
+	
+	private boolean isCurrentHasNextFrame() {
+		return poseFrameDataIndex<getSelectedPoseEditorData().getPoseFrameDatas().size();
+	}
+
 	protected void followTarget() {
 
 		for(IKData ik:getAvaiableIkdatas()){
@@ -4962,13 +5083,18 @@ private List<String> boneList=new ArrayList<String>();
 		
 		boneList.clear();
 		for(int i=0;i<animationBones.length();i++){
-			boneList.add(animationBones.get(i).getName());
+			boneList.add(animationBones.get(i).getName()); //TODO should i trim?
 			//log(bones.get(i).getName()+","+ThreeLog.get(GWTThreeUtils.jsArrayToVector3(bones.get(i).getPos())));
 		}
 	}
 	
+	/**
+	 * simple check bone-name;
+	 * @param name
+	 * @return
+	 */
 	private boolean existBone(String name){
-		//should use availIk();
+		
 		return boneList.contains(name);
 	}
 	
