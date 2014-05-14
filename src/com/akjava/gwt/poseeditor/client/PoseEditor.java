@@ -1357,6 +1357,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		MenuBar ikBar=new MenuBar(true);
 		rootBar.addItem("Ik",ikBar);
 		
+		
 	
 		ikBar.addItem("Exec hard", new Command(){
 			@Override
