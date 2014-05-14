@@ -2075,6 +2075,74 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 			}});
 		
+		rootBoneBar.addItem("Swap all", new Command(){
+			@Override
+			public void execute() {
+				if(bone3D!=null && bone3D.getChildren().length()>0){
+					//selectBone(bone3D.getChildren().get(0),0,0,false);
+					//h-flip
+					//rotationBoneZRange.setValue(-rotationBoneZRange.getValue());
+					//rotToBone();
+					
+					List<String> converted=new ArrayList<String>();
+					
+					//swap all
+					for(IKData ik:getAvaiableIkdatas()){
+						List<String> targets=Lists.newArrayList(ik.getBones());
+						targets.add(ik.getLastBoneName());
+						
+						for(String name:targets){
+							if(converted.contains(name)){
+								continue;
+							}
+							String targetName=getMirroredName(name);
+							if(targetName==null){
+								continue;
+							}
+							int index=ab.getBoneIndex(targetName);
+							int srcIndex=ab.getBoneIndex(name);
+							if(index!=-1 && srcIndex!=-1){
+								Vector3 angle1=ab.getBoneAngleAndMatrix(srcIndex).getAngle();
+								
+								Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
+								rotToBone(name, angle.getX(), -angle.getY(), -angle.getZ(),false);
+								
+								rotToBone(targetName, angle1.getX(), -angle1.getY(), -angle1.getZ(),true);
+							}
+							
+							converted.add(name);
+							converted.add(targetName);
+						}
+					}
+					
+					//swap remains
+					for(String bname:boneList){
+						if(converted.contains(bname)){
+							continue;
+						}
+						int index=ab.getBoneIndex(bname);
+						if(index==-1){
+							LogUtils.log("invalid bone:"+bname);
+							continue;
+						}
+						Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
+						rotToBone(bname, angle.getX(), -angle.getY(), -angle.getZ(),false);
+					}
+					
+					
+					doPoseByMatrix(ab);//update all
+					
+					//TODO check what exactlly doing
+					updateBoneRanges();
+					updateIkLabels();
+					updateIkPositionLabel();
+					
+				}
+				
+			}
+		});
+		
+		
 		
 		MenuBar moveToIk=new MenuBar(true);
 		rootBoneBar.addItem("Move to selection IK-Pos", moveToIk);
@@ -2407,7 +2475,6 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	
 	private void selectBone(Object3D target,int x,int y,boolean needDrag){
 		//maybe bone or root-bone
-		LogUtils.log("select:"+target.getName());
 		selectedBone=target.getName();
 		selectionMesh.setVisible(true);
 		selectionMesh.setPosition(target.getPosition());
