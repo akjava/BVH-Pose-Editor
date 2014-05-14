@@ -3390,6 +3390,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		bonePostionAndRotationContainer.add(boneRotationsPanel);
 		
 		HorizontalPanel rotButtons=new HorizontalPanel();
+		rotButtons.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
 		boneRotationsPanel.add(rotButtons);
 		Button resetAll=new Button("Reset All Rotation",new ClickHandler() {
 			
@@ -3405,7 +3406,43 @@ HorizontalPanel h1=new HorizontalPanel();
 				}
 			}
 		});
-		boneRotationsPanel.add(resetAll);
+		rotButtons.add(resetAll);
+		
+		//flip angle controler
+		rotButtons.add(new Label("Flip"));
+		final ListBox flipBox=new ListBox();
+		flipBox.addItem("");
+		flipBox.addItem("X");
+		flipBox.addItem("Y");
+		flipBox.addItem("Z");
+		rotButtons.add(flipBox);
+		flipBox.addChangeHandler(new ChangeHandler() {
+			
+			@Override
+			public void onChange(ChangeEvent event) {
+				
+				int index=flipBox.getSelectedIndex();
+				if(index==0){
+					return;
+				}
+				if(index==1){
+					rotationBoneXRange.setValue(-rotationBoneXRange.getValue());
+					flipBox.setSelectedIndex(0);
+				}
+				else if(index==2){
+					rotationBoneYRange.setValue(-rotationBoneYRange.getValue());
+					flipBox.setSelectedIndex(0);
+				}
+				else if(index==3){
+					rotationBoneZRange.setValue(-rotationBoneZRange.getValue());
+					flipBox.setSelectedIndex(0);
+				}
+				
+				rotToBone();
+				
+				
+			}
+		});
 		
 		HorizontalPanel h1b=new HorizontalPanel();
 		
@@ -3714,7 +3751,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			@Override
 			public void onClick(ClickEvent event) {
 				range.setValue(range.getValue()-1);
-				positionToBone();
+				rotToBone();
 				if(event.isAltKeyDown()){
 					execIk(5,1);
 				}
