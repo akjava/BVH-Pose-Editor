@@ -4282,6 +4282,10 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		*/
+		final Button pasteBefore=new Button("Paste Before");
+		final Button pasteAfter=new Button("Paste After");
+		pasteBefore.setEnabled(false);
+		pasteAfter.setEnabled(false);
 		Button copy=new Button("Copy");
 		upperPanel.add(copy);
 		copy.addClickHandler(new ClickHandler() {
@@ -4290,10 +4294,12 @@ HorizontalPanel h1=new HorizontalPanel();
 			public void onClick(ClickEvent event) {
 				
 				doCopy();
+				pasteBefore.setEnabled(true);
+				pasteAfter.setEnabled(true);
 			}
 		});
 		
-		Button pasteBefore=new Button("Paste Before");
+		
 		upperPanel.add(pasteBefore);
 		pasteBefore.addClickHandler(new ClickHandler() {
 			
@@ -4306,7 +4312,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		
-		Button pasteAfter=new Button("Paste After");
+		
 		upperPanel.add(pasteAfter);
 		pasteAfter.addClickHandler(new ClickHandler() {
 			
