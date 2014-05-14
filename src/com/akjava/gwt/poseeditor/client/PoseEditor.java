@@ -2253,6 +2253,25 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	}
 	
 }else{
+	
+	for(Object3D selection:selections){
+		if(selection.getName().startsWith("ik:")){
+			selectIk(selection,x,y);
+			
+			lastSelectionIkName=selection.getName();
+			updateBoneRanges();
+			return;
+		}
+		
+		if(!selection.getName().isEmpty() && !selection.getName().startsWith("ik:")){
+			selectBone(selection,x,y);
+			
+			return;
+		}
+	}
+	
+	
+	/*
 	//ik first
 	for(Object3D selection:selections){
 		if(selection.getName().startsWith("ik:")){
@@ -2271,6 +2290,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 			return;
 		}
 	}
+	*/
 }
 
 		
