@@ -2331,7 +2331,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			return;
 		}
 		long t=System.currentTimeMillis();
-		boolean doubleclick=t<lastClicked+200;//onDoubleClick called after mouse up,it's hard to use
+		boolean doubleclick=t<lastClicked+300;//onDoubleClick called after mouse up,it's hard to use
 		doMouseDown(event.getX(),event.getY(),doubleclick);
 		lastClicked=t;
 	}
@@ -3151,8 +3151,11 @@ HorizontalPanel h1=new HorizontalPanel();
 		});
 		h6.add(reset6);
 		
+		HorizontalPanel vPanel=new HorizontalPanel();
+		parent.add(vPanel);
+		
 		transparentCheck = new CheckBox();
-		parent.add(transparentCheck);
+		vPanel.add(transparentCheck);
 		transparentCheck.setText("transparent");
 		transparentCheck.addClickHandler(new ClickHandler() {
 			
@@ -3182,7 +3185,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 		
 		basicMaterialCheck = new CheckBox();
-		parent.add(basicMaterialCheck);
+		vPanel.add(basicMaterialCheck);
 		basicMaterialCheck.setText("BasicMaterial");
 		basicMaterialCheck.addClickHandler(new ClickHandler() {
 			
@@ -3210,6 +3213,22 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 			
 		});
+		
+		/*
+		 * i tried but behavior totally wrong.i should learn cdd ik again.
+		HorizontalPanel optionPanel=new HorizontalPanel();
+		parent.add(optionPanel);
+		CheckBox useEndsite=new CheckBox("use end-site");
+		optionPanel.add(useEndsite);
+		useEndsite.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
+			
+			@Override
+			public void onValueChange(ValueChangeEvent<Boolean> event) {
+				isIkTargetEndSite=event.getValue();
+				fitIkOnBone();
+			}
+		});
+		*/
 		
 		
 		HorizontalPanel shows=new HorizontalPanel();
@@ -3743,6 +3762,8 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 	}
 	*/
+	
+	boolean isIkTargetEndSite;
 	
 	private void createPosRangeControlers(final InputRangeWidget range,HorizontalPanel parent){
 		Button minus3b=new Button("-");
@@ -5006,14 +5027,14 @@ HorizontalPanel h1=new HorizontalPanel();
 	/**
 	 * ik position is same on last ik bone.
 	 * this style usually not so moved when root-bone rotateds
+	 * 
+	 * call doPoseByMatrix or syncIkPosition to sync 3d model position
 	 */
 	private void fitIkOnBone() {
 		for(IKData ik:getAvaiableIkdatas()){
 			String name=ik.getLastBoneName();
-			Vector3 pos=ab.getBonePosition(name);
-			ik.getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
-			//doPoseByMatrix(ab);
-			
+			Vector3 pos=ab.getBonePosition(name,isIkTargetEndSite);//try get endsite
+			ik.getTargetPos().copy(pos);
 		}
 	}
 
@@ -5683,12 +5704,11 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 
 	//do CDDIK
 	//doCDDIk();
-	Vector3 tmp1=null,tmp2=null;
 	currentIkJointIndex=0;
 	
 	
 	List<AngleAndPosition> minMatrix=AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs());
-	double minLength=ab.getBonePosition(ikData.getLastBoneName()).clone().sub(ikData.getTargetPos()).length();
+	double minLength=ab.getBonePosition(ikData.getLastBoneName(),isIkTargetEndSite).clone().sub(ikData.getTargetPos()).length();
 	for(int i=0;i<ikData.getIteration()*cddLoop;i++){
 	String targetBoneName=ikData.getBones().get(currentIkJointIndex);
 	
@@ -5712,7 +5732,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	//log("current:"+ThreeLog.get(currentAngle));
 	String beforeAngleLog="";
 	if(perLimit>0){
-	Vector3 lastJointPos=ab.getBonePosition(ikData.getLastBoneName());
+	Vector3 lastJointPos=ab.getBonePosition(ikData.getLastBoneName(),isIkTargetEndSite);
 	
 	
 	
