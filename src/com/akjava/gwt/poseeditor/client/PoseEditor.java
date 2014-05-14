@@ -84,7 +84,6 @@ import com.akjava.gwt.three.client.js.scenes.Scene;
 import com.akjava.gwt.three.client.js.textures.Texture;
 import com.akjava.lib.common.utils.FileNames;
 import com.akjava.lib.common.utils.ValuesUtils;
-import com.google.common.base.Ascii;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -92,6 +91,8 @@ import com.google.common.collect.Lists;
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.JsArrayNumber;
+import com.google.gwt.core.client.Scheduler;
+import com.google.gwt.core.client.Scheduler.ScheduledCommand;
 import com.google.gwt.dom.client.ImageElement;
 import com.google.gwt.dom.client.NativeEvent;
 import com.google.gwt.event.dom.client.ChangeEvent;
@@ -104,8 +105,6 @@ import com.google.gwt.event.dom.client.DoubleClickEvent;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
-import com.google.gwt.event.dom.client.KeyUpEvent;
-import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.event.dom.client.LoadEvent;
 import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseMoveEvent;
@@ -148,7 +147,6 @@ import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.ValueListBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
-import com.google.gwt.user.client.ui.Widget;
 
 
 /**
@@ -637,6 +635,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	}
 	
 	private void addShortcuts() {
+		
 		canvas.addKeyDownHandler(new KeyDownHandler() {
 			
 			@Override
@@ -648,7 +647,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				if(event.getNativeKeyCode()==KeyCodes.KEY_ENTER){
 					
 					if(bone3D!=null && bone3D.getChildren().length()>0){
-						selectBone(bone3D.getChildren().get(0),0,0);
+						selectBone(bone3D.getChildren().get(0),0,0,false);
 					}
 					
 				}else if(event.getNativeKeyCode()==KeyCodes.KEY_PAGEUP){
@@ -657,6 +656,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 					doNextFrame();
 				}else if(event.getNativeKeyCode()==KeyCodes.KEY_HOME){
 					doFirstFrame();
+				}else if(event.getNativeKeyCode()==KeyCodes.KEY_TAB){
+					loopTabSelection(event.isShiftKeyDown());//shift key has problem
 				}else{
 					int code=event.getNativeKeyCode();
 					if(code==45){//Add last
@@ -673,6 +674,98 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		});
 		
 	}
+
+	
+	/**
+	 * bone mesh's name is same as bone name;
+	 * @param boneName
+	 * @return
+	 */
+	private Mesh getBoneMesh(String boneName){
+		if(bone3D==null){
+			return null;
+		}
+		for(int i=0;i<bone3D.getChildren().length();i++){
+			if(bone3D.getChildren().get(i).getName().equals(boneName)){
+				return (Mesh)bone3D.getChildren().get(i);
+			}
+		}
+		return null;
+	}
+	
+	protected void loopTabSelection(boolean shiftKeyDown) {
+		if(isSelectedIk()){
+			List<IKData> ikLists=Lists.newArrayList(getAvaiableIkdatas());
+			int index=ikLists.indexOf(getCurrentIkData());
+			
+			if(index==-1){
+				LogUtils.log("loopTabSelection() invalid ik selected:"+getCurrentIkData());
+				return;
+			}
+			if(shiftKeyDown){
+				index--;
+				if(index<0){
+					index=ikLists.size()-1;
+				}
+			}else{
+				index++;
+				if(index>=ikLists.size()){
+					index=0;
+				}
+			}
+			
+			Object3D object=getIkObject3D(ikLists.get(index));
+			selectIk(object, 0, 0,false);
+			
+		}else if(isSelectedBone()){
+			int index=boneList.indexOf(selectedBone);
+			LogUtils.log("loop:"+index);
+			if(index==-1){
+				LogUtils.log("loopTabSelection() invalid bone selected:"+selectedBone);
+				return;
+			}
+			if(shiftKeyDown){
+				index--;
+				if(index<0){
+					index=boneList.size()-1;
+				}
+			}else{
+				index++;
+				if(index>=boneList.size()){
+					index=0;
+				}
+			}
+			
+			String newName=boneList.get(index);
+			
+			Mesh boneMesh=getBoneMesh(newName);
+			if(boneMesh==null){
+				LogUtils.log("loopTabSelection() boneMesh not exist:"+newName);
+				return;
+			}
+			selectBone(boneMesh,0,0,false);
+			
+			//loop bone
+		}else{
+			for(IKData ik:getAvaiableIkdatas()){
+				Object3D object=getIkObject3D(ik);
+				selectIk(object, 0, 0,false);
+				break;
+			}
+			//List<IKData> iks=Lists.newArrayList(getAvaiableIkdatas());
+		}	
+	}
+	
+	private Object3D getIkObject3D(IKData ik){
+		for(int i=0;i<ik3D.getChildren().length();i++){
+			Object3D object=ik3D.getChildren().get(i);
+			if(object.getName().equals("ik:"+ik.getLastBoneName())){
+				return object;
+			}
+		}
+		return null;
+	}
+	
 
 	private 	IKData createIKData(List<String> names,int iteration){
 		List<String> boneNames=Lists.newArrayList(names);
@@ -889,12 +982,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 					stats.setVisible(true);
 					showControl();
 					bottomPanel.setVisible(true);
-					dialog2.setVisible(true);
+					popupPanel.setVisible(true);
 				}else{
 				stats.setVisible(false);
 				bottomPanel.setVisible(false);
 				hideControl();
-				dialog2.setVisible(false);
+				popupPanel.setVisible(false);
 				}
 				resized(screenWidth,screenHeight);//for some blackout;
 			}
@@ -2226,7 +2319,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 			if(selection.getName().equals(lastSelectionIkName)){
 				lastIk=selection;
 			}else{
-			selectIk(selection,x,y);
+			selectIk(selection,x,y,true);
 			
 			lastSelectionIkName=selection.getName();
 			updateBoneRanges();
@@ -2237,7 +2330,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	
 	for(Object3D selection:selections){
 		if(!selection.getName().isEmpty() && !selection.getName().startsWith("ik:")){
-			selectBone(selection,x,y);
+			selectBone(selection,x,y,true);
 			
 			return;
 		}
@@ -2245,7 +2338,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	
 	
 	if(lastIk!=null){//when ik selected,select another ik or bone first
-		selectIk(lastIk,x,y);
+		selectIk(lastIk,x,y,true);
 		
 		lastSelectionIkName=lastIk.getName();
 		updateBoneRanges();
@@ -2256,7 +2349,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	
 	for(Object3D selection:selections){
 		if(selection.getName().startsWith("ik:")){
-			selectIk(selection,x,y);
+			selectIk(selection,x,y,true);
 			
 			lastSelectionIkName=selection.getName();
 			updateBoneRanges();
@@ -2264,7 +2357,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		}
 		
 		if(!selection.getName().isEmpty() && !selection.getName().startsWith("ik:")){
-			selectBone(selection,x,y);
+			selectBone(selection,x,y,true);
 			
 			return;
 		}
@@ -2312,18 +2405,19 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		return selections;
 	}
 	
-	private void selectBone(Object3D target,int x,int y){
+	private void selectBone(Object3D target,int x,int y,boolean needDrag){
 		//maybe bone or root-bone
-		//log("select:"+target.getName());
+		LogUtils.log("select:"+target.getName());
 		selectedBone=target.getName();
 		selectionMesh.setVisible(true);
 		selectionMesh.setPosition(target.getPosition());
 		selectionMesh.getMaterial().gwtGetColor().setHex(0xff0000);
 		switchSelectionIk(null);
 		
-		
+		if(needDrag){
 		dragObjectControler.selectObject(target, x,y, screenWidth, screenHeight, camera);
 		logger.fine("onMouse down-end2");
+		}
 		
 		//i guess set pos
 		//this is same effect as mouse move
@@ -2331,10 +2425,27 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		positionYBoneRange.setValue((int)(selectionMesh.getPosition().getY()*100));
 		positionZBoneRange.setValue((int)(selectionMesh.getPosition().getZ()*100));
 		
+	
+		
+		defereredFocusCanvas();
+		
+		
 		return;
 	}
 	
-	private void selectIk(Object3D target,int x,int y){
+	private void defereredFocusCanvas(){
+		Scheduler.get().scheduleDeferred(new ScheduledCommand() {
+			@Override
+			public void execute() {
+				tabPanel.selectTab(0);//this work reget focus canvas.
+				canvas.setFocus(true);
+			}
+		});
+		
+	}
+	
+	
+	private void selectIk(Object3D target,int x,int y,boolean drag){
 		String ikBoneName=target.getName().substring(3);//3 is "ik:".length()
 		
 		
@@ -2352,14 +2463,17 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 				selectedBone=null;
 				
 				
-				
+				if(drag){
 				dragObjectControler.selectObject(target, x,y, screenWidth, screenHeight, camera);
-				
+				}
 				
 				logger.info("onMouse down-end3");
+				defereredFocusCanvas();
 				return;//ik selected
 			}
 		}
+		
+		
 	}
 	
 
