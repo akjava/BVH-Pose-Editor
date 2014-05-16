@@ -147,6 +147,7 @@ import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.ValueListBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import com.google.gwt.user.client.ui.Widget;
 
 
 /**
@@ -1420,8 +1421,43 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 		
 		contextMenu.setPopupPosition(left, top);
+		updateContextMenu();
 		contextMenu.show();
 	}
+	
+	
+	private List<MenuItem> boneOnlyMenu=new ArrayList<MenuItem>();
+	private List<MenuItem> ikOnlyMenu=new ArrayList<MenuItem>();
+	
+	
+	//use enabled ,strange behavior when use visible
+	private void updateContextMenu() {
+		
+		if(isSelectedIk()){
+			for(MenuItem item:boneOnlyMenu){
+				item.setEnabled(false);
+			}
+			for(MenuItem item:ikOnlyMenu){
+				item.setEnabled(true);
+			}
+		}else if(isSelectedBone()){
+			for(MenuItem item:boneOnlyMenu){
+				item.setEnabled(true);
+			}
+			for(MenuItem item:ikOnlyMenu){
+				item.setEnabled(false);
+			}
+		}else{
+			for(MenuItem item:boneOnlyMenu){
+				item.setEnabled(false);
+			}
+			for(MenuItem item:ikOnlyMenu){
+				item.setEnabled(false);
+			}
+		}
+		
+	}
+
 	private void hideContextMenu(){
 		if(contextMenu!=null){
 			contextMenu.hide();
@@ -1439,12 +1475,154 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	}
 	
 	
+	CopiedIk copiedIk;
+	
+	private class CopiedIk{
+		private String ikName;
+		public String getIkName() {
+			return ikName;
+		}
+		public void setIkName(String ikName) {
+			this.ikName = ikName;
+		}
+		public List<String> getNames() {
+			return names;
+		}
+		public List<Vector3> getAngles() {
+			return angles;
+		}
+		private List<String> names=new ArrayList<String>();//bone name
+		private List<Vector3> angles=new ArrayList<Vector3>();
+		private void clear(){
+			names.clear();
+			angles.clear();
+		}
+		private void add(String boneName,Vector3 angle){
+			names.add(boneName);
+			angles.add(angle.clone());
+		}
+	}
+	
+	private void doPasteIk(){
+		if(copiedIk==null){
+			return;
+		}
+		boolean needSwap=false;
+		if(isSelectedIk()){
+			String ikName=getCurrentIkData().getLastBoneName();//TODO fix handle last bone name;
+			if(!copiedIk.getIkName().equals(ikName)){
+				if(copiedIk.getIkName().equals(getMirroredName(ikName))){
+				needSwap=true;
+				}else{
+					Window.alert("not supported paste selection ik selected ="+ikName+" copied "+copiedIk.getIkName());
+					return;
+				}
+			}
+		}
+		
+		//do paste
+		for(int i=0;i<copiedIk.getNames().size();i++){
+			
+			String targetName;
+			if(needSwap){
+				targetName=getMirroredName(copiedIk.getNames().get(i));
+			}else{
+				targetName=copiedIk.getNames().get(i);
+			}
+			if(targetName==null){
+				continue;
+			}
+			int index=ab.getBoneIndex(targetName);
+			
+			if(index!=-1 ){
+				if(needSwap){
+					rotToBone(targetName, copiedIk.getAngles().get(i).getX(), -copiedIk.getAngles().get(i).getY(), -copiedIk.getAngles().get(i).getZ(),true);
+				}else{
+					rotToBone(targetName, copiedIk.getAngles().get(i).getX(), copiedIk.getAngles().get(i).getY(), copiedIk.getAngles().get(i).getZ(),true);
+				}
+				
+			}
+		}
+	}
+	private void doCopyIk(boolean copyLastBone){
+		
+		
+		if(isSelectedIk()){
+			
+			if(copiedIk==null){
+				copiedIk=new CopiedIk();
+			}else{
+				copiedIk.clear();
+			}
+			
+			IKData ik=getCurrentIkData();
+			copiedIk.setIkName(ik.getLastBoneName());//TODO fix better ik-name by preset
+			
+			List<String> boneNames=Lists.newArrayList(ik.getBones());
+			if(copyLastBone){
+				boneNames.add(ik.getLastBoneName());
+			}
+			
+			for(String name:boneNames){
+				
+				
+				int srcIndex=ab.getBoneIndex(name);
+				if(srcIndex!=-1){
+					Vector3 angle=ab.getBoneAngleAndMatrix(srcIndex).getAngle();
+					
+					copiedIk.add(name,angle);
+					
+				}
+			}
+		}
+	}
+	
+	
+	private void createIkSelectedMenu(MenuBar parent){
+		
+		parent.addItem("copy", new Command(){
+			@Override
+			public void execute() {
+				doCopyIk(false);
+				hideContextMenu();
+			}});
+		
+		parent.addItem("copy with lastBone", new Command(){
+			@Override
+			public void execute() {
+				doCopyIk(true);
+				hideContextMenu();
+			}});
+		
+		//TODO paste move to another location
+		parent.addItem("paste", new Command(){
+			@Override
+			public void execute() {
+				doPasteIk();
+				fitIkOnBone();
+				hideContextMenu();
+			}});
+		
+		//copy
+		//copy with lastBone
+		
+		//paste selection if supported
+	}
 	
 	private void createContextMenu(){
 		contextMenu=new PopupPanel();
 		MenuBar rootBar=new MenuBar(true);
 		contextMenu.add(rootBar);
 		rootBar.setAutoOpen(true);
+		
+		
+		MenuBar ikSelectedBar=new MenuBar(true);
+		ikOnlyMenu.add(rootBar.addItem("selected Ik",ikSelectedBar));
+		createIkSelectedMenu(ikSelectedBar);
+		
+		MenuBar boneSelecteddBar=new MenuBar(true);
+		boneOnlyMenu.add(rootBar.addItem("selected Bone",boneSelecteddBar));
+		
 		
 		
 		MenuBar ikBar=new MenuBar(true);
