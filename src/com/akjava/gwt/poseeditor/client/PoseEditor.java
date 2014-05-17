@@ -1426,34 +1426,29 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	}
 	
 	
-	private List<MenuItem> boneOnlyMenu=new ArrayList<MenuItem>();
-	private List<MenuItem> ikOnlyMenu=new ArrayList<MenuItem>();
+	private List<MenuItem> dynamicMenues=new ArrayList<MenuItem>();
 	
 	
 	//use enabled ,strange behavior when use visible
 	private void updateContextMenu() {
 		
+		//remove old
+		for(MenuItem item:dynamicMenues){
+			if(item.getParentMenu()!=null){//usually never possible
+			item.getParentMenu().removeItem(item);
+			}
+		}
+		dynamicMenues.clear();
+		
+		
+		
+		
 		if(isSelectedIk()){
-			for(MenuItem item:boneOnlyMenu){
-				item.setEnabled(false);
-			}
-			for(MenuItem item:ikOnlyMenu){
-				item.setEnabled(true);
-			}
+			dynamicMenues.add(rootBar.addItem("selected Ik",ikSelectedBar));
 		}else if(isSelectedBone()){
-			for(MenuItem item:boneOnlyMenu){
-				item.setEnabled(true);
-			}
-			for(MenuItem item:ikOnlyMenu){
-				item.setEnabled(false);
-			}
+			dynamicMenues.add(rootBar.addItem("selected Bone",boneSelecteddBar));
 		}else{
-			for(MenuItem item:boneOnlyMenu){
-				item.setEnabled(false);
-			}
-			for(MenuItem item:ikOnlyMenu){
-				item.setEnabled(false);
-			}
+			
 		}
 		
 	}
@@ -1476,6 +1471,37 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 	
 	CopiedIk copiedIk;
+	CopiedBone copiedBone;
+	
+	private class CopiedBone{
+		private String name;
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			this.name = name;
+		}
+		public Vector3 getAngle() {
+			return angle;
+		}
+		public void setAngle(Vector3 angle) {
+			this.angle = angle;
+		}
+		public Vector3 getPosition() {
+			return position;
+		}
+		public void setPosition(Vector3 position) {
+			this.position = position;
+		}
+		public CopiedBone(String name, Vector3 angle, Vector3 position) {
+			super();
+			this.name = name;
+			this.angle = angle;
+			this.position = position;
+		}
+		private Vector3 angle;
+		private Vector3 position;
+	}
 	
 	private class CopiedIk{
 		private String ikName;
@@ -1544,6 +1570,45 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			}
 		}
 	}
+	
+	
+	
+	private void doPasteBone(){
+		if(copiedBone==null){
+			LogUtils.log("not copied bone yet");
+			return;
+		}
+		int srcIndex=ab.getBoneIndex(copiedBone.getName());
+		if(srcIndex!=-1){
+			ab.getBoneAngleAndMatrix(srcIndex).getPosition().copy(copiedBone.getPosition());
+			ab.getBoneAngleAndMatrix(srcIndex).getAngle().copy(copiedBone.getAngle());
+			ab.getBoneAngleAndMatrix(srcIndex).updateMatrix();
+			fitIkOnBone();
+			doPoseByMatrix(ab);
+		}else{
+			LogUtils.log("invalid bone selected:"+copiedBone.getName());
+		}
+	}
+	private void doCopyBone(){
+		if(isSelectedBone()){
+			String name=getSelectedBoneName();
+			int srcIndex=ab.getBoneIndex(name);
+			if(srcIndex!=-1){
+				Vector3 angle=ab.getBoneAngleAndMatrix(srcIndex).getAngle().clone();
+				Vector3 pos=ab.getBoneAngleAndMatrix(srcIndex).getPosition().clone();
+				
+				if(copiedBone==null){
+					copiedBone=new CopiedBone(name, angle, pos);
+				}else{
+					copiedBone.setName(name);
+					copiedBone.setAngle(angle);
+					copiedBone.setPosition(pos);
+				}
+			}else{
+				LogUtils.log("invalid bone selected:"+name);
+			}
+		}
+	}
 	private void doCopyIk(boolean copyLastBone){
 		
 		
@@ -1578,24 +1643,32 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	}
 	
 	
+	private void createBoneSelectedMenu(MenuBar parent){
+		parent.addItem("Copy", new Command(){
+			@Override
+			public void execute() {
+				doCopyBone();
+				hideContextMenu();
+			}});
+	}
 	private void createIkSelectedMenu(MenuBar parent){
 		
-		parent.addItem("copy", new Command(){
+		parent.addItem("Copy", new Command(){
 			@Override
 			public void execute() {
 				doCopyIk(false);
 				hideContextMenu();
 			}});
 		
-		parent.addItem("copy with lastBone", new Command(){
+		parent.addItem("Copy with lastBone", new Command(){
 			@Override
 			public void execute() {
 				doCopyIk(true);
 				hideContextMenu();
 			}});
 		
-		//TODO paste move to another location
-		parent.addItem("paste", new Command(){
+		
+		parent.addItem("Paste", new Command(){
 			@Override
 			public void execute() {
 				doPasteIk();
@@ -1603,25 +1676,175 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				hideContextMenu();
 			}});
 		
-		//copy
-		//copy with lastBone
+
+		parent.addItem("Move to Prev Frame Ik-pos", new Command(){
+			@Override
+			public void execute() {
+				
+				if(isSelectedIk() && isCurrentHasPrevFrame()){	
+					String boneName=getCurrentIkData().getLastBoneName();
+					Vector3 pos=getBonePositionAtFrame(boneName,poseFrameDataIndex-1);
+					if(pos!=null){
+						getCurrentIkData().getTargetPos().copy(pos);
+						syncIkPosition();
+					}
+				}
+				hideContextMenu();
+				
+			}});
 		
-		//paste selection if supported
+		parent.addItem("Move to Current Frame Ik-pos", new Command(){
+			@Override
+			public void execute() {
+				
+				if(isSelectedIk()){	
+					String boneName=getCurrentIkData().getLastBoneName();
+					Vector3 pos=getBonePositionAtFrame(boneName,poseFrameDataIndex);
+					if(pos!=null){
+						getCurrentIkData().getTargetPos().copy(pos);
+						syncIkPosition();
+					}
+				}
+				hideContextMenu();
+				
+			}});
+		
+		parent.addItem("Move to Next Frame Ik-pos", new Command(){
+			@Override
+			public void execute() {
+				
+				if(isSelectedIk() && isCurrentHasNextFrame()){	
+					String boneName=getCurrentIkData().getLastBoneName();
+					Vector3 pos=getBonePositionAtFrame(boneName,poseFrameDataIndex+1);
+					if(pos!=null){
+						getCurrentIkData().getTargetPos().copy(pos);
+						syncIkPosition();
+					}
+				}
+				hideContextMenu();
+				
+			}});
+		
+		parent.addItem("Move to Between Frame Ik-pos", new Command(){
+			@Override
+			public void execute() {
+				
+				if(isSelectedIk() && isCurrentHasNextFrame()  && isCurrentHasPrevFrame()){	
+					String boneName=getCurrentIkData().getLastBoneName();
+					Vector3 pos=getBonePositionAtFrame(boneName,poseFrameDataIndex-1).clone();//to modify to clone
+					Vector3 next=getBonePositionAtFrame(boneName,poseFrameDataIndex+1);
+					
+					if(pos!=null && next!=null){
+						pos.add(next).divideScalar(2);
+						getCurrentIkData().getTargetPos().copy(pos);
+						syncIkPosition();
+					}
+				}
+				hideContextMenu();
+				
+			}});
+		
+
+		MenuBar moveToIk=new MenuBar(true);
+		parent.addItem("Root move to selection IK-Pos", moveToIk);
+
+		moveToIk.addItem("Pos-X", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				Vector3 target=getCurrentIkData().getTargetPos();
+				Vector3 rootPos=ab.getBonePosition(0);
+				Vector3 diff=target.clone().sub(rootPos);
+				diff.setY(0);
+				diff.setZ(0);
+				
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.add(diff));
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+			}});
+		moveToIk.addItem("Pos-Y", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				Vector3 target=getCurrentIkData().getTargetPos();
+				Vector3 rootPos=ab.getBonePosition(0);
+				Vector3 diff=target.clone().sub(rootPos);
+				diff.setX(0);
+				diff.setZ(0);
+				
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.add(diff));
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+			}});
+		moveToIk.addItem("Pos-Z", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				Vector3 target=getCurrentIkData().getTargetPos();
+				Vector3 rootPos=ab.getBonePosition(0);
+				Vector3 diff=target.clone().sub(rootPos);
+				diff.setY(0);
+				diff.setX(0);
+				
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.add(diff));
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+			}});
+		
+		moveToIk.addItem("Pos-All", new Command(){
+			@Override
+			public void execute() {
+				if(!isSelectedIk()){
+					hideContextMenu();
+					return;
+				}
+				Vector3 target=getCurrentIkData().getTargetPos();
+				Vector3 rootPos=ab.getBonePosition(0);
+				Vector3 diff=target.clone().sub(rootPos);
+				
+				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.add(diff));
+				ab.getBoneAngleAndMatrix(0).updateMatrix();
+				doPoseByMatrix(ab);
+				hideContextMenu();
+				/*
+				for(IKData ik:getAvaiableIkdatas()){
+					ik.getTargetPos().addSelf(diff);
+					doPoseByMatrix(ab);
+					hideContextMenu();
+				}
+				*/
+			}});
 	}
+	
+	private MenuBar ikSelectedBar,boneSelecteddBar;
 	
 	private void createContextMenu(){
 		contextMenu=new PopupPanel();
-		MenuBar rootBar=new MenuBar(true);
+		rootBar = new MenuBar(true);
 		contextMenu.add(rootBar);
 		rootBar.setAutoOpen(true);
 		
 		
-		MenuBar ikSelectedBar=new MenuBar(true);
-		ikOnlyMenu.add(rootBar.addItem("selected Ik",ikSelectedBar));
+		 ikSelectedBar=new MenuBar(true);
+		
 		createIkSelectedMenu(ikSelectedBar);
 		
-		MenuBar boneSelecteddBar=new MenuBar(true);
-		boneOnlyMenu.add(rootBar.addItem("selected Bone",boneSelecteddBar));
+		 boneSelecteddBar=new MenuBar(true);
+		 
+		 createBoneSelectedMenu(boneSelecteddBar);
+		
 		
 		
 		
@@ -1682,6 +1905,13 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			}});
 		
 		
+		ikBar.addItem("Paste", new Command(){
+			@Override
+			public void execute() {
+				doPasteIk();
+				fitIkOnBone();
+				hideContextMenu();
+			}});
 
 	
 		ikBar.addItem("Y-Zero", new Command(){
@@ -1720,83 +1950,25 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				}
 			}});
 		
-		ikBar.addItem("Move to Prev Frame Ik-pos", new Command(){
-			@Override
-			public void execute() {
-				
-				if(isSelectedIk() && isCurrentHasPrevFrame()){	
-					String boneName=getCurrentIkData().getLastBoneName();
-					Vector3 pos=getBonePositionAtFrame(boneName,poseFrameDataIndex-1);
-					if(pos!=null){
-						getCurrentIkData().getTargetPos().copy(pos);
-						syncIkPosition();
-					}
-				}
-				hideContextMenu();
-				
-			}});
-		
-		ikBar.addItem("Move to Current Frame Ik-pos", new Command(){
-			@Override
-			public void execute() {
-				
-				if(isSelectedIk()){	
-					String boneName=getCurrentIkData().getLastBoneName();
-					Vector3 pos=getBonePositionAtFrame(boneName,poseFrameDataIndex);
-					if(pos!=null){
-						getCurrentIkData().getTargetPos().copy(pos);
-						syncIkPosition();
-					}
-				}
-				hideContextMenu();
-				
-			}});
-		
-		ikBar.addItem("Move to Next Frame Ik-pos", new Command(){
-			@Override
-			public void execute() {
-				
-				if(isSelectedIk() && isCurrentHasNextFrame()){	
-					String boneName=getCurrentIkData().getLastBoneName();
-					Vector3 pos=getBonePositionAtFrame(boneName,poseFrameDataIndex+1);
-					if(pos!=null){
-						getCurrentIkData().getTargetPos().copy(pos);
-						syncIkPosition();
-					}
-				}
-				hideContextMenu();
-				
-			}});
-		
-		ikBar.addItem("Move to Between Frame Ik-pos", new Command(){
-			@Override
-			public void execute() {
-				
-				if(isSelectedIk() && isCurrentHasNextFrame()  && isCurrentHasPrevFrame()){	
-					String boneName=getCurrentIkData().getLastBoneName();
-					Vector3 pos=getBonePositionAtFrame(boneName,poseFrameDataIndex-1).clone();//to modify to clone
-					Vector3 next=getBonePositionAtFrame(boneName,poseFrameDataIndex+1);
-					
-					if(pos!=null && next!=null){
-						pos.add(next).divideScalar(2);
-						getCurrentIkData().getTargetPos().copy(pos);
-						syncIkPosition();
-					}
-				}
-				hideContextMenu();
-				
-			}});
 		
 		
 		createContextMenuRoot(rootBar);
 
-		MenuBar boneLimitBar=new MenuBar(true);
-		MenuItem boneLimitMenuItem = new MenuItem("Bone Limit",boneLimitBar);//menu item can change label dynamic
+		MenuBar boneBar=new MenuBar(true);
+		MenuItem boneLimitMenuItem = new MenuItem("Bone",boneBar);//menu item can change label dynamic
 		
+		boneBar.addItem("Paste",new Command(){
+
+			@Override
+			public void execute() {
+				doPasteBone();
+				updateBoneRanges();
+				hideContextMenu();
+			}});
 		
 		rootBar.addItem(boneLimitMenuItem);
 		
-		boneLimitBar.addItem("Change bones'limit to none", new Command(){
+		boneBar.addItem("Change bones'limit to none", new Command(){
 			@Override
 			public void execute() {
 				if(!isSelectedIk()){
@@ -1813,7 +1985,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				updateBoneRotationRanges();
 				hideContextMenu();
 			}});
-		boneLimitBar.addItem("Change bones'limit to X", new Command(){
+		boneBar.addItem("Change bones'limit to X", new Command(){
 			@Override
 			public void execute() {
 				if(!isSelectedIk()){
@@ -1830,7 +2002,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				updateBoneRotationRanges();
 				hideContextMenu();
 			}});
-		boneLimitBar.addItem("Change bones'limit to Y", new Command(){
+		boneBar.addItem("Change bones'limit to Y", new Command(){
 			@Override
 			public void execute() {
 				if(!isSelectedIk()){
@@ -1847,7 +2019,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				updateBoneRotationRanges();
 				hideContextMenu();
 			}});
-		boneLimitBar.addItem("Change bones'limit to Z", new Command(){
+		boneBar.addItem("Change bones'limit to Z", new Command(){
 			@Override
 			public void execute() {
 				if(!isSelectedIk()){
@@ -1865,7 +2037,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				hideContextMenu();
 			}});
 		
-		boneLimitBar.addItem("Change bones'limit to Y,Z", new Command(){
+		boneBar.addItem("Change bones'limit to Y,Z", new Command(){
 			@Override
 			public void execute() {
 				if(!isSelectedIk()){
@@ -1883,7 +2055,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				hideContextMenu();
 			}});
 		
-		boneLimitBar.addItem("Change bones'limit to X,Z", new Command(){
+		boneBar.addItem("Change bones'limit to X,Z", new Command(){
 			@Override
 			public void execute() {
 				if(!isSelectedIk()){
@@ -1900,7 +2072,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				updateBoneRotationRanges();
 				hideContextMenu();
 			}});
-		boneLimitBar.addItem("Change bones'limit to Y,X", new Command(){
+		boneBar.addItem("Change bones'limit to Y,X", new Command(){
 			@Override
 			public void execute() {
 				if(!isSelectedIk()){
@@ -2322,87 +2494,6 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		
 		
-		MenuBar moveToIk=new MenuBar(true);
-		rootBoneBar.addItem("Move to selection IK-Pos", moveToIk);
-
-		moveToIk.addItem("Pos-X", new Command(){
-			@Override
-			public void execute() {
-				if(!isSelectedIk()){
-					hideContextMenu();
-					return;
-				}
-				Vector3 target=getCurrentIkData().getTargetPos();
-				Vector3 rootPos=ab.getBonePosition(0);
-				Vector3 diff=target.clone().sub(rootPos);
-				diff.setY(0);
-				diff.setZ(0);
-				
-				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.add(diff));
-				ab.getBoneAngleAndMatrix(0).updateMatrix();
-				doPoseByMatrix(ab);
-				hideContextMenu();
-			}});
-		moveToIk.addItem("Pos-Y", new Command(){
-			@Override
-			public void execute() {
-				if(!isSelectedIk()){
-					hideContextMenu();
-					return;
-				}
-				Vector3 target=getCurrentIkData().getTargetPos();
-				Vector3 rootPos=ab.getBonePosition(0);
-				Vector3 diff=target.clone().sub(rootPos);
-				diff.setX(0);
-				diff.setZ(0);
-				
-				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.add(diff));
-				ab.getBoneAngleAndMatrix(0).updateMatrix();
-				doPoseByMatrix(ab);
-				hideContextMenu();
-			}});
-		moveToIk.addItem("Pos-Z", new Command(){
-			@Override
-			public void execute() {
-				if(!isSelectedIk()){
-					hideContextMenu();
-					return;
-				}
-				Vector3 target=getCurrentIkData().getTargetPos();
-				Vector3 rootPos=ab.getBonePosition(0);
-				Vector3 diff=target.clone().sub(rootPos);
-				diff.setY(0);
-				diff.setX(0);
-				
-				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.add(diff));
-				ab.getBoneAngleAndMatrix(0).updateMatrix();
-				doPoseByMatrix(ab);
-				hideContextMenu();
-			}});
-		
-		moveToIk.addItem("Pos-All", new Command(){
-			@Override
-			public void execute() {
-				if(!isSelectedIk()){
-					hideContextMenu();
-					return;
-				}
-				Vector3 target=getCurrentIkData().getTargetPos();
-				Vector3 rootPos=ab.getBonePosition(0);
-				Vector3 diff=target.clone().sub(rootPos);
-				
-				ab.getBoneAngleAndMatrix(0).setPosition(rootPos.add(diff));
-				ab.getBoneAngleAndMatrix(0).updateMatrix();
-				doPoseByMatrix(ab);
-				hideContextMenu();
-				/*
-				for(IKData ik:getAvaiableIkdatas()){
-					ik.getTargetPos().addSelf(diff);
-					doPoseByMatrix(ab);
-					hideContextMenu();
-				}
-				*/
-			}});
 		
 		/*
 		 * swap angle maybe need for old range
@@ -6536,6 +6627,7 @@ private MenuItem contextMenuHidePrefIks;
 
 private GridHelper backgroundGrid;
 private Label ikPositionLabelX;
+private MenuBar rootBar;
 ;
 
 /**
