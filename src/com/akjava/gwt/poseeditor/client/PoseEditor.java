@@ -2293,7 +2293,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				angleAndPositions.get(0).getPosition().copy(lastPosition);
 				angleAndPositions.get(0).updateMatrix();
 				
-				selectFrameData(angleAndPositions);
+				selectAnimationDataData(angleAndPositions);
 				hideContextMenu();
 		
 			}});
@@ -4174,6 +4174,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	
 	
 	protected void doSwap() {
+		List<AngleAndPosition> lastAAP=cloneAngleAndPositions(ab.getBonesAngleAndMatrixs());
 		if(isSelectedIk() && getSelectedBoneName().isEmpty()){
 			IKData ik=getCurrentIkData();
 			for(String name:ik.getBones()){
@@ -4239,6 +4240,9 @@ HorizontalPanel h1=new HorizontalPanel();
 				rotToBone();
 			}
 		}
+		List<AngleAndPosition> newAAP=cloneAngleAndPositions(ab.getBonesAngleAndMatrixs());
+		AngleAndPositionsCommand command=new AngleAndPositionsCommand(newAAP, lastAAP);
+		undoControler.addCommand(command);
 	}
 
 	private IKData getIk(String name){
@@ -4249,7 +4253,11 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 		return null;
 	}
+	
+	
+	
 	protected void doMirror(boolean rightToLeft) {
+		List<AngleAndPosition> lastAAP=cloneAngleAndPositions(ab.getBonesAngleAndMatrixs());
 		if(isSelectedIk() && getSelectedBoneName().isEmpty()){
 			IKData ik=getCurrentIkData();
 			for(String name:ik.getBones()){
@@ -4290,6 +4298,8 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 			//
 			//Vector3 lastPosition=ik.getTargetPos().clone();
+			
+			//invoke not call
 			fitIkOnBone();
 			
 			
@@ -4342,6 +4352,11 @@ HorizontalPanel h1=new HorizontalPanel();
 				
 			}
 		}
+		
+		List<AngleAndPosition> newAAP=cloneAngleAndPositions(ab.getBonesAngleAndMatrixs());
+		AngleAndPositionsCommand command=new AngleAndPositionsCommand(newAAP, lastAAP);
+		undoControler.addCommand(command);
+		//no need invoke;
 	}
 	
 	
@@ -4871,6 +4886,35 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 	}
 	
+	private List<AngleAndPosition> cloneAngleAndPositions(List<AngleAndPosition> datas){
+		return AnimationBonesData.cloneAngleAndMatrix(datas);
+	}
+	
+	private class AngleAndPositionsCommand implements ICommand{
+		public AngleAndPositionsCommand(List<AngleAndPosition> newBoneData, List<AngleAndPosition> lastBoneData) {
+			super();
+			this.newBoneData = newBoneData;
+			this.lastBoneData = lastBoneData;
+		}
+
+		private List<AngleAndPosition> newBoneData;
+		private List<AngleAndPosition> lastBoneData;
+		@Override
+		public void invoke() {
+			selectAnimationDataData(cloneAngleAndPositions(newBoneData));
+		}
+
+		@Override
+		public void undo() {
+			selectAnimationDataData(cloneAngleAndPositions(lastBoneData));
+		}
+
+		@Override
+		public void redo() {
+			selectAnimationDataData(cloneAngleAndPositions(newBoneData));
+		}
+		
+	}
 	private class FrameMoveCommand implements ICommand{
 		public FrameMoveCommand(int index,List<AngleAndPosition> boneData){
 			this.frameIndex=index;
@@ -4892,7 +4936,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			currentFrameRange.setValue(lastIndex);
 			updatePoseIndex(lastIndex);
 			
-			selectFrameData(AnimationBonesData.cloneAngleAndMatrix(boneData));
+			selectAnimationDataData(AnimationBonesData.cloneAngleAndMatrix(boneData));
 		}
 
 		@Override
@@ -5382,11 +5426,11 @@ HorizontalPanel h1=new HorizontalPanel();
 			return;
 		}
 		
-		selectFrameData(AnimationBonesData.cloneAngleAndMatrix(pfd.getAngleAndMatrixs()));
+		selectAnimationDataData(AnimationBonesData.cloneAngleAndMatrix(pfd.getAngleAndMatrixs()));
 		
 	}
 	
-	private void selectFrameData(List<AngleAndPosition> angleAndPositions) {	
+	private void selectAnimationDataData(List<AngleAndPosition> angleAndPositions) {	
 		currentMatrixs=angleAndPositions;
 		ab.setBonesAngleAndMatrixs(currentMatrixs);
 		//update
