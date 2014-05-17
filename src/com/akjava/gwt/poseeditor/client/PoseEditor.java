@@ -4817,7 +4817,10 @@ HorizontalPanel h1=new HorizontalPanel();
 			@Override
 			public void onMouseUp(MouseUpEvent event) {
 			
-				updatePoseIndex(currentFrameRange.getValue());
+				FrameMoveCommand command=new FrameMoveCommand(currentFrameRange.getValue(),cloneAngleAndPositions(ab.getBonesAngleAndMatrixs()));
+				command.invoke();
+				undoControler.addCommand(command);
+				//updatePoseIndex(currentFrameRange.getValue());
 			}
 		});
 		
@@ -4919,7 +4922,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		public FrameMoveCommand(int index,List<AngleAndPosition> boneData){
 			this.frameIndex=index;
 			this.boneData=boneData;
-			this.lastIndex=currentFrameRange.getValue();
+			this.lastIndex=poseFrameDataIndex;
 		}
 		private int lastIndex;
 		private int frameIndex;
