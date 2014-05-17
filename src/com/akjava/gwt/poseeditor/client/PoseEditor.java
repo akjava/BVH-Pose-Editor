@@ -4570,6 +4570,7 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	
 	private int fileIndex;
+	private Button redoButton;
 	private void createBottomPanel(){
 		bottomPanel = new PopupPanel();
 		bottomPanel.setVisible(true);
@@ -4642,6 +4643,28 @@ HorizontalPanel h1=new HorizontalPanel();
 				doSaveAsFile(getSelectedPoseEditorData());
 			}
 		});
+		
+		
+		undoButton = new Button("Undo");
+		topPanel.add(undoButton);
+		undoButton.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				undoControler.undo();
+			}
+		});
+		undoButton.setEnabled(false);
+		
+		redoButton = new Button("Redo");
+		topPanel.add(redoButton);
+		redoButton.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				undoControler.redo();
+			}
+		});
+		redoButton.setEnabled(false);
+		
 		
 		HorizontalPanel rightSide=new HorizontalPanel();
 		rightSide.setHorizontalAlignment(HorizontalPanel.ALIGN_RIGHT);
@@ -4820,6 +4843,66 @@ HorizontalPanel h1=new HorizontalPanel();
 		// TODO Auto-generated method stub
 		
 	}
+	
+	private SimpleUndoControler undoControler=new SimpleUndoControler();
+	
+	private class SimpleUndoControler{
+		private ICommand currentCommand;
+		public void undo(){
+			if(currentCommand!=null){
+				currentCommand.undo();
+			}
+			undoButton.setEnabled(false);
+			redoButton.setEnabled(true);
+		}
+		
+		public void redo(){
+			if(currentCommand!=null){
+				currentCommand.redo();
+			}
+			undoButton.setEnabled(true);
+			redoButton.setEnabled(false);
+		}
+		
+		public void addCommand(ICommand command){
+			currentCommand=command;
+			undoButton.setEnabled(true);
+			redoButton.setEnabled(false);
+		}
+	}
+	
+	private class FrameMoveCommand implements ICommand{
+		public FrameMoveCommand(int index,List<AngleAndPosition> boneData){
+			this.frameIndex=index;
+			this.boneData=boneData;
+			this.lastIndex=currentFrameRange.getValue();
+		}
+		private int lastIndex;
+		private int frameIndex;
+		private List<AngleAndPosition> boneData;
+		
+		@Override
+		public void invoke() {
+			currentFrameRange.setValue(frameIndex);
+			updatePoseIndex(frameIndex);
+		}
+
+		@Override
+		public void undo() {
+			currentFrameRange.setValue(lastIndex);
+			updatePoseIndex(lastIndex);
+			
+			selectFrameData(AnimationBonesData.cloneAngleAndMatrix(boneData));
+		}
+
+		@Override
+		public void redo() {
+			currentFrameRange.setValue(frameIndex);
+			updatePoseIndex(frameIndex);
+		}
+		
+	}
+	
 
 	protected void doScreenShot() {
 		String url=canvas.getRenderer().gwtPngDataUrl();
@@ -4832,24 +4915,29 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 
 	private void doFirstFrame() {
-		currentFrameRange.setValue(0);
-		updatePoseIndex(0);
+		FrameMoveCommand command=new FrameMoveCommand(0,AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs()));
+		command.invoke();
+		undoControler.addCommand(command);
 	}
 
 	private void doPrevFrame(){
 		int value=currentFrameRange.getValue();
 		if(value>0){
 			value--;
-			currentFrameRange.setValue(value);
-			updatePoseIndex(value);
+			
+			FrameMoveCommand command=new FrameMoveCommand(value,AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs()));
+			command.invoke();
+			undoControler.addCommand(command);
 		}
 	}
 	private void doNextFrame(){
 		int value=currentFrameRange.getValue();
 		if(value<getSelectedPoseEditorData().getPoseFrameDatas().size()-1){
 			value++;
-			currentFrameRange.setValue(value);
-			updatePoseIndex(value);
+			
+			FrameMoveCommand command=new FrameMoveCommand(value,AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs()));
+			command.invoke();
+			undoControler.addCommand(command);
 		}
 	}
 	
@@ -6674,6 +6762,7 @@ private GridHelper backgroundGrid;
 private Label ikPositionLabelX;
 private MenuBar rootBar;
 private VerticalPanel imageLinkContainer;
+private Button undoButton;
 ;
 
 /**
