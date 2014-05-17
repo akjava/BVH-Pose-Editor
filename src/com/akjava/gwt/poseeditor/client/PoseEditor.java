@@ -4578,10 +4578,13 @@ HorizontalPanel h1=new HorizontalPanel();
 		bottomPanel.add(main);
 		
 		
-		
+		HorizontalPanel trueTop=new HorizontalPanel();
+		trueTop.setWidth("100%");
+		main.add(trueTop);
 		//upper
 		HorizontalPanel topPanel=new HorizontalPanel();
-		main.add(topPanel);
+		
+		trueTop.add(topPanel);
 		
 		pedSelectionListBox=new ValueListBox<PoseEditorData>(new Renderer<PoseEditorData>() {
 
@@ -4639,6 +4642,33 @@ HorizontalPanel h1=new HorizontalPanel();
 				doSaveAsFile(getSelectedPoseEditorData());
 			}
 		});
+		
+		HorizontalPanel rightSide=new HorizontalPanel();
+		rightSide.setHorizontalAlignment(HorizontalPanel.ALIGN_RIGHT);
+		rightSide.setWidth("100%");
+		trueTop.add(rightSide);
+		
+		Button imageBt=new Button("Screenshot",new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				doScreenShot();
+			}
+		});
+		rightSide.add(imageBt);
+		Button gifAnimeBt=new Button("GifAnime",new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				doGifAnime();
+			}
+		});
+		rightSide.add(gifAnimeBt);
+		imageLinkContainer = new VerticalPanel();
+		imageLinkContainer.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
+		imageLinkContainer.setWidth("100px");
+		rightSide.add(imageLinkContainer);
+		
+		
+		
 		
 		HorizontalPanel upperPanel=new HorizontalPanel();
 		upperPanel.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
@@ -4786,6 +4816,21 @@ HorizontalPanel h1=new HorizontalPanel();
 		bottomPanel.show();
 		super.leftBottom(bottomPanel);
 	}
+	protected void doGifAnime() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	protected void doScreenShot() {
+		String url=canvas.getRenderer().gwtPngDataUrl();
+		
+		Anchor anchor=HTML5Download.get().generateBase64DownloadLink(url, "image/png", "poseeditor.png", "Download", true);
+		
+		imageLinkContainer.clear();
+		imageLinkContainer.add(anchor);
+		
+	}
+
 	private void doFirstFrame() {
 		currentFrameRange.setValue(0);
 		updatePoseIndex(0);
@@ -6628,6 +6673,7 @@ private MenuItem contextMenuHidePrefIks;
 private GridHelper backgroundGrid;
 private Label ikPositionLabelX;
 private MenuBar rootBar;
+private VerticalPanel imageLinkContainer;
 ;
 
 /**
