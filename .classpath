@@ -10,5 +10,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/GWTLib2011"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/html5gwt"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/threeTest"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/GWTJSGif"/>
 	<classpathentry kind="output" path="war/WEB-INF/classes"/>
 </classpath>

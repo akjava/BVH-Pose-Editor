@@ -20,6 +20,7 @@
   <source path='client'/>
   <source path='shared'/>
 
+	  <inherits name='com.akjava.gwt.jsgif.GWTJSGif'/>
 <inherits name="com.google.gwt.json.JSON" /> 
 
 <inherits name="com.akjava.gwt.html5.Html5widget"/>

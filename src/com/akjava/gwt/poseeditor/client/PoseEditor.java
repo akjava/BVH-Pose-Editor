@@ -30,7 +30,10 @@ import com.akjava.gwt.html5.client.file.FileUploadForm;
 import com.akjava.gwt.html5.client.file.FileUtils;
 import com.akjava.gwt.html5.client.file.FileUtils.DataURLListener;
 import com.akjava.gwt.html5.client.file.ui.DropVerticalPanelBase;
+import com.akjava.gwt.jsgif.client.GifAnimeBuilder;
+import com.akjava.gwt.lib.client.CanvasUtils;
 import com.akjava.gwt.lib.client.IStorageControler;
+import com.akjava.gwt.lib.client.ImageElementUtils;
 import com.akjava.gwt.lib.client.JsonValueUtils;
 import com.akjava.gwt.lib.client.LogUtils;
 import com.akjava.gwt.lib.client.StorageControler;
@@ -240,10 +243,25 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	@Override
 	public void update(WebGLRenderer renderer) {
 		
+		if(isUsingRenderer){//create gifanime or video
+			return;
+		}
+		
 		beforeUpdate(renderer);
 		camera.getPosition().set(cameraX, cameraY, cameraZ);
 		//LogUtils.log("camera:"+ThreeLog.get(camera.getPosition()));
 		renderer.render(scene, camera);
+		
+		//it's better to do in render update-loop
+		if(reservedScreenshot){
+			doScreenShot();
+			reservedScreenshot=false;
+		}
+		
+		if(reservedCreateGifAnime){
+			doGifAnime();
+			reservedCreateGifAnime=false;
+		}
 	}
 
 	@Override
@@ -4689,14 +4707,15 @@ HorizontalPanel h1=new HorizontalPanel();
 		Button imageBt=new Button("Screenshot",new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				doScreenShot();
+				//doScreenShot();
+				reservedScreenshot=true;
 			}
 		});
 		rightSide.add(imageBt);
 		Button gifAnimeBt=new Button("GifAnime",new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				doGifAnime();
+				reservedCreateGifAnime=true;
 			}
 		});
 		rightSide.add(gifAnimeBt);
@@ -4813,14 +4832,12 @@ HorizontalPanel h1=new HorizontalPanel();
 		pPanel.add(currentFrameRange);
 		
 		currentFrameRange.addMouseUpHandler(new MouseUpHandler() {
-			
 			@Override
 			public void onMouseUp(MouseUpEvent event) {
 			
 				FrameMoveCommand command=new FrameMoveCommand(currentFrameRange.getValue(),cloneAngleAndPositions(ab.getBonesAngleAndMatrixs()));
 				command.invoke();
 				undoControler.addCommand(command);
-				//updatePoseIndex(currentFrameRange.getValue());
 			}
 		});
 		
@@ -4857,9 +4874,58 @@ HorizontalPanel h1=new HorizontalPanel();
 		bottomPanel.show();
 		super.leftBottom(bottomPanel);
 	}
+	
+	private boolean isUsingRenderer;//gifanime
+	
+	private boolean reservedCreateGifAnime;//call start gif-anime
+	
 	protected void doGifAnime() {
-		// TODO Auto-generated method stub
+		//TODO timer for update ui.
+		try{
+		isUsingRenderer=true;
 		
+		int gifWidth=497;
+		int gifHeight=373;
+		
+		int quality=10;
+		int speed=200;
+		
+		//TODO,hide bones.
+		
+		
+		Canvas gifCanvas=CanvasUtils.createCanvas(gifWidth,gifHeight);
+		
+		
+		int lastFrameIndex=currentFrameRange.getValue();
+		List<ImageElement> elements=Lists.newArrayList();
+		for(int i=0;i<getCurrentDataSize();i++){
+			
+			updatePoseIndex(i);
+			renderer.render(scene, camera);
+			
+			String url=canvas.getRenderer().gwtPngDataUrl();
+			ImageElement element=ImageElementUtils.create(url);
+			//
+			CanvasUtils.fillRect(gifCanvas, "#000");//TODO get image or something.
+			CanvasUtils.drawCenter(gifCanvas, element);
+			elements.add(ImageElementUtils.create(gifCanvas.toDataUrl()));
+		}
+		
+		final String gifUrl=GifAnimeBuilder.from(elements).setQuality(quality).loop().delay(speed).toDataUrl();
+		
+		Anchor anchor=HTML5Download.get().generateBase64DownloadLink(gifUrl, "image/gif", "poseeditor.gif", "Download", true);
+		
+		imageLinkContainer.clear();
+		imageLinkContainer.add(anchor);
+		
+		//reset last index
+		currentFrameRange.setValue(lastFrameIndex);
+		updatePoseIndex(lastFrameIndex);
+		
+		isUsingRenderer=false;
+		}catch (Exception e) {
+			Window.alert(e.getMessage());
+		}
 	}
 	
 	private SimpleUndoControler undoControler=new SimpleUndoControler();
@@ -4951,6 +5017,8 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	
 
+	
+	private boolean reservedScreenshot;
 	protected void doScreenShot() {
 		String url=canvas.getRenderer().gwtPngDataUrl();
 		
@@ -4976,6 +5044,10 @@ HorizontalPanel h1=new HorizontalPanel();
 			command.invoke();
 			undoControler.addCommand(command);
 		}
+	}
+	
+	private int getCurrentDataSize(){
+		return getSelectedPoseEditorData().getPoseFrameDatas().size();
 	}
 	private void doNextFrame(){
 		int value=currentFrameRange.getValue();
