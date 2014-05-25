@@ -264,6 +264,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		}
 	}
 
+	public void selectMainTab(){
+		tabPanel.selectTab(0);
+	}
+	
 	@Override
 	public void resized(int width, int height) {
 
@@ -450,8 +454,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				boneLimits.put("Neck1",BoneLimit.createBoneLimit(-5, 5, -5, 5, -5, 5));
 	}
 	
+	public static PoseEditor poseEditor;
 	@Override
 	protected void initializeOthers(WebGLRenderer renderer) {
+		poseEditor=this;
 		cameraZ=500/posDivided;
 		
 		this.renderer=renderer;
@@ -1007,6 +1013,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				bottomPanel.setVisible(false);
 				hideControl();
 				popupPanel.setVisible(false);
+				
+				if(selection==3){//settings
+					settingPanel.synchUI();
+				}
+				
 				}
 				resized(screenWidth,screenHeight);//for some blackout;
 			}
@@ -1087,6 +1098,14 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		preferencePanel=new PreferenceTabPanel(storageControler,this);
 		tabPanel.add(preferencePanel,"Model & Texture");
 		
+		
+		
+		
+		
+		settingPanel=new SettingPanel();
+		tabPanel.add(settingPanel,"Settings");
+		
+		
 		//about
 		String html="";
 		html+="<br/>"+"[Howto Move]<br/><b>Select Nothing:</b><br/>Mouse Drag=Cammera Rotatation-XY<br/>Mouse Wheel= Zoom<br/> +ALT Move-XY Camera";
@@ -1103,7 +1122,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		aboutRoot.add(htmlP);
 		tabPanel.add(aboutRoot,"About");
 		
+		
+		
 	}
+	SettingPanel settingPanel;
 	PreferenceTabPanel preferencePanel;
 	
 	
@@ -4891,7 +4913,17 @@ HorizontalPanel h1=new HorizontalPanel();
 		int speed=200;
 		
 		//TODO,hide bones.
+		boolean sbone=showBonesCheck.getValue();
+		boolean sik=showIkCheck.getValue();
+		boolean stile=showTileCheck.getValue();
 		
+		showTileCheck.setValue(settingPanel.isGifShowTile());
+		showBonesCheck.setValue(settingPanel.isGifShowBone());
+		showIkCheck.setValue(settingPanel.isGifShowIk());
+		
+		Object3DUtils.setVisibleAll(backgroundGrid,showTileCheck.getValue());
+		updateIKVisible();
+		updateBonesVisible();
 		
 		Canvas gifCanvas=CanvasUtils.createCanvas(gifWidth,gifHeight);
 		
@@ -4921,6 +4953,15 @@ HorizontalPanel h1=new HorizontalPanel();
 		//reset last index
 		currentFrameRange.setValue(lastFrameIndex);
 		updatePoseIndex(lastFrameIndex);
+		
+		
+		showTileCheck.setValue(stile);
+		showBonesCheck.setValue(sbone);
+		showIkCheck.setValue(sik);
+		
+		Object3DUtils.setVisibleAll(backgroundGrid,showTileCheck.getValue());
+		updateIKVisible();
+		updateBonesVisible();
 		
 		isUsingRenderer=false;
 		}catch (Exception e) {
