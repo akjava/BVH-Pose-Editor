@@ -262,6 +262,14 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			doGifAnime();
 			reservedCreateGifAnime=false;
 		}
+		
+		if(reservedSettingPreview){
+			//TODO sync bone or etc.
+			
+			String url=canvas.getRenderer().gwtPngDataUrl();
+			settingPanel.setPreviewImage(url);
+			reservedSettingPreview=false;
+		}
 	}
 
 	public void selectMainTab(){
@@ -1015,7 +1023,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				popupPanel.setVisible(false);
 				
 				if(selection==3){//settings
+					reservedSettingPreview=true;
 					settingPanel.synchUI();
+					
 				}
 				
 				}
@@ -4925,7 +4935,9 @@ HorizontalPanel h1=new HorizontalPanel();
 		updateIKVisible();
 		updateBonesVisible();
 		
-		Canvas gifCanvas=CanvasUtils.createCanvas(gifWidth,gifHeight);
+		Canvas baseCanvas=settingPanel.createBgCanvas();
+		
+		Canvas gifCanvas=CanvasUtils.createCanvas(baseCanvas.getCoordinateSpaceWidth(),baseCanvas.getCoordinateSpaceHeight());
 		
 		
 		int lastFrameIndex=currentFrameRange.getValue();
@@ -4937,11 +4949,13 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			String url=canvas.getRenderer().gwtPngDataUrl();
 			ImageElement element=ImageElementUtils.create(url);
-			//
-			CanvasUtils.fillRect(gifCanvas, "#000");//TODO get image or something.
+			
+			gifCanvas.getContext2d().drawImage(baseCanvas.getCanvasElement(), 0, 0);
+			
 			CanvasUtils.drawCenter(gifCanvas, element);
 			elements.add(ImageElementUtils.create(gifCanvas.toDataUrl()));
 		}
+		
 		
 		final String gifUrl=GifAnimeBuilder.from(elements).setQuality(quality).loop().delay(speed).toDataUrl();
 		
@@ -5060,6 +5074,8 @@ HorizontalPanel h1=new HorizontalPanel();
 
 	
 	private boolean reservedScreenshot;
+	
+	private boolean reservedSettingPreview;
 	protected void doScreenShot() {
 		String url=canvas.getRenderer().gwtPngDataUrl();
 		
