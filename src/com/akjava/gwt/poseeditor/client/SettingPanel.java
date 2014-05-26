@@ -92,7 +92,7 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 		//scroll.setSize("100%","100%");
 		//creaate gif-anime panel
 		tab.add(scroll2,"Screenshot");
-		scroll.add(createScreenshotPanel());
+		scroll2.add(createScreenshotPanel());
 		
 		synchUI();
 	}
@@ -147,12 +147,14 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 		return panel;
 	}
 	
-	public boolean isScreenShotTransparent(){
+	/*
+	public boolean isPreviewScreenShotTransparent(){
 		return screenshotTransparentBt.getValue();
 	}
-	public String getScreenshotBackgroundValue(){
+	public String getPreviewScreenshotBackgroundValue(){
 		return screenshotColorBox.getValue();
 	}
+	*/
 	
 	private Widget createGifPanel() {
 		VerticalPanel panel=new VerticalPanel();
@@ -415,6 +417,14 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 		boneCheck.setValue(isGifShowBone());
 		ikCheck.setValue(isGifShowIk());
 		
+		int screenshottype=getScreenshotBackgroundType();
+		if(screenshottype==0){
+			screenshotTransparentBt.setValue(true);
+		}else if(screenshottype==1){
+			screenshotColorBt.setValue(true);
+			String scvalue=getScreenshotBackgroundValue();
+			screenshotColorBox.setValue(scvalue);
+		}
 		
 		lastBgImage=bgImage;//store for cancel
 		lastBgLabel=bgImageLabel.getText();
@@ -449,9 +459,16 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 		
 	}
 
+	
 	protected void updateSettings() {
 		//gif-panel
 				try {//TODO only update modified value
+					
+					//screenshot
+					int sctype=screenshotTransparentBt.getValue()?0:1;
+					storageControler.setValue(KEY_SCREENSHOT_BG_TYPE, sctype);
+					storageControler.setValue(KEY_SCREENSHOT_BG_VALUE, screenshotColorBox.getValue());
+					
 					storageControler.setValue(KEY_GIF_WITH_BACKGROUND, backgroundCheck.getValue());
 					storageControler.setValue(KEY_GIF_WITH_BONE, boneCheck.getValue());
 					storageControler.setValue(KEY_GIF_WITH_IK, ikCheck.getValue());
@@ -533,6 +550,14 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 	}
 	public boolean isGifShowBackground(){
 		return storageControler.getValue(KEY_GIF_WITH_BACKGROUND, false);
+	}
+
+	
+	public int getScreenshotBackgroundType(){
+		return storageControler.getValue(KEY_SCREENSHOT_BG_TYPE, 0);
+	}
+	public String getScreenshotBackgroundValue(){
+		return storageControler.getValue(KEY_SCREENSHOT_BG_VALUE, "#333333");
 	}
 	
 	public boolean isPreviewGifShowBone(){

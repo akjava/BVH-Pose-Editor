@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.plaf.ColorUIResource;
+
 import com.akjava.bvh.client.BVH;
 import com.akjava.bvh.client.BVHMotion;
 import com.akjava.bvh.client.BVHNode;
@@ -86,6 +88,7 @@ import com.akjava.gwt.three.client.js.renderers.WebGLRenderer;
 import com.akjava.gwt.three.client.js.scenes.Scene;
 import com.akjava.gwt.three.client.js.textures.Texture;
 import com.akjava.gwt.threetest.client.TileDemo;
+import com.akjava.lib.common.utils.ColorUtils;
 import com.akjava.lib.common.utils.FileNames;
 import com.akjava.lib.common.utils.ValuesUtils;
 import com.google.common.base.Joiner;
@@ -256,7 +259,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		//it's better to do in render update-loop
 		if(reservedScreenshot){
-			doScreenShot();
+			doScreenShot(renderer);
 			reservedScreenshot=false;
 		}
 		
@@ -5129,7 +5132,18 @@ HorizontalPanel h1=new HorizontalPanel();
 	private boolean reservedScreenshot;
 	
 	private boolean reservedSettingPreview;
-	protected void doScreenShot() {
+	protected void doScreenShot(WebGLRenderer renderer) {
+		
+		if(settingPanel.getScreenshotBackgroundType()==1){
+			String bgcolor=settingPanel.getScreenshotBackgroundValue();
+		
+			int clearColor=ColorUtils.toColor(bgcolor);
+			renderer.setClearColor(clearColor, 1);
+			//need re-render
+			renderer.render(scene, camera);
+		}
+		
+		
 		String url=canvas.getRenderer().gwtPngDataUrl();
 		
 		Anchor anchor=HTML5Download.get().generateBase64DownloadLink(url, "image/png", "poseeditor.png", "Download", true);
@@ -5137,6 +5151,8 @@ HorizontalPanel h1=new HorizontalPanel();
 		imageLinkContainer.clear();
 		imageLinkContainer.add(anchor);
 		
+		//set back clear
+		renderer.setClearColor(0, 0);
 	}
 
 	private void doFirstFrame() {
