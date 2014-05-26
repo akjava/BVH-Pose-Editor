@@ -85,6 +85,7 @@ import com.akjava.gwt.three.client.js.objects.Mesh;
 import com.akjava.gwt.three.client.js.renderers.WebGLRenderer;
 import com.akjava.gwt.three.client.js.scenes.Scene;
 import com.akjava.gwt.three.client.js.textures.Texture;
+import com.akjava.gwt.threetest.client.TileDemo;
 import com.akjava.lib.common.utils.FileNames;
 import com.akjava.lib.common.utils.ValuesUtils;
 import com.google.common.base.Joiner;
@@ -134,6 +135,7 @@ import com.google.gwt.json.client.JSONString;
 import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.text.shared.Renderer;
 import com.google.gwt.user.client.Command;
+import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
@@ -264,12 +266,25 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		}
 		
 		if(reservedSettingPreview){
-			//TODO sync bone or etc.
 			
+			updateBackgroundVisible(settingPanel.isPreviewGifShowBackground());
+			updateBonesVisible(settingPanel.isPreviewGifShowBone());
+			updateIKVisible(settingPanel.isPreviewGifShowIk());
+			
+			renderer.render(scene, camera);
 			String url=canvas.getRenderer().gwtPngDataUrl();
 			settingPanel.setPreviewImage(url);
+			
+			updateBackgroundVisible(showBackgroundCheck.getValue());
+			updateBonesVisible(showBonesCheck.getValue());
+			updateIKVisible(showIkCheck.getValue());
+			
 			reservedSettingPreview=false;
 		}
+	}
+	
+	public void doReserveSettingPreview(){
+		reservedSettingPreview=true;
 	}
 
 	public void selectMainTab(){
@@ -3374,7 +3389,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	private CheckBox showBonesCheck,showIkCheck,smallCheck;
 	
 	private int posDivided=10;	//how small 10 or 100
-	private CheckBox showTileCheck;
+	private CheckBox showBackgroundCheck;
 	private VerticalPanel ikPositionsPanel;
 	private Label ikPositionLabelY;
 	private Label ikPositionLabelZ;
@@ -3559,7 +3574,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			@Override
 			public void onClick(ClickEvent event) {
-				updateBonesVisible();
+				updateBonesVisible(showBonesCheck.getValue());
 			}
 		});
 		showBonesCheck.setValue(true);
@@ -3583,22 +3598,21 @@ HorizontalPanel h1=new HorizontalPanel();
 			
 			@Override
 			public void onClick(ClickEvent event) {
-				updateIKVisible();
+				updateIKVisible(showIkCheck.getValue());
 			}
 		});
 		showIkCheck.setValue(true);
 		
 		
-		showTileCheck = new CheckBox("Tile");
-		shows.add(showTileCheck);
-		showTileCheck.addClickHandler(new ClickHandler() {
+		showBackgroundCheck = new CheckBox("Tile");
+		shows.add(showBackgroundCheck);
+		showBackgroundCheck.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				Object3DUtils.setVisibleAll(backgroundGrid,showTileCheck.getValue());
-				//backgroundGrid.setVisible(showTileCheck.getValue());
+				updateBackgroundVisible(showBackgroundCheck.getValue());
 			}
 		});
-		showTileCheck.setValue(true);
+		showBackgroundCheck.setValue(true);
 		
 		//dont need now
 		/*
@@ -4411,9 +4425,9 @@ HorizontalPanel h1=new HorizontalPanel();
 	
 	
 
-	protected void updateBonesVisible() {
+	protected void updateBonesVisible(boolean value) {
 		if(bone3D!=null){
-			Object3DUtils.setVisibleAll(bone3D, showBonesCheck.getValue());
+			Object3DUtils.setVisibleAll(bone3D, value);
 		}
 	}
 	
@@ -4422,11 +4436,18 @@ HorizontalPanel h1=new HorizontalPanel();
 			doPoseByMatrix(ab);//re-create
 		}
 	}
-	protected void updateIKVisible() {
+	protected void updateIKVisible(boolean value) {
 		if(ik3D!=null){
-			Object3DUtils.setVisibleAll(ik3D, showIkCheck.getValue());
+			Object3DUtils.setVisibleAll(ik3D, value);
 		}
 	}
+	
+	protected void updateBackgroundVisible(boolean value) {
+		if(backgroundGrid!=null){
+			Object3DUtils.setVisibleAll(backgroundGrid,value);
+		}
+	}
+	
 
 	protected String getMirroredName(String name) {
 		if(name.indexOf("Right")!=-1){
@@ -4744,7 +4765,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		rightSide.add(imageBt);
-		Button gifAnimeBt=new Button("GifAnime",new ClickHandler() {
+		gifAnimeBt = new Button("GifAnime",new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
 				reservedCreateGifAnime=true;
@@ -4913,27 +4934,40 @@ HorizontalPanel h1=new HorizontalPanel();
 	
 	protected void doGifAnime() {
 		//TODO timer for update ui.
+		
+		gifAnimeBt.setEnabled(false);
+		Timer timer=new Timer(){
+
+			@Override
+			public void run() {
+				
 		try{
 		isUsingRenderer=true;
 		
-		int gifWidth=497;
-		int gifHeight=373;
 		
-		int quality=10;
-		int speed=200;
+		int quality=settingPanel.getGifQuality();
+		int speed=settingPanel.getGifSpeed();
 		
-		//TODO,hide bones.
-		boolean sbone=showBonesCheck.getValue();
-		boolean sik=showIkCheck.getValue();
-		boolean stile=showTileCheck.getValue();
 		
-		showTileCheck.setValue(settingPanel.isGifShowTile());
-		showBonesCheck.setValue(settingPanel.isGifShowBone());
+		
+		
+		
+		
+		
+		boolean lastBackground=showBackgroundCheck.getValue();
+		boolean lastIk=showIkCheck.getValue();
+		boolean lastBone=showBonesCheck.getValue();
+		
+		
+		
+		
+		showBackgroundCheck.setValue(settingPanel.isGifShowBackground());
 		showIkCheck.setValue(settingPanel.isGifShowIk());
+		showBonesCheck.setValue(settingPanel.isGifShowBone());
 		
-		Object3DUtils.setVisibleAll(backgroundGrid,showTileCheck.getValue());
-		updateIKVisible();
-		updateBonesVisible();
+		
+		
+		LogUtils.log(settingPanel.isGifShowIk()+","+settingPanel.isGifShowBone());
 		
 		Canvas baseCanvas=settingPanel.createBgCanvas();
 		
@@ -4950,6 +4984,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			String url=canvas.getRenderer().gwtPngDataUrl();
 			ImageElement element=ImageElementUtils.create(url);
 			
+			CanvasUtils.clear(gifCanvas);
 			gifCanvas.getContext2d().drawImage(baseCanvas.getCanvasElement(), 0, 0);
 			
 			CanvasUtils.drawCenter(gifCanvas, element);
@@ -4959,28 +4994,46 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		final String gifUrl=GifAnimeBuilder.from(elements).setQuality(quality).loop().delay(speed).toDataUrl();
 		
-		Anchor anchor=HTML5Download.get().generateBase64DownloadLink(gifUrl, "image/gif", "poseeditor.gif", "Download", true);
+		//becareful somehow rightnow no transparent  gif supported.
+		//even choose choose transparent draw black. 
+		Anchor anchor=HTML5Download.get().generateBase64DownloadLink(gifUrl, "image/gif", getSelectedPoseEditorData().getName()+".gif", "Download", true);
 		
 		imageLinkContainer.clear();
 		imageLinkContainer.add(anchor);
+		
+		
+		
+		/*
+		Anchor debug=HTML5Download.get().generateBase64DownloadLink(baseCanvas.toDataUrl(), "image/png", "poseeditor.png", "debug", true);
+		imageLinkContainer.add(debug);
+		*/
 		
 		//reset last index
 		currentFrameRange.setValue(lastFrameIndex);
 		updatePoseIndex(lastFrameIndex);
 		
 		
-		showTileCheck.setValue(stile);
-		showBonesCheck.setValue(sbone);
-		showIkCheck.setValue(sik);
+		showBackgroundCheck.setValue(lastBackground);
+		showIkCheck.setValue(lastIk);
+		showBonesCheck.setValue(lastBone);
 		
-		Object3DUtils.setVisibleAll(backgroundGrid,showTileCheck.getValue());
-		updateIKVisible();
-		updateBonesVisible();
+		updateBackgroundVisible(showBackgroundCheck.getValue());
+		updateIKVisible(showIkCheck.getValue());
+		updateBonesVisible(showBonesCheck.getValue());
 		
 		isUsingRenderer=false;
 		}catch (Exception e) {
 			Window.alert(e.getMessage());
+		}finally{
+			gifAnimeBt.setEnabled(true);
 		}
+			}
+		// TODO Auto-generated method stub
+		
+					};
+		timer.schedule(10);//just disable bt;
+					
+				
 	}
 	
 	private SimpleUndoControler undoControler=new SimpleUndoControler();
@@ -6939,6 +6992,7 @@ private Label ikPositionLabelX;
 private MenuBar rootBar;
 private VerticalPanel imageLinkContainer;
 private Button undoButton;
+private Button gifAnimeBt;
 ;
 
 /**
