@@ -192,7 +192,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				}
 			}
 			*/
-			
+			//usually positionZRange is zero ,controlled by camera pos
 			setRootPositionByRange(positionXRange.getValue(),positionYRange.getValue(),positionZRange.getValue());
 			root.getRotation().set(Math.toRadians(rotationXRange.getValue()),Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()),Euler.XYZ);
 			
@@ -229,7 +229,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	public void setRootPositionRangeValues(int x,int y,int z){
 		positionXRange.setValue(x);
 		positionYRange.setValue(y);
-		positionZRange.setValue(z);
+		
+		setCameraZ((double)z/10);//z is special
+		//positionZRange.setValue(z);
 	}
 	
 	public void setRootPositionByRange(int x,int y,int z){
@@ -241,9 +243,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	public int getRootPositionYRange(){
 		return positionYRange.getValue();
 	}
+	
+	/*right now ze not used
 	public int getRootPositionZRange(){
 		return positionZRange.getValue();
 	}
+	*/
 	
 	
 	private Object3D cameraHolder;
@@ -1071,8 +1076,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				popupPanel.setVisible(false);
 				
 				if(selection==3){//settings
-					reservedSettingPreview=true;
+					
 					settingPanel.synchUI();
+					reservedSettingPreview=true;
+					
 					//isUsingRenderer=true;
 				}
 				
@@ -3436,6 +3443,8 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	private Label ikPositionLabelY;
 	private Label ikPositionLabelZ;
 
+	
+	
 	@Override
 	public void createControl(DropVerticalPanelBase parent) {
 HorizontalPanel h1=new HorizontalPanel();

@@ -103,6 +103,7 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 		tab.add(scroll2,"Screenshot");
 		scroll2.add(createScreenshotPanel());
 	}
+
 	
 	private StorageControler storageControler=new StorageControler();
 	private CheckBox backgroundCheck;
@@ -114,9 +115,9 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 	private RadioButton screenshotTransparentBt;
 	private RadioButton screenshotColorBt;
 	private ColorBox screenshotColorBox;
-	private InputRangeWidget positionXRange;
-	private InputRangeWidget positionYRange;
-	private InputRangeWidget positionZRange;
+	private InputRangeWidget settingPositionXRange;
+	private InputRangeWidget settingPositionYRange;
+	private InputRangeWidget settingPositionZRange;
 	
 	private void doCancel(){
 		bgImageLabel.setText(lastBgLabel);
@@ -217,47 +218,47 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 		HorizontalPanel h4=new HorizontalPanel();
 		panel.add(h4);
 		
-		positionXRange = InputRangeWidget.createInputRange(-300,300,0);
+		settingPositionXRange = InputRangeWidget.createInputRange(-300,300,0);
 		HorizontalPanel hx=new HorizontalPanel();
 		hx.setWidth("100px");
 		h4.add(hx);
-		hx.add(HTML5Builder.createRangeLabel("X-Position:", positionXRange,PoseEditor.poseEditor.getPosDivided()));
+		hx.add(HTML5Builder.createRangeLabel("X-Position:", settingPositionXRange,PoseEditor.poseEditor.getPosDivided()));
 		
-		h4.add(positionXRange);
+		h4.add(settingPositionXRange);
 		
-		positionXRange.addInputRangeListener(new InputRangeListener() {
+		settingPositionXRange.addInputRangeListener(new InputRangeListener() {
 			@Override
 			public void changed(int newValue) {
-				PoseEditor.poseEditor.setRootPositionRangeValues(positionXRange.getValue(), positionYRange.getValue(), positionZRange.getValue());
+				PoseEditor.poseEditor.setRootPositionRangeValues(settingPositionXRange.getValue(), settingPositionYRange.getValue(), settingPositionZRange.getValue());
 				
 				PoseEditor.poseEditor.setReservedSettingPreview(true);
 				
 			}
 		});
 		
-		positionYRange = InputRangeWidget.createInputRange(-300,300,0);
-		h4.add(HTML5Builder.createRangeLabel("Y-Position:", positionYRange,PoseEditor.poseEditor.getPosDivided()));
+		settingPositionYRange = InputRangeWidget.createInputRange(-300,300,0);
+		h4.add(HTML5Builder.createRangeLabel("Y-Position:", settingPositionYRange,PoseEditor.poseEditor.getPosDivided()));
 	
-		h4.add(positionYRange);
+		h4.add(settingPositionYRange);
 		
-		positionYRange.addInputRangeListener(new InputRangeListener() {
+		settingPositionYRange.addInputRangeListener(new InputRangeListener() {
 			@Override
 			public void changed(int newValue) {
-				PoseEditor.poseEditor.setRootPositionRangeValues(positionXRange.getValue(), positionYRange.getValue(), positionZRange.getValue());
+				PoseEditor.poseEditor.setRootPositionRangeValues(settingPositionXRange.getValue(), settingPositionYRange.getValue(), settingPositionZRange.getValue());
 				PoseEditor.poseEditor.setReservedSettingPreview(true);
 				//updatePreviewCanvas();
 			}
 		});
 		
-		positionZRange = InputRangeWidget.createInputRange(-600,600,0);
-		h4.add(HTML5Builder.createRangeLabel("Z-Position:", positionZRange,PoseEditor.poseEditor.getPosDivided()));
+		settingPositionZRange = InputRangeWidget.createInputRange(0,1000,0);
+		h4.add(HTML5Builder.createRangeLabel("Z-Position:", settingPositionZRange,PoseEditor.poseEditor.getPosDivided()));
 		
-		h4.add(positionZRange);
+		h4.add(settingPositionZRange);
 		
-		positionZRange.addInputRangeListener(new InputRangeListener() {
+		settingPositionZRange.addInputRangeListener(new InputRangeListener() {
 			@Override
 			public void changed(int newValue) {
-				PoseEditor.poseEditor.setRootPositionRangeValues(positionXRange.getValue(), positionYRange.getValue(), positionZRange.getValue());
+				PoseEditor.poseEditor.setRootPositionRangeValues(settingPositionXRange.getValue(), settingPositionYRange.getValue(), settingPositionZRange.getValue());
 				PoseEditor.poseEditor.setReservedSettingPreview(true);
 				
 			}
@@ -485,6 +486,7 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 			initialize();
 			initialized=true;
 		}
+		LogUtils.log("sync:pos:"+PoseEditor.poseEditor.getRootPositionXRange()+","+PoseEditor.poseEditor.getRootPositionYRange()+","+PoseEditor.poseEditor.getCameraZ());
 		
 		//gif-panel
 		backgroundCheck.setValue(isGifShowBackground());
@@ -523,14 +525,19 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 		qualityBox.setValue(getGifQuality());
 		speedBox.setValue(getGifSpeed());
 		
+		//keep value before set,if change value listener change others.
+		int x=PoseEditor.poseEditor.getRootPositionXRange();
+		int y=PoseEditor.poseEditor.getRootPositionYRange();
+		int z=(int) (PoseEditor.poseEditor.getCameraZ()*10);
 		
-		positionXRange.setValue(PoseEditor.poseEditor.getRootPositionXRange());
-		positionYRange.setValue(PoseEditor.poseEditor.getRootPositionYRange());
-		positionZRange.setValue(PoseEditor.poseEditor.getRootPositionZRange());
 		
-		lastRangeX=positionXRange.getValue();
-		lastRangeY=positionYRange.getValue();
-		lastRangeZ=positionZRange.getValue();
+		settingPositionXRange.setValue(x);
+		settingPositionYRange.setValue(y);
+		settingPositionZRange.setValue(z);
+		
+		lastRangeX=x;
+		lastRangeY=y;
+		lastRangeZ=z;
 		
 		updateCanvasSize();
 		
