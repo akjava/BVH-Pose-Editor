@@ -193,8 +193,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			}
 			*/
 			
-			
-			root.setPosition((double)positionXRange.getValue()/posDivided, (double)positionYRange.getValue()/posDivided, (double)positionZRange.getValue()/posDivided);
+			setRootPositionByRange(positionXRange.getValue(),positionYRange.getValue(),positionZRange.getValue());
 			root.getRotation().set(Math.toRadians(rotationXRange.getValue()),Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()),Euler.XYZ);
 			
 			
@@ -227,6 +226,26 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		}
 	}
 	
+	public void setRootPositionRangeValues(int x,int y,int z){
+		positionXRange.setValue(x);
+		positionYRange.setValue(y);
+		positionZRange.setValue(z);
+	}
+	
+	public void setRootPositionByRange(int x,int y,int z){
+		root.setPosition((double)x/posDivided, (double)y/posDivided, (double)z/posDivided);
+	}
+	public int getRootPositionXRange(){
+		return positionXRange.getValue();
+	}
+	public int getRootPositionYRange(){
+		return positionYRange.getValue();
+	}
+	public int getRootPositionZRange(){
+		return positionZRange.getValue();
+	}
+	
+	
 	private Object3D cameraHolder;
 	@Override
 	protected void createCamera(Scene scene,int width,int height){
@@ -245,6 +264,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		this.camera=camera;
 	}
 	
+	public void render(){
+		renderer.render(scene, camera);
+	}
+	
 	@Override
 	public void update(WebGLRenderer renderer) {
 		
@@ -255,7 +278,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		beforeUpdate(renderer);
 		camera.getPosition().set(cameraX, cameraY, cameraZ);
 		//LogUtils.log("camera:"+ThreeLog.get(camera.getPosition()));
-		renderer.render(scene, camera);
+		
+		render();
 		
 		//it's better to do in render update-loop
 		if(reservedScreenshot){
@@ -286,8 +310,14 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		}
 	}
 	
-	public void doReserveSettingPreview(){
-		reservedSettingPreview=true;
+	
+
+	public boolean isReservedSettingPreview() {
+		return reservedSettingPreview;
+	}
+
+	public void setReservedSettingPreview(boolean reservedSettingPreview) {
+		this.reservedSettingPreview = reservedSettingPreview;
 	}
 
 	public void selectMainTab(){
@@ -1043,7 +1073,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				if(selection==3){//settings
 					reservedSettingPreview=true;
 					settingPanel.synchUI();
-					
+					//isUsingRenderer=true;
 				}
 				
 				}
@@ -1153,6 +1183,15 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		
 	}
+	public boolean isUsingRenderer() {
+		return isUsingRenderer;
+	}
+
+	public void setUsingRenderer(boolean isUsingRenderer) {
+		this.isUsingRenderer = isUsingRenderer;
+	}
+
+
 	SettingPanel settingPanel;
 	PreferenceTabPanel preferencePanel;
 	
@@ -3475,7 +3514,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		
 		//maybe z no need,there are whell-zoom
 		HorizontalPanel h6=new HorizontalPanel();
-		positionZRange = InputRangeWidget.createInputRange(-300,300,0);
+		positionZRange = InputRangeWidget.createInputRange(-600,600,0);
 		//parent.add(HTML5Builder.createRangeLabel("Z-Position:", positionZRange,10));
 		//parent.add(h6);
 		h6.add(positionZRange);
@@ -4099,6 +4138,10 @@ HorizontalPanel h1=new HorizontalPanel();
 	}
 	*/
 	
+	public int getPosDivided() {
+		return posDivided;
+	}
+
 	boolean isIkTargetEndSite;
 	
 	private void createPosRangeControlers(final InputRangeWidget range,HorizontalPanel parent){
@@ -5034,7 +5077,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		// TODO Auto-generated method stub
 		
 					};
-		timer.schedule(10);//just disable bt;
+		timer.schedule(50);//just disable bt;
 					
 				
 	}
