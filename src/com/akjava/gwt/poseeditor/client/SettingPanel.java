@@ -154,7 +154,7 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 				
 				screenshotColorBox = new ColorBox();
 				screenshotColorBox.setValue("#333333");
-				bgTypes.add(colorBox);
+				bgTypes.add(screenshotColorBox);
 				
 		
 		return panel;
@@ -237,7 +237,11 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 		});
 		
 		settingPositionYRange = InputRangeWidget.createInputRange(-300,300,0);
-		h4.add(HTML5Builder.createRangeLabel("Y-Position:", settingPositionYRange,PoseEditor.poseEditor.getPosDivided()));
+		
+		HorizontalPanel hy=new HorizontalPanel();
+		hy.setWidth("100px");
+		h4.add(hy);
+		hy.add(HTML5Builder.createRangeLabel("Y-Position:", settingPositionYRange,PoseEditor.poseEditor.getPosDivided()));
 	
 		h4.add(settingPositionYRange);
 		
@@ -251,7 +255,10 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 		});
 		
 		settingPositionZRange = InputRangeWidget.createInputRange(0,1000,0);
-		h4.add(HTML5Builder.createRangeLabel("Z-Position:", settingPositionZRange,PoseEditor.poseEditor.getPosDivided()));
+		HorizontalPanel hz=new HorizontalPanel();
+		hz.setWidth("100px");
+		h4.add(hz);
+		hz.add(HTML5Builder.createRangeLabel("Z-Position:", settingPositionZRange,PoseEditor.poseEditor.getPosDivided()));
 		
 		h4.add(settingPositionZRange);
 		
@@ -430,6 +437,16 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 				updatePreviewCanvas();
 			}
 		});
+		
+		Button colorUpdateBt = new Button("Update",new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				updatePreviewCanvas();
+			}
+		});
+		bgTypes.add(colorUpdateBt);
+		
 		
 		bgImageLabel = new Label();
 		bgImageLabel.setWidth("100px");
