@@ -9,7 +9,7 @@ import com.akjava.bvh.client.Channels;
 import com.akjava.bvh.client.NameAndChannel;
 import com.akjava.gwt.bvh.client.threejs.AnimationDataConverter;
 import com.akjava.gwt.lib.client.LogUtils;
-import com.akjava.gwt.three.client.gwt.animation.AnimationData;
+import com.akjava.gwt.three.client.gwt.boneanimation.AnimationData;
 import com.google.common.base.Converter;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArray;

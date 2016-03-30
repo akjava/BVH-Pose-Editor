@@ -12,6 +12,7 @@ import com.akjava.gwt.html5.client.file.FileUtils;
 import com.akjava.gwt.html5.client.file.FileUtils.DataURLListener;
 import com.akjava.gwt.html5.client.input.ColorBox;
 import com.akjava.gwt.lib.client.CanvasUtils;
+import com.akjava.gwt.lib.client.ImageElementListener;
 import com.akjava.gwt.lib.client.ImageElementUtils;
 import com.akjava.gwt.lib.client.LogUtils;
 import com.akjava.gwt.lib.client.StorageControler;
@@ -23,6 +24,7 @@ import com.google.gwt.dom.client.ImageElement;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.ErrorEvent;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.text.shared.Renderer;
@@ -455,9 +457,25 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 			@Override
 			public void uploaded(File file, String text) {
 				bgImageLabel.setText(Ascii.truncate(file.getFileName(),15,"..."));
-				bgImage=ImageElementUtils.create(text);
-				imageBt.setValue(true);
-				updatePreviewCanvas();
+				
+				ImageElementUtils.createWithLoader(text,new ImageElementListener() {
+					
+					@Override
+					public void onLoad(ImageElement element) {
+						bgImage=element;
+						imageBt.setValue(true);
+						updatePreviewCanvas();
+					}
+					
+					@Override
+					public void onError(String url, ErrorEvent event) {
+						LogUtils.log(event.getNativeEvent());
+					}
+				});
+				
+				
+				
+				
 			}
 		}, true);
 		

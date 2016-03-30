@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.plaf.ColorUIResource;
-
 import com.akjava.bvh.client.BVH;
 import com.akjava.bvh.client.BVHMotion;
 import com.akjava.bvh.client.BVHNode;
@@ -43,18 +41,20 @@ import com.akjava.gwt.lib.client.StorageException;
 import com.akjava.gwt.lib.client.datalist.SimpleTextData;
 import com.akjava.gwt.poseeditor.client.PreferenceTabPanel.PreferenceListener;
 import com.akjava.gwt.poseeditor.client.resources.PoseEditorBundles;
+import com.akjava.gwt.three.client.examples.renderers.Projector;
+import com.akjava.gwt.three.client.examples.utils.GeometryUtils;
 import com.akjava.gwt.three.client.gwt.JSONModelFile;
 import com.akjava.gwt.three.client.gwt.JSParameter;
-import com.akjava.gwt.three.client.gwt.animation.AngleAndPosition;
-import com.akjava.gwt.three.client.gwt.animation.AnimationBone;
-import com.akjava.gwt.three.client.gwt.animation.AnimationBonesData;
-import com.akjava.gwt.three.client.gwt.animation.AnimationData;
-import com.akjava.gwt.three.client.gwt.animation.AnimationHierarchyItem;
-import com.akjava.gwt.three.client.gwt.animation.AnimationKey;
-import com.akjava.gwt.three.client.gwt.animation.BoneLimit;
-import com.akjava.gwt.three.client.gwt.animation.NameAndVector3;
-import com.akjava.gwt.three.client.gwt.animation.ik.CDDIK;
-import com.akjava.gwt.three.client.gwt.animation.ik.IKData;
+import com.akjava.gwt.three.client.gwt.boneanimation.AngleAndPosition;
+import com.akjava.gwt.three.client.gwt.boneanimation.AnimationBone;
+import com.akjava.gwt.three.client.gwt.boneanimation.AnimationBonesData;
+import com.akjava.gwt.three.client.gwt.boneanimation.AnimationData;
+import com.akjava.gwt.three.client.gwt.boneanimation.AnimationHierarchyItem;
+import com.akjava.gwt.three.client.gwt.boneanimation.AnimationKey;
+import com.akjava.gwt.three.client.gwt.boneanimation.BoneLimit;
+import com.akjava.gwt.three.client.gwt.boneanimation.NameAndVector3;
+import com.akjava.gwt.three.client.gwt.boneanimation.ik.CDDIK;
+import com.akjava.gwt.three.client.gwt.boneanimation.ik.IKData;
 import com.akjava.gwt.three.client.gwt.core.BoundingBox;
 import com.akjava.gwt.three.client.gwt.core.Intersect;
 import com.akjava.gwt.three.client.gwt.materials.MeshBasicMaterialParameter;
@@ -71,8 +71,6 @@ import com.akjava.gwt.three.client.js.THREE;
 import com.akjava.gwt.three.client.js.cameras.Camera;
 import com.akjava.gwt.three.client.js.core.Geometry;
 import com.akjava.gwt.three.client.js.core.Object3D;
-import com.akjava.gwt.three.client.js.core.Projector;
-import com.akjava.gwt.three.client.js.extras.GeometryUtils;
 import com.akjava.gwt.three.client.js.extras.ImageUtils;
 import com.akjava.gwt.three.client.js.extras.helpers.GridHelper;
 import com.akjava.gwt.three.client.js.lights.Light;
@@ -87,7 +85,6 @@ import com.akjava.gwt.three.client.js.objects.Mesh;
 import com.akjava.gwt.three.client.js.renderers.WebGLRenderer;
 import com.akjava.gwt.three.client.js.scenes.Scene;
 import com.akjava.gwt.three.client.js.textures.Texture;
-import com.akjava.gwt.threetest.client.TileDemo;
 import com.akjava.lib.common.utils.ColorUtils;
 import com.akjava.lib.common.utils.FileNames;
 import com.akjava.lib.common.utils.ValuesUtils;
@@ -155,7 +152,6 @@ import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.ValueListBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
-import com.google.gwt.user.client.ui.Widget;
 
 
 /**
@@ -582,7 +578,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		
 		double selectionSize=baseBoneCoreSize*2.5/posDivided;
 		
-		selectionMesh=THREE.Mesh(THREE.CubeGeometry(selectionSize,selectionSize,selectionSize), THREE.MeshBasicMaterial().color(0x00ff00).wireFrame(true).build());
+		selectionMesh=THREE.Mesh(THREE.BoxGeometry(selectionSize,selectionSize,selectionSize), THREE.MeshBasicMaterial().color(0x00ff00).wireFrame(true).build());
 		
 		root.add(selectionMesh);
 		selectionMesh.setVisible(false);
@@ -1280,7 +1276,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 
 	private String currentSelectionIkName;//TODO not use last bone name
 	Mesh selectionMesh;
-	final Projector projector=THREE.Projector();
+	final Projector projector=Projector.createProjector();
 	@Override
 	public void onMouseClick(ClickEvent event) {
 		
@@ -2857,6 +2853,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	}
 	
 	private void selectBone(Object3D target,int x,int y,boolean needDrag){
+		
 		//maybe bone or root-bone
 		selectedBone=target.getName();
 		selectionMesh.setVisible(true);
@@ -2865,8 +2862,10 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		switchSelectionIk(null);
 		
 		if(needDrag){
+		
 		dragObjectControler.selectObject(target, x,y, screenWidth, screenHeight, camera);
 		logger.fine("onMouse down-end2");
+		
 		}
 		
 		//i guess set pos
@@ -6717,7 +6716,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 				bsize/=2;
 			}
 			
-			Mesh mesh=THREE.Mesh(THREE.CubeGeometry(bsize,bsize, bsize),THREE.MeshLambertMaterial().color(0xff0000).build());
+			Mesh mesh=THREE.Mesh(THREE.BoxGeometry(bsize,bsize, bsize),THREE.MeshLambertMaterial().color(0xff0000).build());
 			bone3D.add(mesh);
 			
 			Vector3 pos=THREE.Vector3();
@@ -6789,7 +6788,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 						Vector3 ikpos=pos.clone().subSelf(ppos).multiplyScalar(ikLength).addSelf(ppos);
 						//ikpos=pos.clone();
 						//trying transparent
-						ikMesh=THREE.Mesh(THREE.CubeGeometry(ikCoreSize, ikCoreSize, ikCoreSize),THREE.MeshLambertMaterial(MeshLambertMaterialParameter.create().color(0x00ff00).transparent(true).opacity(0.5)));
+						ikMesh=THREE.Mesh(THREE.BoxGeometry(ikCoreSize, ikCoreSize, ikCoreSize),THREE.MeshLambertMaterial(MeshLambertMaterialParameter.create().color(0x00ff00).transparent(true).opacity(0.5)));
 						ikMesh.setPosition(ikpos);
 						ikMesh.setName("ik:"+boneName);
 					//	log(boneName+":"+ThreeLog.get(ikpos));
@@ -7078,7 +7077,7 @@ private Button gifAnimeBt;
 		root.add(bone3D);
 		
 		//test ikk
-		Mesh cddIk0=THREE.Mesh(THREE.CubeGeometry(.5, .5, .5),THREE.MeshLambertMaterial().color(0x00ff00).build());
+		Mesh cddIk0=THREE.Mesh(THREE.BoxGeometry(.5, .5, .5),THREE.MeshLambertMaterial().color(0x00ff00).build());
 		cddIk0.setPosition(getCurrentIkData().getTargetPos());
 		bone3D.add(cddIk0);
 		
@@ -7087,7 +7086,7 @@ private Button gifAnimeBt;
 		List<Vector3> bonePositions=new ArrayList<Vector3>();
 		for(int i=0;i<animationBones.length();i++){
 			MatrixAndVector3 mv=boneMatrix.get(i);
-			Mesh mesh=THREE.Mesh(THREE.CubeGeometry(.2, .2, .2),THREE.MeshLambertMaterial().color(0xff0000).build());
+			Mesh mesh=THREE.Mesh(THREE.BoxGeometry(.2, .2, .2),THREE.MeshLambertMaterial().color(0xff0000).build());
 			bone3D.add(mesh);
 			
 			Vector3 pos=mv.getPosition().clone();
@@ -7291,7 +7290,7 @@ private Button gifAnimeBt;
 				canvas.setCoordinateSpaceWidth(img.getWidth());
 				canvas.setCoordinateSpaceHeight(img.getHeight());
 				canvas.getContext2d().drawImage(ImageElement.as(img.getElement()),0,0);
-				texture=THREE.Texture(canvas.getCanvasElement());
+				texture=THREE.CanvasTexture(canvas.getCanvasElement());
 				texture.setNeedsUpdate(true);
 				
 				img.removeFromParent();
