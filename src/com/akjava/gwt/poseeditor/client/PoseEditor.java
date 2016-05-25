@@ -2655,19 +2655,27 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			*/
 	}
 	protected void touchGroundZero() {
-		bodyMesh.getGeometry().computeBoundingBox();
-		LogUtils.log(bodyMesh.getGeometry());
-		BoundingBox box=bodyMesh.getGeometry().getBoundingBox();
 		
+		//bodyMesh.getGeometry().computeBoundingBox();
+		//BoundingBox box=bodyMesh.getGeometry().getBoundingBox();
+		BoundingBox box=SkinningVertexUtils.computeBoundingBox(bodyMesh);
+		
+		
+		//LogUtils.log("bone-pos");
+		//ThreeLog.log(ab.getBonePosition(0));
+		//LogUtils.log("box-min-pos");
+		//ThreeLog.log(box.getMin());
 		
 		Vector3 currentRoot=ab.getBonePosition(0);
 		currentRoot.setY(currentRoot.getY()-box.getMin().getY());
 		
-		logger.fine("min:"+ThreeLog.get(box.getMin()));
-		logger.fine("max:"+ThreeLog.get(box.getMax()));
+		//logger.fine("min:"+ThreeLog.get(box.getMin()));
+		//logger.fine("max:"+ThreeLog.get(box.getMax()));
 		ab.getBoneAngleAndMatrix(0).getPosition().setY(currentRoot.getY());
 		ab.getBoneAngleAndMatrix(0).updateMatrix();
 		
+		//LogUtils.log("moved-root-pos");
+		ThreeLog.log(ab.getBoneAngleAndMatrix(0).getPosition());
 		
 		
 		fitIkOnBone();
@@ -5969,7 +5977,12 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 		
 		bodyMaterial=material;
+		if(bodyMesh!=null){
+			bodyMaterial.setNeedsUpdate(true);
+			bodyMesh.setMaterial(material);
+		}
 		
+		/*
 		if(basicMaterialCheck.getValue()){
 			if(bodyMesh!=null){
 				bodyMesh.setMaterial(material);//somehow now works.
@@ -5980,7 +5993,7 @@ HorizontalPanel h1=new HorizontalPanel();
 			//not basic material need recreate-model
 			doPoseByMatrix(ab);
 		}
-		
+		*/
 		
 		
 		
