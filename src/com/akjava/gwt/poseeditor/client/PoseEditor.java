@@ -126,6 +126,8 @@ import com.google.gwt.event.dom.client.MouseOutEvent;
 import com.google.gwt.event.dom.client.MouseUpEvent;
 import com.google.gwt.event.dom.client.MouseUpHandler;
 import com.google.gwt.event.dom.client.MouseWheelEvent;
+import com.google.gwt.event.logical.shared.CloseEvent;
+import com.google.gwt.event.logical.shared.CloseHandler;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
@@ -455,11 +457,36 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				
 				
 			
+		//mbl3d		
 				
-				
+		ikdatas.add(createIKData(Lists.newArrayList("head","neck","spine03","spine02","spine01"),9));//,"spline03","spline02","spline01"
+		boneLimits.put("neck",BoneLimit.createBoneLimit(-30, 30, 0,0, -30, 30));
+		boneLimits.put("spine03",BoneLimit.createBoneLimit(-30, 30, 0, 0, -30, 30));
+		boneLimits.put("spine02",BoneLimit.createBoneLimit(-30, 30, 0, 0, -30, 30));
+		boneLimits.put("spine01",BoneLimit.createBoneLimit(-30, 30, 0, 0, -30, 30));
+		
+		ikdatas.add(createIKData(Lists.newArrayList("hand_R","lowerarm_R","upperarm_R","clavicle_R"),9));
+		boneLimits.put("lowerarm_R",BoneLimit.createBoneLimit(0, 0, 0, 140, 0, 0));
+		boneLimits.put("upperarm_R",BoneLimit.createBoneLimit(-80, 60, -60, 91, -40, 100));
+		boneLimits.put("clavicle_R",BoneLimit.createBoneLimit(0,0,-20,0,-40,0));
+		
+		ikdatas.add(createIKData(Lists.newArrayList("hand_L","lowerarm_L","upperarm_L","clavicle_L"),9));
+		boneLimits.put("lowerarm_L",oppositeRL(boneLimits.get("lowerarm_R")));
+		boneLimits.put("upperarm_L",oppositeRL(boneLimits.get("upperarm_R")));
+		boneLimits.put("clavicle_L",oppositeRL(boneLimits.get("clavicle_R")));
+		
+		
+		ikdatas.add(createIKData(Lists.newArrayList("foot_R","calf_R","thigh_R"),9));
+		boneLimits.put("calf_R",BoneLimit.createBoneLimit(0, 160, 0, 0, 0, 0));
+		boneLimits.put("thigh_R",BoneLimit.createBoneLimit(-120, 60, -35, 5, -80, 40));
+		
+		ikdatas.add(createIKData(Lists.newArrayList("foot_L","calf_L","thigh_L"),9));
+		boneLimits.put("calf_L",oppositeRL(boneLimits.get("calf_R")));
+		boneLimits.put("thigh_L",oppositeRL(boneLimits.get("thigh_R")));
 		
 		//head
 		
+		/*
 		ikdatas.add(createIKData(Lists.newArrayList("head","neck","chest","abdomen"),9));
 		boneLimits.put("abdomen",BoneLimit.createBoneLimit(-30, 30, -60, 60, -30, 30));
 		boneLimits.put("chest",BoneLimit.createBoneLimit(-30, 30, -40, 40, -40, 40));//chest not stable if have more Y
@@ -523,6 +550,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				//boneLimits.put("Spine1",BoneLimit.createBoneLimit(-30, 30, -30, 30, -30, 30));
 				boneLimits.put("Neck",BoneLimit.createBoneLimit(-29, 29, -29, 29, -29, 29));
 				boneLimits.put("Neck1",BoneLimit.createBoneLimit(-5, 5, -5, 5, -5, 5));
+				*/
 	}
 	
 	public static PoseEditor poseEditor;
@@ -2879,14 +2907,12 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	}
 	
 	private void selectBone(Object3D target,int x,int y,boolean needDrag){
-		
 		//maybe bone or root-bone
 		selectedBone=target.getName();
 		selectionMesh.setVisible(true);
 		selectionMesh.setPosition(target.getPosition());
 		selectionMesh.getMaterial().gwtGetColor().setHex(0xff0000);
 		switchSelectionIk(null);
-		
 		if(needDrag){
 		
 		dragObjectControler.selectObject(target, x,y, screenWidth, screenHeight, camera);
@@ -2900,10 +2926,8 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		positionYBoneRange.setValue((int)(selectionMesh.getPosition().getY()*100));
 		positionZBoneRange.setValue((int)(selectionMesh.getPosition().getZ()*100));
 		
-	
 		
 		defereredFocusCanvas();
-		
 		
 		return;
 	}
@@ -3460,7 +3484,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	private CheckBox ylockCheck;
 	private CheckBox xlockCheck;
 	private List<String> ikLocks=new ArrayList<String>();
-	private CheckBox showBonesCheck,showIkCheck,smallCheck;
+	private CheckBox showBonesCheck,showIkCheck,smallCheck,showFingersCheck;
 	
 	private int posDivided=10;	//how small 10 or 100
 	private CheckBox showBackgroundCheck;
@@ -3472,7 +3496,17 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	
 	@Override
 	public void createControl(DropVerticalPanelBase parent) {
-HorizontalPanel h1=new HorizontalPanel();
+		Window.addCloseHandler(new CloseHandler<Window>() {
+			@Override
+			public void onClose(CloseEvent<Window> event) {
+				//this call fix slow closing problem
+				LogUtils.log("close");
+				animationHandler.cancel();
+			}
+		});
+		
+		nearCamera=0.0001;//TODO scale up character
+		HorizontalPanel h1=new HorizontalPanel();
 
 
 		rotationXRange = InputRangeWidget.createInputRange(-180,180,0);
@@ -3654,6 +3688,18 @@ HorizontalPanel h1=new HorizontalPanel();
 			}
 		});
 		showBonesCheck.setValue(true);
+		
+		showFingersCheck = new CheckBox();
+		parent.add(showFingersCheck);
+		showFingersCheck.setText("Show Fingers");//basically no need
+		showFingersCheck.setValue(false);
+		showFingersCheck.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				updateFingerBonesVisible(showFingersCheck.getValue());
+			}
+		});
+		
 		
 		smallCheck = new CheckBox();
 		shows.add(smallCheck);
@@ -4508,6 +4554,26 @@ HorizontalPanel h1=new HorizontalPanel();
 	protected void updateBonesVisible(boolean value) {
 		if(bone3D!=null){
 			Object3DUtils.setVisibleAll(bone3D, value);
+			if(value){
+				updateFingerBonesVisible(showFingersCheck.getValue());
+			}
+		}
+		
+	}
+	
+	protected void updateFingerBonesVisible(boolean value) {
+		List<String> fingerNames=Lists.newArrayList("thumb","index","middle","pinky","ring");
+		if(bone3D!=null){
+			for(int i=0;i<bone3D.getChildren().length();i++){
+				Object3D obj=bone3D.getChildren().get(i);
+				String name=obj.getName();
+				for(String fingerName:fingerNames){
+					if(name.startsWith(fingerName)){
+						obj.setVisible(value);
+					}
+				}
+			}
+			
 		}
 	}
 	
@@ -4530,6 +4596,13 @@ HorizontalPanel h1=new HorizontalPanel();
 	
 
 	protected String getMirroredName(String name) {
+		if(name.endsWith("_R")){
+			return name.replace("_R", "_L");
+		}
+		if(name.endsWith("_L")){
+			return name.replace("_L", "_R");
+		}
+		
 		if(name.indexOf("Right")!=-1){
 			return name.replace("Right", "Left");
 		}
@@ -4555,6 +4628,10 @@ HorizontalPanel h1=new HorizontalPanel();
 	
 	
 	private boolean isRightBone(String name){
+		if(name.endsWith("_R")){
+			return true;
+		}
+		
 		if(name.indexOf("Right")!=-1){
 			return true;
 		}
@@ -4563,8 +4640,8 @@ HorizontalPanel h1=new HorizontalPanel();
 		}
 		
 		//makehuman 19 bones
-		if(name.startsWith("r")){
-			return true;
+		if(name.startsWith("r")){//rethink later
+		//	return true;
 		}
 		
 		return false;
@@ -4868,7 +4945,8 @@ HorizontalPanel h1=new HorizontalPanel();
 				reservedCreateGifAnime=true;
 			}
 		});
-		rightSide.add(gifAnimeBt);
+		//rightSide.add(gifAnimeBt);//stop support gif-anime
+		
 		imageLinkContainer = new VerticalPanel();
 		imageLinkContainer.setVerticalAlignment(HorizontalPanel.ALIGN_MIDDLE);
 		imageLinkContainer.setWidth("100px");
@@ -5246,7 +5324,7 @@ HorizontalPanel h1=new HorizontalPanel();
 		imageLinkContainer.add(anchor);
 		
 		//set back clear
-		renderer.setClearColor(0, 0);
+		renderer.setClearColor(0, 0);//somehow this is default
 	}
 
 	private void doFirstFrame() {
@@ -6761,7 +6839,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			}
 			bsize/=posDivided;
 			if(smallCheck.getValue()){
-				bsize/=2;
+				bsize/=4;
 			}
 			
 			Mesh mesh=THREE.Mesh(THREE.BoxGeometry(bsize,bsize, bsize),THREE.MeshLambertMaterial(GWTParamUtils.MeshBasicMaterial().color(0xff0000)));
@@ -6832,8 +6910,11 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 						
 						double ikCoreSize=baseBoneCoreSize*2/posDivided;
 						
+						//ThreeLog.log(pos.clone().sub(ppos));
+						//LogUtils.log(ikLength);
 						
-						Vector3 ikpos=pos.clone().subSelf(ppos).multiplyScalar(ikLength).addSelf(ppos);
+						Vector3 ikpos=pos.clone().sub(ppos).multiplyScalar(ikLength).add(pos);
+						//ThreeLog.log(ikpos);
 						//ikpos=pos.clone();
 						//trying transparent
 						ikMesh=THREE.Mesh(THREE.BoxGeometry(ikCoreSize, ikCoreSize, ikCoreSize),THREE.MeshLambertMaterial(MeshLambertMaterialParameter.create().color(0x00ff00).transparent(true).opacity(0.5)));
@@ -6871,7 +6952,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		}
 		
 		//dont work
-		Object3DUtils.setVisibleAll(bone3D, showBonesCheck.getValue());
+		updateBonesVisible(showBonesCheck.getValue());
 		Object3DUtils.setVisibleAll(ik3D, showIkCheck.getValue());
 		//bone3D.setVisible(showBonesCheck.getValue());
 		
@@ -7047,6 +7128,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			bodyMesh=THREE.SkinnedMesh(baseGeometry, bodyMaterial);
 			mixer=THREE.AnimationMixer(bodyMesh);//replace mixer
 			root.add(bodyMesh);
+			updateBonesVisible(showBonesCheck.getValue());
 		}
 		
 		//make skinning animation

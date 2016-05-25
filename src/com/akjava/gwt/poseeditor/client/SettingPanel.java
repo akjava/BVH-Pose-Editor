@@ -95,7 +95,7 @@ public static final String KEY_GIF_WITH_BACKGROUND="poseeditor_gif_background";
 		ScrollPanel scroll=new ScrollPanel();
 		//scroll.setSize("100%","100%");
 		//creaate gif-anime panel
-		tab.add(scroll,"GifAnime");
+		//tab.add(scroll,"GifAnime");//stop support gif-anime
 		scroll.add(createGifPanel());
 		
 		
