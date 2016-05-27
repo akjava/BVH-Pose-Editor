@@ -1,5 +1,7 @@
 package com.akjava.gwt.poseeditor.client;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -162,8 +164,10 @@ import com.google.gwt.user.client.ui.MenuItem;
 import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.ScrollPanel;
+import com.google.gwt.user.client.ui.TabPanel;
 import com.google.gwt.user.client.ui.ValueListBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import com.google.gwt.user.client.ui.Widget;
 
 
 /**
@@ -1035,7 +1039,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			});
 			
 			Button exportBt=new Button("Export");
-			add(exportBt);
+			//add(exportBt); //stop support ,TODO replace json
 			exportBt.addClickHandler(new ClickHandler() {
 				
 				private Anchor anchor;
@@ -1185,8 +1189,11 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		}, true);
 		importBVH.setAccept(".bvh");
 		
+		/*
+		stop support
 		dataButtons.add(new Label("Import BVH"));
 		dataButtons.add(importBVH);
+		*/
 		
 		datasPanel = new VerticalPanel();
 		
@@ -4834,10 +4841,15 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	private void createBottomPanel(){
 		bottomPanel = new PopupPanel();
 		bottomPanel.setVisible(true);
-		bottomPanel.setSize("650px", "96px");
-		VerticalPanel main=new VerticalPanel();
-		bottomPanel.add(main);
+		bottomPanel.setSize("650px", "106px");
 		
+		TabPanel tab=new TabPanel();
+		bottomPanel.add(tab);
+		
+		VerticalPanel main=new VerticalPanel();
+		tab.add(main,"Edit");
+		tab.add(createPlayerPanel(),"Play");
+		tab.selectTab(0);
 		
 		HorizontalPanel trueTop=new HorizontalPanel();
 		trueTop.setWidth("100%");
@@ -5103,6 +5115,96 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		super.leftBottom(bottomPanel);
 	}
 	
+	private Widget createPlayerPanel() {
+		VerticalPanel panel=new VerticalPanel();
+		
+		final double duration=1;
+		
+		HorizontalPanel buttons=new HorizontalPanel();
+		buttons.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		panel.add(buttons);
+		Button play=new Button("Play Animation",new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				//TODO disable all editor
+				stopAnimation();
+				playFrameAnimation(duration);
+			}
+		});
+		buttons.add(play);
+		
+		
+		Button stop=new Button("Stop",new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				stopAnimation();
+				doPoseByMatrix(ab);//recover base pose
+			}
+		});
+		buttons.add(stop);
+		
+		final HorizontalPanel downloadPanel=new HorizontalPanel();
+		downloadPanel.setSpacing(4);
+		
+		Button export=new Button("Export",new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				AnimationClip clip=makeFrameAnimation(duration);
+				JavaScriptObject json=AnimationClip.toJSON(clip);
+				JSONObject obj=new JSONObject(json);
+				downloadPanel.clear();
+				Anchor a=HTML5Download.get().generateTextDownloadLink(obj.toString(), "animation.json", "download",true);
+				downloadPanel.add(a);
+			}
+		});
+		buttons.add(export);
+		buttons.add(downloadPanel);
+		
+		//
+		return panel;
+	}
+
+	private List<AngleAndPosition> poseFrameDataToAngleAndPosition(PoseFrameData poseFrameData){
+		List<AngleAndPosition> list=Lists.newArrayList();
+		for(int i=0;i<poseFrameData.getAngles().size();i++){
+			//need add bone-position-data
+			list.add(new AngleAndPosition(poseFrameData.getAngles().get(i).clone(), poseFrameData.getPositions().get(i).clone().add(ab.getBaseBoneRelativePosition(i)), null));
+		}
+		return list;
+	}
+	
+	private AnimationClip makeFrameAnimation(double duration){
+		PoseEditorData editorData=getSelectedPoseEditorData();
+		List<JsArray<KeyframeTrack>> tracksList=Lists.newArrayList();
+		for(int i=0;i<editorData.getPoseFrameDatas().size();i++){
+			List<AngleAndPosition> ap=poseFrameDataToAngleAndPosition(editorData.getPoseFrameDatas().get(i));
+			JsArray<KeyframeTrack> tracks=createAnimationTracks(ap);
+			tracksList.add(tracks);
+		}
+		
+		JsArray<KeyframeTrack> tracks=mergeAnimationTracks(tracksList, duration);
+		
+		/*
+		LogUtils.log("tracks:"+tracks.length());
+		for(int i=0;i<tracks.length();i++){
+			LogUtils.log(tracks.get(i));
+		}
+		*/
+		
+		
+		AnimationClip clip=THREE.AnimationClip("play", -1,tracks);
+		return clip;
+	}
+	protected void playFrameAnimation(double duration) {
+		AnimationClip clip=makeFrameAnimation(duration);
+		
+		mixer.stopAllAction();
+		mixer.uncacheClip(clip);//same name cache that.
+		mixer.clipAction(clip).play();
+		
+		
+	}
+
 	private boolean isUsingRenderer;//gifanime
 	
 	private boolean reservedCreateGifAnime;//call start gif-anime
@@ -7132,7 +7234,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		}
 		
 		//make skinning animation
-		AnimationClip clip=createAnimationClip(animationBonesData);
+		AnimationClip clip=createAnimationClip(animationBonesData.getBonesAngleAndMatrixs());
 		mixer.stopAllAction();
 		mixer.uncacheClip(clip);//same name cache that.
 		mixer.clipAction(clip).play();
@@ -7205,10 +7307,14 @@ private void concat(JsArrayNumber target,JsArrayNumber values){
 	}
 }
 
-public AnimationClip createAnimationClip(AnimationBonesData animationBonesData){
+public AnimationClip createAnimationClip(List<AngleAndPosition> angleAndPositions){
+	AnimationClip clip=THREE.AnimationClip("pose", -1, createAnimationTracks(angleAndPositions));
+	return clip;
+}
+	public JsArray<KeyframeTrack> createAnimationTracks(List<AngleAndPosition> angleAndPositions){
 	JsArray<KeyframeTrack> tracks=JavaScriptObject.createArray().cast();
-	for(int i=0;i<animationBonesData.getBonesAngleAndMatrixs().size();i++){
-		AngleAndPosition ap=animationBonesData.getBonesAngleAndMatrixs().get(i);
+	for(int i=0;i<angleAndPositions.size();i++){
+		AngleAndPosition ap=angleAndPositions.get(i);
 		int boneIndex=i;
 		
 		JsArrayNumber times=JavaScriptObject.createArray().cast();
@@ -7220,13 +7326,12 @@ public AnimationClip createAnimationClip(AnimationBonesData animationBonesData){
 		
 		QuaternionKeyframeTrack track=THREE.QuaternionKeyframeTrack(".bones["+boneIndex+"].quaternion", times, values);
 		tracks.push(track);
-		
-		
-		
+			
 	}
+	
 	//position animation
-	for(int i=0;i<animationBonesData.getBonesAngleAndMatrixs().size();i++){
-		AngleAndPosition ap=animationBonesData.getBonesAngleAndMatrixs().get(i);
+	for(int i=0;i<angleAndPositions.size();i++){
+		AngleAndPosition ap=angleAndPositions.get(i);
 		int boneIndex=i;
 		
 		JsArrayNumber times=JavaScriptObject.createArray().cast();
@@ -7242,8 +7347,48 @@ public AnimationClip createAnimationClip(AnimationBonesData animationBonesData){
 		//position animation
 		
 	}
-	AnimationClip clip=THREE.AnimationClip("pose", -1, tracks);
-	return clip;
+	
+	return tracks;
+}
+	
+public JsArray<KeyframeTrack> mergeAnimationTracks(List<JsArray<KeyframeTrack>> trackList,double betweenTime){
+	final JsArray<KeyframeTrack> tracks=JavaScriptObject.createArray().cast();
+	
+	for(int i=0;i<trackList.get(0).length();i++){
+	KeyframeTrack track=trackList.get(0).get(i);
+	
+	JsArrayNumber times=JavaScriptObject.createArray().cast();
+	JsArrayNumber values=JavaScriptObject.createArray().cast();
+	double lastTime=0;
+	for(int k=0;k<trackList.size();k++){
+		JsArray<KeyframeTrack> tracksA=trackList.get(k);
+		
+		KeyframeTrack trackA=tracksA.get(i);
+	
+		JsArrayNumber timesA=trackA.getTimes().cast();
+		JsArrayNumber valuesA=trackA.getValues().cast();
+		concat(values,valuesA);
+		
+		double time=0;
+		for(int j=0;j<timesA.length();j++){
+			time=timesA.get(j)+lastTime;
+			times.push(time);
+		}
+		lastTime=time+betweenTime;
+	}
+	//don't check with instanceof
+	if(track.getValueTypeName().equals("quaternion")){
+		tracks.push(THREE.QuaternionKeyframeTrack(track.getName(),times,values));
+	}else if(track.getValueTypeName().equals("vector")){
+		tracks.push(THREE.VectorKeyframeTrack(track.getName(),times,values));
+	}else{
+		LogUtils.log("invalid instance type:mergeAnimationTracks:"+track.getValueTypeName());
+	}
+	
+	}
+	
+	
+	return  tracks;
 }
 
 /**
