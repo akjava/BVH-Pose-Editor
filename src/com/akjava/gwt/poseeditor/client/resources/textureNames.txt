@@ -1,3 +1,4 @@
 blondhair_tshirt.png,-1
 asian_blondhair_tshirt.png,-2
 asian_blackhair_tshirt.png,-3
+simpleeye-2kbluexxx-extendhead.png,-4

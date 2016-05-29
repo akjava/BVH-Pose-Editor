@@ -1,7 +1,5 @@
 package com.akjava.gwt.poseeditor.client;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -101,6 +99,7 @@ import com.akjava.lib.common.utils.FileNames;
 import com.akjava.lib.common.utils.ValuesUtils;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gwt.canvas.client.Canvas;
@@ -188,7 +187,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	@Override
 	protected void beforeUpdate(WebGLRenderer renderer) {
 		
-		if(root!=null){
+		if(rootObject!=null){
 			/*
 			root.getScale().set(upscale,upscale,upscale);
 			
@@ -206,7 +205,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			*/
 			//usually positionZRange is zero ,controlled by camera pos
 			setRootPositionByRange(positionXRange.getValue(),positionYRange.getValue(),positionZRange.getValue());
-			root.getRotation().set(Math.toRadians(rotationXRange.getValue()),Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()),Euler.XYZ);
+			rootObject.getRotation().set(Math.toRadians(rotationXRange.getValue()),Math.toRadians(rotationYRange.getValue()),Math.toRadians(rotationZRange.getValue()),Euler.XYZ);
 			
 			
 			//camera rotation style
@@ -247,7 +246,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	}
 	
 	public void setRootPositionByRange(int x,int y,int z){
-		root.setPosition((double)x/posDivided, (double)y/posDivided, (double)z/posDivided);
+		rootObject.setPosition((double)x/posDivided, (double)y/posDivided, (double)z/posDivided);
 	}
 	public int getRootPositionXRange(){
 		return positionXRange.getValue();
@@ -599,15 +598,16 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		pointLight2.setPosition(0, 10, -300);
 		//scene.add(pointLight2);
 		
-		root=THREE.Object3D();
-		scene.add(root);
+		rootObject=THREE.Object3D();
+		scene.add(rootObject);
 		
 		//background;
-		//Geometry geo=THREE.PlaneGeometry(1000/posDivided, 1000/posDivided,20,20);
+		Geometry geo=THREE.PlaneGeometry(1000/posDivided*2, 1000/posDivided*2,20,20);
 		
-		//backgroundMesh = THREE.Mesh(geo, THREE.MeshBasicMaterial().color(0xaaaaaa).wireFrame().build());
-		//backgroundMesh=THREE.GridHelper(1000/posDivided, 40);
-		//backgroundMesh.setRotation(Math.toRadians(-90), 0, 0);
+		planeMesh = THREE.Mesh(geo, THREE.MeshBasicMaterial(GWTParamUtils.MeshBasicMaterial().color(0xaaaaaa).side(THREE.DoubleSide)
+				.transparent(true).opacity(0.5)));
+		rootObject.add(planeMesh);
+		planeMesh.getRotation().set(Math.toRadians(-90), 0, 0);
 		
 		
 		int size=1000/posDivided;
@@ -615,7 +615,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		step=Math.max(1, step);
 		
 		backgroundGrid = THREE.GridHelper(1000/posDivided, step);
-		root.add(backgroundGrid);
+		rootObject.add(backgroundGrid);
 		
 		//line removed,because of flicking
 		//Object3D xline=GWTGeometryUtils.createLineMesh(THREE.Vector3(-50, 0, 0.001), THREE.Vector3(50, 0, 0.001), 0x880000,3);
@@ -630,7 +630,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				GWTParamUtils.MeshBasicMaterial().color(0x00ff00).wireframe(true)
 				));
 		
-		root.add(selectionMesh);
+		rootObject.add(selectionMesh);
 		selectionMesh.setVisible(false);
 		
 		
@@ -937,10 +937,10 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		private String name;
 		private long cdate;
 		private String json;
-		public DataPanel(final int ind,String head,String base64, String text){
+		public DataPanel(final int dataIndex,String head,String base64, String text){
 			this.setSpacing(4);
 			json=text;
-			this.index=ind;
+			this.index=dataIndex;
 			
 			//right now stop using image.
 			Image img=new Image();
@@ -966,13 +966,16 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			
 			
 			
+		
+			
+			
 			Button loadBt=new Button("Load");
 			add(loadBt);
 			loadBt.addClickHandler(new ClickHandler() {
 				
 				@Override
 				public void onClick(ClickEvent event) {
-					int loadedIndex=isLoaded(ind);
+					int loadedIndex=isLoaded(dataIndex);
 					LogUtils.log("loadedIndex:"+loadedIndex);
 					if(loadedIndex!=-1){
 						//if already exist remove from list & alwasy recrete.because possiblly model's bone is alway difference.
@@ -983,12 +986,22 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 					
 					
 					if(ped!=null){
-					ped.setFileId(ind);
+					ped.setFileId(dataIndex);
 					doLoad(ped);
 					}else{
 						//TODO error catch
 						Window.alert("load faild");
 					}
+				}
+			});
+			
+			Button cloneBt=new Button("Clone");
+			add(cloneBt);
+			cloneBt.addClickHandler(new ClickHandler() {
+				
+				@Override
+				public void onClick(ClickEvent event) {
+					doClone(json);
 				}
 			});
 			
@@ -1079,6 +1092,66 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				}
 			});
 			
+		}
+		protected void doClone(String json) {
+			PoseEditorData pdata=PoseEditorData.readData(json);
+			pdata.setName(pdata.getName()+"-copy");
+			
+			JSONObject data=PoseEditorData.convertToJson(pdata);
+			//TODO
+			if(!storageControler.isAvailable()){
+				//TODO just export
+				Window.alert("not saved because your browser not supoort HTML5 storage");
+				return;
+			}
+			
+		//	Window.alert("hello");
+			//save database
+			
+			int dataIndex=0;
+			try {
+				dataIndex = getNewDataIndex();
+			} catch (StorageException e) {
+				alert("save faild:"+e.getMessage());
+				return;
+			}
+			
+			//TODO method?
+			//Canvas canvas=Canvas.createIfSupported();
+			/*
+			int thumbW=32;
+			int thumbH=32;
+			canvas.setSize(thumbW+"px", thumbH+"px");
+			canvas.setCoordinateSpaceWidth(thumbW);
+			canvas.setCoordinateSpaceHeight(thumbH);
+			//log(renderer.gwtCanvas());
+			//now stop write image.
+			//canvas.getContext2d().drawImage(renderer.gwtCanvas(),0,0,screenWidth,screenHeight,0,0,thumbW,thumbH);
+			
+			String thumbnail=canvas.toDataUrl();
+			LogUtils.log(thumbnail);
+			*/
+			
+		//	Window.alert("hello1");
+			//Window.alert("hello1");
+			//Window.open(thumbnail, "tmp", null);
+			try{
+			storageControler.setValue(KEY_DATA+dataIndex, data.toString());
+		//	Window.alert("hello2");
+			//storageControler.setValue(KEY_IMAGE+dataIndex, thumbnail);
+			storageControler.setValue(KEY_HEAD+dataIndex, pdata.getName()+"\t"+pdata.getCdate());
+			
+		//	Window.alert("hello3:"+dataIndex);
+			pdata.setFileId(dataIndex);
+			
+			//increment
+			dataIndex++;
+			storageControler.setValue(KEY_INDEX, dataIndex);
+			}catch (Exception e) {
+				Window.alert("storage error:"+e.getMessage());
+			}
+			
+			updateDatasPanel();
 		}
 	}
 	
@@ -2795,7 +2868,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		//TODO only call once for speed up
 		JsArray<Object3D> targets=(JsArray<Object3D>) JsArray.createArray();
 		
-		JsArray<Object3D> childs=root.getChildren();
+		JsArray<Object3D> childs=rootObject.getChildren();
 		for(int i=0;i<childs.length();i++){
 			//LogUtils.log(childs.get(i).getName());
 			targets.push(childs.get(i));
@@ -3179,7 +3252,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 							}
 							//getCurrentIkData().getTargetPos().copy(newPos);	
 							
-							positionXBoneRange.setValue((int)(newPos.getX()*100));
+							positionXBoneRange.setValue((int)(newPos.getX()*100)); //what is 100?
 							positionYBoneRange.setValue((int)(newPos.getY()*100));
 							positionZBoneRange.setValue((int)(newPos.getZ()*100));
 							logger.fine("moved:"+length+",mouse="+mouseMoved);
@@ -3733,15 +3806,45 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		showIkCheck.setValue(true);
 		
 		
+		final CheckBox showWireframeCheck = new CheckBox("wireframe");
+		
 		showBackgroundCheck = new CheckBox("Tile");
 		shows.add(showBackgroundCheck);
 		showBackgroundCheck.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				updateBackgroundVisible(showBackgroundCheck.getValue());
+				boolean allVisible=showBackgroundCheck.getValue();
+				boolean wire=showWireframeCheck.getValue();
+				if(allVisible){
+					updateBackgroundVisible(wire);
+					planeMesh.setVisible(!wire);
+				}else{
+					updateBackgroundVisible(false);
+					planeMesh.setVisible(false);
+				}
+				
 			}
 		});
 		showBackgroundCheck.setValue(true);
+		
+		
+		shows.add(showWireframeCheck);
+		showWireframeCheck.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				boolean allVisible=showBackgroundCheck.getValue();
+				boolean wire=showWireframeCheck.getValue();
+				if(allVisible){
+					updateBackgroundVisible(wire);
+					planeMesh.setVisible(!wire);
+				}else{
+					updateBackgroundVisible(false);
+					planeMesh.setVisible(false);
+				}
+				
+			}
+		});
+		showWireframeCheck.setValue(true);
 		
 		//dont need now
 		/*
@@ -4694,7 +4797,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 				@Override
 				public void loaded(Geometry geometry,JsArray<Material> materials) {
 					if(bodyMesh!=null){
-						root.remove(bodyMesh);//for initialzie
+						rootObject.remove(bodyMesh);//for initialzie
 						bodyMesh=null;
 					}
 					//LogUtils.log("material?");
@@ -4797,7 +4900,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 
 		Vector3 pos=THREE.Vector3(positionXBoneRange.getValue(),
 				positionYBoneRange.getValue()
-				, positionZBoneRange.getValue()).multiplyScalar(0.01);
+				, positionZBoneRange.getValue()).multiplyScalar(0.01);//what is 100?
 		
 		/*
 		Vector3 angles=GWTThreeUtils.rotationToVector3(ab.getBoneAngleAndMatrix(index).getMatrix());
@@ -4843,13 +4946,20 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		bottomPanel.setVisible(true);
 		bottomPanel.setSize("650px", "106px");
 		
-		TabPanel tab=new TabPanel();
-		bottomPanel.add(tab);
+		TabPanel bottomTab=new TabPanel();
+		bottomTab.addSelectionHandler(new SelectionHandler<Integer>() {
+			@Override
+			public void onSelection(SelectionEvent<Integer> event) {
+				onBottomTabSelectionChanged(event.getSelectedItem());
+			}
+			
+		});
+		bottomPanel.add(bottomTab);
 		
 		VerticalPanel main=new VerticalPanel();
-		tab.add(main,"Edit");
-		tab.add(createPlayerPanel(),"Play");
-		tab.selectTab(0);
+		bottomTab.add(main,"Edit");
+		bottomTab.add(createPlayerPanel(),"Play");
+		bottomTab.selectTab(0);
 		
 		HorizontalPanel trueTop=new HorizontalPanel();
 		trueTop.setWidth("100%");
@@ -5115,21 +5225,50 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		super.leftBottom(bottomPanel);
 	}
 	
+	protected void onBottomTabSelectionChanged(Integer selectedItem) {
+		if(selectedItem==0){//edit tab
+			executeStop();
+			showIkCheck.setValue(true, true);
+			showBonesCheck.setValue(true, true);
+		}else if(selectedItem==1){//play tab
+			executePlayAnimation();
+			showIkCheck.setValue(false, true);
+			showBonesCheck.setValue(false, true);
+		}
+	
+		//I'm not sure still some objects make each time ,TODO fix this
+		updateBonesVisible(showBonesCheck.getValue());
+		if(ik3D!=null){
+			Object3DUtils.setVisibleAll(ik3D, showIkCheck.getValue());
+		}
+	}
+
 	private Widget createPlayerPanel() {
 		VerticalPanel panel=new VerticalPanel();
 		
-		final double duration=1;
 		
 		HorizontalPanel buttons=new HorizontalPanel();
 		buttons.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		panel.add(buttons);
+		
+		 CheckBox connectFirstCheck=new CheckBox("connect first");
+		 connectFirstCheck.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
+			@Override
+			public void onValueChange(ValueChangeEvent<Boolean> event) {
+				connectFirst=event.getValue();
+				executeStop();
+				executePlayAnimation();
+			}
+			 
+		});
+		panel.add(connectFirstCheck);
+		
 		Button play=new Button("Play Animation",new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
+				executePlayAnimation();
 				//TODO disable all editor
-				stopAnimation();
-				playFrameAnimation(duration);
-			}
+				}
 		});
 		buttons.add(play);
 		
@@ -5137,8 +5276,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		Button stop=new Button("Stop",new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				stopAnimation();
-				doPoseByMatrix(ab);//recover base pose
+				executeStop();
 			}
 		});
 		buttons.add(stop);
@@ -5146,10 +5284,11 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		final HorizontalPanel downloadPanel=new HorizontalPanel();
 		downloadPanel.setSpacing(4);
 		
+		
 		Button export=new Button("Export",new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				AnimationClip clip=makeFrameAnimation(duration);
+				AnimationClip clip=makeFrameAnimation(playAnimationDuration,posDivided,connectFirst);
 				JavaScriptObject json=AnimationClip.toJSON(clip);
 				JSONObject obj=new JSONObject(json);
 				downloadPanel.clear();
@@ -5164,6 +5303,20 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		return panel;
 	}
 
+	protected void executeStop() {
+		stopAnimation();
+		doPoseByMatrix(ab);//recover base pose
+	
+	}
+	
+	private double playAnimationDuration=1;
+	private boolean connectFirst;
+	protected void executePlayAnimation() {
+		stopAnimation();
+		playFrameAnimation(playAnimationDuration,connectFirst);
+	
+	}
+
 	private List<AngleAndPosition> poseFrameDataToAngleAndPosition(PoseFrameData poseFrameData){
 		List<AngleAndPosition> list=Lists.newArrayList();
 		for(int i=0;i<poseFrameData.getAngles().size();i++){
@@ -5173,14 +5326,23 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		return list;
 	}
 	
-	private AnimationClip makeFrameAnimation(double duration){
+	private AnimationClip makeFrameAnimation(double duration,double divided,boolean connectFirst){
 		PoseEditorData editorData=getSelectedPoseEditorData();
 		List<JsArray<KeyframeTrack>> tracksList=Lists.newArrayList();
-		for(int i=0;i<editorData.getPoseFrameDatas().size();i++){
-			List<AngleAndPosition> ap=poseFrameDataToAngleAndPosition(editorData.getPoseFrameDatas().get(i));
-			JsArray<KeyframeTrack> tracks=createAnimationTracks(ap);
+		
+		List<PoseFrameData> frames=Lists.newArrayList(editorData.getPoseFrameDatas());
+		
+		if(connectFirst){
+			frames.add(editorData.getPoseFrameDatas().get(0));
+		}
+		
+		for(int i=0;i<frames.size();i++){
+			List<AngleAndPosition> ap=poseFrameDataToAngleAndPosition(frames.get(i));
+			JsArray<KeyframeTrack> tracks=createAnimationTracks(ap,divided);
 			tracksList.add(tracks);
 		}
+		
+		
 		
 		JsArray<KeyframeTrack> tracks=mergeAnimationTracks(tracksList, duration);
 		
@@ -5195,8 +5357,8 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		AnimationClip clip=THREE.AnimationClip("play", -1,tracks);
 		return clip;
 	}
-	protected void playFrameAnimation(double duration) {
-		AnimationClip clip=makeFrameAnimation(duration);
+	protected void playFrameAnimation(double duration,boolean connectFirst) {
+		AnimationClip clip=makeFrameAnimation(duration,1,connectFirst);
 		
 		mixer.stopAllAction();
 		mixer.uncacheClip(clip);//same name cache that.
@@ -5472,7 +5634,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		String result=Window.prompt("Save File", pdata.getName());
 		if(result!=null){
 			pdata.setName(result);
-			JSONObject data=PoseEditorData.writeData(pdata);
+			JSONObject data=PoseEditorData.convertToJson(pdata);
 			
 			updateListBox();
 			//fileNames.setItemText(poseEditorDataSelection, result);
@@ -5572,7 +5734,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		
 		int fileId=pdata.getFileId();
 		if(fileId!=-1){
-			JSONObject data=PoseEditorData.writeData(pdata);
+			JSONObject data=PoseEditorData.convertToJson(pdata);
 			try{
 			storageControler.setValue(KEY_DATA+fileId, data.toString());
 			pdata.setModified(false);
@@ -6408,7 +6570,7 @@ private List<String> boneList=new ArrayList<String>();
 	private JsArray<Vector4> bodyIndices;
 	private JsArray<Vector4> bodyWeight;
 	SkinnedMesh bodyMesh;
-	Object3D root;
+	Object3D rootObject;
 	Object3D bone3D;
 	Object3D ik3D;
 	private CheckBox transparentCheck;
@@ -6909,16 +7071,16 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		
 		bonePath=boneToPath(animationBones);
 		if(bone3D!=null){
-			root.remove(bone3D);
+			rootObject.remove(bone3D);
 		}
 		bone3D=THREE.Object3D();
-		root.add(bone3D);
+		rootObject.add(bone3D);
 		
 		if(ik3D!=null){
-			root.remove(ik3D);
+			rootObject.remove(ik3D);
 		}
 		ik3D=THREE.Object3D();
-		root.add(ik3D);
+		rootObject.add(ik3D);
 		
 		
 		//selection
@@ -7229,7 +7391,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			stopAnimation();
 			bodyMesh=THREE.SkinnedMesh(baseGeometry, bodyMaterial);
 			mixer=THREE.AnimationMixer(bodyMesh);//replace mixer
-			root.add(bodyMesh);
+			rootObject.add(bodyMesh);
 			updateBonesVisible(showBonesCheck.getValue());
 		}
 		
@@ -7308,14 +7470,17 @@ private void concat(JsArrayNumber target,JsArrayNumber values){
 }
 
 public AnimationClip createAnimationClip(List<AngleAndPosition> angleAndPositions){
-	AnimationClip clip=THREE.AnimationClip("pose", -1, createAnimationTracks(angleAndPositions));
+	AnimationClip clip=THREE.AnimationClip("pose", -1, createAnimationTracks(angleAndPositions,1));
 	return clip;
 }
-	public JsArray<KeyframeTrack> createAnimationTracks(List<AngleAndPosition> angleAndPositions){
+	public JsArray<KeyframeTrack> createAnimationTracks(List<AngleAndPosition> angleAndPositions,double posdivided){
 	JsArray<KeyframeTrack> tracks=JavaScriptObject.createArray().cast();
 	for(int i=0;i<angleAndPositions.size();i++){
-		AngleAndPosition ap=angleAndPositions.get(i);
-		int boneIndex=i;
+		int index=i;
+		
+		
+		AngleAndPosition ap=angleAndPositions.get(index);
+		int boneIndex=index;
 		
 		JsArrayNumber times=JavaScriptObject.createArray().cast();
 		times.push(0);
@@ -7327,19 +7492,23 @@ public AnimationClip createAnimationClip(List<AngleAndPosition> angleAndPosition
 		QuaternionKeyframeTrack track=THREE.QuaternionKeyframeTrack(".bones["+boneIndex+"].quaternion", times, values);
 		tracks.push(track);
 			
+		
 	}
 	
 	//position animation
 	for(int i=0;i<angleAndPositions.size();i++){
-		AngleAndPosition ap=angleAndPositions.get(i);
-		int boneIndex=i;
+		int index=i;
+		
+		
+		AngleAndPosition ap=angleAndPositions.get(index);
+		int boneIndex=index;
 		
 		JsArrayNumber times=JavaScriptObject.createArray().cast();
 		times.push(0);
 		
 		
 		JsArrayNumber values=JsArray.createArray().cast();
-		concat(values,ap.getPosition().toArray());
+		concat(values,ap.getPosition().clone().divideScalar(posdivided).toArray());
 		
 		VectorKeyframeTrack track=THREE.VectorKeyframeTrack(".bones["+boneIndex+"].position", times, values);
 		tracks.push(track);
@@ -7511,6 +7680,7 @@ private MenuBar rootBar;
 private VerticalPanel imageLinkContainer;
 private Button undoButton;
 private Button gifAnimeBt;
+private Mesh planeMesh;
 ;
 
 /**
@@ -7522,10 +7692,10 @@ private Button gifAnimeBt;
 		
 		bonePath=boneToPath(animationBones);
 		if(bone3D!=null){
-			root.remove(bone3D);
+			rootObject.remove(bone3D);
 		}
 		bone3D=THREE.Object3D();
-		root.add(bone3D);
+		rootObject.add(bone3D);
 		
 		//test ikk
 		Mesh cddIk0=THREE.Mesh(THREE.BoxGeometry(.5, .5, .5),THREE.MeshLambertMaterial(GWTParamUtils.MeshBasicMaterial().color(0x00ff00)));
@@ -7659,7 +7829,7 @@ private Button gifAnimeBt;
 		//Material material=THREE.MeshLambertMaterial().map(ImageUtils.loadTexture("men3smart_texture.png")).build();
 		
 		bodyMesh=THREE.SkinnedMesh(geo, bodyMaterial);
-		root.add(bodyMesh);
+		rootObject.add(bodyMesh);
 		
 		
 		
