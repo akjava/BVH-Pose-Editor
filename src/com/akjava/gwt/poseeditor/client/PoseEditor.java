@@ -80,6 +80,7 @@ import com.akjava.gwt.three.client.js.core.Geometry;
 import com.akjava.gwt.three.client.js.core.Object3D;
 import com.akjava.gwt.three.client.js.extras.ImageUtils;
 import com.akjava.gwt.three.client.js.extras.helpers.GridHelper;
+import com.akjava.gwt.three.client.js.extras.helpers.SkeletonHelper;
 import com.akjava.gwt.three.client.js.lights.Light;
 import com.akjava.gwt.three.client.js.loaders.JSONLoader.JSONLoadHandler;
 import com.akjava.gwt.three.client.js.materials.Material;
@@ -284,6 +285,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	public void render(){
 		if(mixer!=null){
 			mixer.update(clock.getDelta());
+		}
+		if(skeltonHelper!=null){
+			skeltonHelper.update();
 		}
 		renderer.render(scene, camera);
 	}
@@ -4669,6 +4673,10 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 			}
 		}
 		
+		if(skeltonHelper!=null){
+			skeltonHelper.setVisible(value);
+		}
+		
 	}
 	
 	protected void updateFingerBonesVisible(boolean value) {
@@ -7140,8 +7148,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			//pos.addSelf(ppos);
 			
 			//log(boneName+":"+ThreeLog.get(pos)+","+ThreeLog.get(ppos));	
-			Object3D line=GWTGeometryUtils.createLineMesh(pos, ppos, 0xffffff);
-			bone3D.add(line);
+			
 			
 			//cylinder
 			/* better bone faild
@@ -7388,11 +7395,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		*/
 		
 		if(bodyMesh==null){
-			stopAnimation();
-			bodyMesh=THREE.SkinnedMesh(baseGeometry, bodyMaterial);
-			mixer=THREE.AnimationMixer(bodyMesh);//replace mixer
-			rootObject.add(bodyMesh);
-			updateBonesVisible(showBonesCheck.getValue());
+			createSkinnedMesh();
 		}
 		
 		//make skinning animation
@@ -7432,6 +7435,24 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		}
 
 private AnimationMixer mixer;
+
+
+public void createSkinnedMesh(){
+	stopAnimation();
+	//must be remove by hand
+	bodyMesh=THREE.SkinnedMesh(baseGeometry, bodyMaterial);
+	mixer=THREE.AnimationMixer(bodyMesh);//replace mixer
+	rootObject.add(bodyMesh);
+	
+	if(skeltonHelper!=null){
+		scene.remove(skeltonHelper);//re-create
+	}
+	
+	skeltonHelper = THREE.SkeletonHelper(bodyMesh);
+	scene.add(skeltonHelper);
+	updateBonesVisible(showBonesCheck.getValue());
+}
+
 public void stopAnimation() {
 	if(mixer==null){
 		return;
@@ -7681,6 +7702,7 @@ private VerticalPanel imageLinkContainer;
 private Button undoButton;
 private Button gifAnimeBt;
 private Mesh planeMesh;
+private SkeletonHelper skeltonHelper;
 ;
 
 /**
