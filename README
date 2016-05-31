@@ -1,29 +1,28 @@
-BVH Pose Editor
+#GWT Pose Editor
 
-[Updated] 2014.05.08
-support three.js r66
-now all model based Makehuman & second-life 19bone(I'm not sure how this bone called)
-sadly old model & bone(bvh) not work right now.
-it would be fixed next release.
+now i'm developping newer-version with Manuel Bastioni Lab 3D 
+http://www.manuelbastioni.com/manuellab.php
+
+
+Not compatible old version.dropping any BVH functions.(i don't have a resource to test these)
 
 Licensed Apache2.0
 included Three.js & stats.js & GWT-Three.js Wrapper is Under MIT License
 
 any question or suggestion post issue or comment on Google+
 
-English Web Site(based old version)
-http://webgl.akjava.com
 
-Base Bone come from
-https://sites.google.com/a/cgspeed.com/cgspeed/motion-capture/cmu-bvh-conversion
-
----
-Bugs
+##Bugs
 Only Tested on Chrome
 
 there are gimbal lock problem when angle over 90
 
-Aboud Models
+##Aboud Models
+###new model
+Manuel Bastioni Lab 3D -
+http://www.manuelbastioni.com/manuellab.php
+
+###old model
 Model file name is model{number}_{makehuman-topology-name}{total-vertices-count}_bone{bone-number}.js
 Model001 is almost default Makehuman 1.0 just changed 100% Caucasian & 100% female.
 the name is like proxy or female is topology name on makehuman.
