@@ -1489,7 +1489,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			
 			//for debug;
 			for(String bname:getCurrentIkData().getBones()){
-				Vector3 angle=bm.get(ab.getBoneIndex(bname)).getAngle();
+				Vector3 angle=bm.get(ab.getBoneIndex(bname)).getDegreeAngle();
 				//log(bname+":"+ThreeLog.get(angle));
 			}
 			
@@ -1842,7 +1842,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		int srcIndex=ab.getBoneIndex(copiedBone.getName());
 		if(srcIndex!=-1){
 			ab.getBoneAngleAndMatrix(srcIndex).getPosition().copy(copiedBone.getPosition());
-			ab.getBoneAngleAndMatrix(srcIndex).getAngle().copy(copiedBone.getAngle());
+			ab.getBoneAngleAndMatrix(srcIndex).getDegreeAngle().copy(copiedBone.getAngle());
 			ab.getBoneAngleAndMatrix(srcIndex).updateMatrix();
 			fitIkOnBone();
 			doPoseByMatrix(ab);
@@ -1855,7 +1855,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			String name=getSelectedBoneName();
 			int srcIndex=ab.getBoneIndex(name);
 			if(srcIndex!=-1){
-				Vector3 angle=ab.getBoneAngleAndMatrix(srcIndex).getAngle().clone();
+				Vector3 angle=ab.getBoneAngleAndMatrix(srcIndex).getDegreeAngle().clone();
 				Vector3 pos=ab.getBoneAngleAndMatrix(srcIndex).getPosition().clone();
 				
 				if(copiedBone==null){
@@ -1894,7 +1894,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				
 				int srcIndex=ab.getBoneIndex(name);
 				if(srcIndex!=-1){
-					Vector3 angle=ab.getBoneAngleAndMatrix(srcIndex).getAngle();
+					Vector3 angle=ab.getBoneAngleAndMatrix(srcIndex).getDegreeAngle();
 					
 					copiedIk.add(name,angle);
 					
@@ -2257,7 +2257,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				for(String boneName:ik.getBones()){
 					boneLock.clearY(boneName);
 					boneLock.clearZ(boneName);
-					boneLock.setX(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getX());
+					boneLock.setX(boneName,ab.getBoneAngleAndMatrix(boneName).getDegreeAngle().getX());
 					
 				}
 				updateBoneRotationRanges();
@@ -2274,7 +2274,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				for(String boneName:ik.getBones()){
 					boneLock.clearX(boneName);
 					boneLock.clearZ(boneName);
-					boneLock.setY(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getY());
+					boneLock.setY(boneName,ab.getBoneAngleAndMatrix(boneName).getDegreeAngle().getY());
 					
 				}
 				updateBoneRotationRanges();
@@ -2291,7 +2291,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				for(String boneName:ik.getBones()){
 					boneLock.clearX(boneName);
 					boneLock.clearY(boneName);
-					boneLock.setZ(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getZ());
+					boneLock.setZ(boneName,ab.getBoneAngleAndMatrix(boneName).getDegreeAngle().getZ());
 					
 				}
 				updateBoneRotationRanges();
@@ -2308,8 +2308,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				IKData ik=getCurrentIkData();
 				for(String boneName:ik.getBones()){
 					boneLock.clearX(boneName);
-					boneLock.setY(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getY());
-					boneLock.setZ(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getZ());
+					boneLock.setY(boneName,ab.getBoneAngleAndMatrix(boneName).getDegreeAngle().getY());
+					boneLock.setZ(boneName,ab.getBoneAngleAndMatrix(boneName).getDegreeAngle().getZ());
 					
 				}
 				updateBoneRotationRanges();
@@ -2326,8 +2326,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				IKData ik=getCurrentIkData();
 				for(String boneName:ik.getBones()){
 					boneLock.clearY(boneName);
-					boneLock.setX(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getX());
-					boneLock.setZ(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getZ());
+					boneLock.setX(boneName,ab.getBoneAngleAndMatrix(boneName).getDegreeAngle().getX());
+					boneLock.setZ(boneName,ab.getBoneAngleAndMatrix(boneName).getDegreeAngle().getZ());
 					
 				}
 				updateBoneRotationRanges();
@@ -2343,8 +2343,8 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 				IKData ik=getCurrentIkData();
 				for(String boneName:ik.getBones()){
 					boneLock.clearZ(boneName);
-					boneLock.setY(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getY());
-					boneLock.setX(boneName,ab.getBoneAngleAndMatrix(boneName).getAngle().getX());
+					boneLock.setY(boneName,ab.getBoneAngleAndMatrix(boneName).getDegreeAngle().getY());
+					boneLock.setX(boneName,ab.getBoneAngleAndMatrix(boneName).getDegreeAngle().getX());
 					
 				}
 				updateBoneRotationRanges();
@@ -2713,9 +2713,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 							int index=ab.getBoneIndex(targetName);
 							int srcIndex=ab.getBoneIndex(name);
 							if(index!=-1 && srcIndex!=-1){
-								Vector3 angle1=ab.getBoneAngleAndMatrix(srcIndex).getAngle();
+								Vector3 angle1=ab.getBoneAngleAndMatrix(srcIndex).getDegreeAngle();
 								
-								Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
+								Vector3 angle=ab.getBoneAngleAndMatrix(index).getDegreeAngle();
 								rotToBone(name, angle.getX(), -angle.getY(), -angle.getZ(),false);
 								
 								rotToBone(targetName, angle1.getX(), -angle1.getY(), -angle1.getZ(),true);
@@ -2736,7 +2736,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 							LogUtils.log("invalid bone:"+bname);
 							continue;
 						}
-						Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
+						Vector3 angle=ab.getBoneAngleAndMatrix(index).getDegreeAngle();
 						rotToBone(bname, angle.getX(), -angle.getY(), -angle.getZ(),false);
 					}
 					
@@ -3350,7 +3350,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 				}else{//change angle
 					
 				
-				Vector3 angle=ab.getBoneAngleAndMatrix(selectedBone).getAngle();
+				Vector3 angle=ab.getBoneAngleAndMatrix(selectedBone).getDegreeAngle();
 				
 				rotationBoneXRange.setValue(getRotationRangeValue(rotationBoneXRange.getValue(),(int)diffY));
 				rotationBoneYRange.setValue(getRotationRangeValue(rotationBoneYRange.getValue(),(int)diffX));
@@ -3368,7 +3368,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 					}
 				}else{
 					//Vector3 rootPos=ab.getBonePosition(0);
-					Vector3 movedAngle=ab.getBoneAngleAndMatrix(selectedBone).getAngle().clone();
+					Vector3 movedAngle=ab.getBoneAngleAndMatrix(selectedBone).getDegreeAngle().clone();
 					movedAngle.sub(angle);
 					//log("before:"+ThreeLog.get(angle)+" moved:"+ThreeLog.get(movedAngle));
 					//Matrix4 mx=GWTThreeUtils.degitRotationToMatrix4(movedAngle);
@@ -3523,7 +3523,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 			}else{
 			int diff=event.getDeltaY();
 			
-			Vector3 angle=ab.getBoneAngleAndMatrix(selectedBone).getAngle();
+			Vector3 angle=ab.getBoneAngleAndMatrix(selectedBone).getDegreeAngle();
 			rotationBoneZRange.setValue(getRotationRangeValue(rotationBoneZRange.getValue(),diff));
 			//rotationBoneZRange.setValue(rotationBoneZRange.getValue()+diff);
 			rotToBone();
@@ -3540,7 +3540,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 				}else{
 					//Vector3 rootPos=ab.getBonePosition(0);
 					
-					Vector3 movedAngle=ab.getBoneAngleAndMatrix(selectedBone).getAngle().clone();
+					Vector3 movedAngle=ab.getBoneAngleAndMatrix(selectedBone).getDegreeAngle().clone();
 					movedAngle.sub(angle);
 					//logger.fine("before:"+ThreeLog.get(angle)+" moved:"+ThreeLog.get(movedAngle));
 					//Matrix4 mx=GWTThreeUtils.degitRotationToMatrix4(movedAngle);
@@ -4581,9 +4581,9 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 				int index=ab.getBoneIndex(targetName);
 				int srcIndex=ab.getBoneIndex(name);
 				if(index!=-1 && srcIndex!=-1){
-					Vector3 angle1=ab.getBoneAngleAndMatrix(srcIndex).getAngle();
+					Vector3 angle1=ab.getBoneAngleAndMatrix(srcIndex).getDegreeAngle();
 					
-					Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
+					Vector3 angle=ab.getBoneAngleAndMatrix(index).getDegreeAngle();
 					rotToBone(name, angle.getX(), -angle.getY(), -angle.getZ(),false);
 					
 					rotToBone(targetName, angle1.getX(), -angle1.getY(), -angle1.getZ(),true);
@@ -4623,7 +4623,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 			int index=ab.getBoneIndex(targetName);
 			if(index!=-1){
 				
-				Vector3 targetAngle=ab.getBoneAngleAndMatrix(index).getAngle();
+				Vector3 targetAngle=ab.getBoneAngleAndMatrix(index).getDegreeAngle();
 				double x=rotationBoneXRange.getValue();
 				double y=rotationBoneYRange.getValue()*-1;
 				double z=rotationBoneZRange.getValue()*-1;
@@ -4688,7 +4688,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 				
 				int index=ab.getBoneIndex(srcBoneName);
 				if(index!=-1){
-					Vector3 angle=ab.getBoneAngleAndMatrix(index).getAngle();
+					Vector3 angle=ab.getBoneAngleAndMatrix(index).getDegreeAngle();
 					rotToBone(destBoneName, angle.getX(), -angle.getY(), -angle.getZ(),false);
 				}
 			}
@@ -4728,7 +4728,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 						rotToBone(targetName, rotationBoneXRange.getValue(),-rotationBoneYRange.getValue(),-rotationBoneZRange.getValue(),true);
 					}else{
 						//copy from left
-						Vector3 angle=ab.getBoneAngleAndMatrix(targetBoneIndex).getAngle();
+						Vector3 angle=ab.getBoneAngleAndMatrix(targetBoneIndex).getDegreeAngle();
 						rotationBoneXRange.setValue((int) angle.getX());
 						rotationBoneYRange.setValue((int) angle.getY()*-1);
 						rotationBoneZRange.setValue((int) angle.getZ()*-1);
@@ -4736,7 +4736,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 					}
 				}else{//left bone
 					if(rightToLeft){
-						Vector3 angle=ab.getBoneAngleAndMatrix(targetBoneIndex).getAngle();
+						Vector3 angle=ab.getBoneAngleAndMatrix(targetBoneIndex).getDegreeAngle();
 						rotationBoneXRange.setValue((int) angle.getX());
 						rotationBoneYRange.setValue((int) angle.getY()*-1);
 						rotationBoneZRange.setValue((int) angle.getZ()*-1);
@@ -5970,7 +5970,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		List<Vector3> angles=new ArrayList<Vector3>();
 		List<Vector3> positions=new ArrayList<Vector3>();
 		for(int i=0;i<matrixs.size();i++){
-			Vector3 angle=matrixs.get(i).getAngle().clone();
+			Vector3 angle=matrixs.get(i).getDegreeAngle().clone();
 			angles.add(angle);
 			
 			Vector3 position=ab.getMatrixPosition(i);//TODO getPosition()?
@@ -6245,7 +6245,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		//log("bone-pos:"+ThreeLog.get(bones.get(index).getPos()));
 		
 		ab.getBoneAngleAndMatrix(index).setMatrix(rotMx);
-		ab.getBoneAngleAndMatrix(index).setAngle(degAngles);
+		ab.getBoneAngleAndMatrix(index).setDegreeAngle(degAngles);
 	
 		if(doPoseByMatrix){
 			doPoseByMatrix(ab);
@@ -6343,7 +6343,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		Vector3 mAngles=GWTThreeUtils.toDegreeAngle(ab.getBoneAngleAndMatrix(name).getMatrix());
 		//log("updateBoneRotationRanges():"+ThreeLog.get(mAngles));
 		
-		Vector3 angles=ab.getBoneAngleAndMatrix(name).getAngle();
+		Vector3 angles=ab.getBoneAngleAndMatrix(name).getDegreeAngle();
 		int x=(int) angles.getX();
 		
 		rotationBoneXRange.setValue(x);
@@ -6759,7 +6759,7 @@ for(NameAndVector3 nv:samples){
 	Matrix4 newMatrix=GWTThreeUtils.rotationToMatrix4(nv.getVector3());
 	newMatrix.multiplyMatrices(translates,newMatrix);
 	//log("apply-matrix");
-	matrix.get(boneIndex).setAngle(GWTThreeUtils.radiantToDegree(nv.getVector3()));
+	matrix.get(boneIndex).setDegreeAngle(GWTThreeUtils.radiantToDegree(nv.getVector3()));
 	matrix.get(boneIndex).setMatrix(newMatrix);
 	}
 }
@@ -6877,7 +6877,7 @@ private Vector3 findNextStep(int boneIndex,int lastBoneIndex,Vector3 targetPos){
 					AngleAndPosition am=ab.getBoneAngleAndMatrix(bindex);
 					Matrix4 m=am.getMatrix();
 					if(bindex==boneIndex){
-						Vector3 newAngle=am.getAngle().clone().add(tmpVec);
+						Vector3 newAngle=am.getDegreeAngle().clone().add(tmpVec);
 						Vector3 pv=GWTThreeUtils.toPositionVec(m);
 						
 						m=THREE.Matrix4();
@@ -6899,7 +6899,7 @@ private Vector3 findNextStep(int boneIndex,int lastBoneIndex,Vector3 targetPos){
 		}
 	}
 	//log("mutch:"+ThreeLog.get(base));
-	return base.add(ab.getBoneAngleAndMatrix(boneIndex).getAngle());
+	return base.add(ab.getBoneAngleAndMatrix(boneIndex).getDegreeAngle());
 }
 
 private boolean doLimit=true;
@@ -6937,7 +6937,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	Vector3 ikkedAngle=null;
 	Matrix4 jointRot=ab.getBoneAngleAndMatrix(targetBoneName).getMatrix();
 	Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(jointRot));
-	Vector3 currentAngle=ab.getBoneAngleAndMatrix(targetBoneName).getAngle().clone();
+	Vector3 currentAngle=ab.getBoneAngleAndMatrix(targetBoneName).getDegreeAngle().clone();
 	//log("current:"+ThreeLog.get(currentAngle));
 	String beforeAngleLog="";
 	if(perLimit>0){
@@ -7066,7 +7066,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	newMatrix.multiplyMatrices(translates,newMatrix);
 	
 	ab.getBoneAngleAndMatrix(boneIndex).setMatrix(newMatrix);
-	ab.getBoneAngleAndMatrix(boneIndex).setAngle(GWTThreeUtils.radiantToDegree(ikkedAngle));
+	ab.getBoneAngleAndMatrix(boneIndex).setDegreeAngle(GWTThreeUtils.radiantToDegree(ikkedAngle));
 	
 	
 	//log(targetName+":"+ThreeLog.getAngle(jointRot)+",new"+ThreeLog.getAngle(newMatrix));
@@ -7195,7 +7195,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		selectionMesh.setPosition(ab.getBonePosition(selectedBone));
 	}
 		
-	List<AngleAndPosition> boneMatrix=animationBonesData.getBonesAngleAndMatrixs();
+		List<AngleAndPosition> boneMatrix=animationBonesData.getBonesAngleAndMatrixs();
 		
 		bonePath=boneToPath(animationBones);
 		if(bone3D!=null){
@@ -7254,7 +7254,7 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 			pos.setFromMatrixPosition(mv);
 			
 			//Vector3 rot=GWTThreeUtils.rotationToVector3(GWTThreeUtils.jsArrayToQuaternion(bones.get(i).getRotq()));
-			Vector3 rot=GWTThreeUtils.degreeToRagiant(ab.getBoneAngleAndMatrix(i).getAngle());
+			Vector3 rot=GWTThreeUtils.degreeToRagiant(ab.getBoneAngleAndMatrix(i).getDegreeAngle());
 			List<Integer> path=bonePath.get(i);
 			String boneName=animationBones.get(i).getName();
 			//log(boneName);
@@ -7608,6 +7608,7 @@ public void stopAnimation() {
 
 /*
  * radiants
+ * same as THREE.Quaternion().setFromEuler(euler, false)
  */
 public Quaternion createAngleQuaternion(double x,double y,double z){
 	Quaternion q=THREE.Quaternion();
@@ -7650,7 +7651,7 @@ public AnimationClip createAnimationClip(List<AngleAndPosition> angleAndPosition
 		JsArrayNumber times=JavaScriptObject.createArray().cast();
 		times.push(0);
 		
-		Quaternion q=createAngleQuaternionByAngle(ap.getAngle().getX(),ap.getAngle().getY(),ap.getAngle().getZ());
+		Quaternion q=createAngleQuaternionByAngle(ap.getDegreeAngle().getX(),ap.getDegreeAngle().getY(),ap.getDegreeAngle().getZ());
 		JsArrayNumber values=JsArray.createArray().cast();
 		concat(values,q.toArray());
 		
