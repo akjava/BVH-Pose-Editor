@@ -266,7 +266,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	
 	private Object3D cameraHolder;
 	@Override
-	protected void createCamera(Scene scene,int width,int height){
+	protected void updateCamera(Scene scene,int width,int height){
 		if(cameraHolder==null){
 			cameraHolder=THREE.Object3D();
 			scene.add(cameraHolder);
