@@ -276,7 +276,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			cameraHolder.remove(camera);
 			camera=null;
 		}
-		Camera camera = THREE.PerspectiveCamera(35,(double)width/height,0.1,6000);
+		Camera camera = THREE.PerspectiveCamera(45,(double)width/height,0.001,600);
 		//camera.getPosition().set(0, 0, cameraZ);
 		cameraHolder.add(camera); //some kind of trick.
 		this.camera=camera;
@@ -7582,7 +7582,9 @@ private AnimationMixer mixer;
 public void createSkinnedMesh(){
 	stopAnimation();
 	//must be remove by hand
+	baseGeometry.computeBoundingSphere();
 	bodyMesh=THREE.SkinnedMesh(baseGeometry, bodyMaterial);
+	
 	mixer=THREE.AnimationMixer(bodyMesh);//replace mixer
 	group1.add(bodyMesh);
 	
@@ -7595,6 +7597,7 @@ public void createSkinnedMesh(){
 	updateBonesVisible(showBonesCheck.getValue());
 	
 	touchGroundZero();//
+	
 }
 
 public void stopAnimation() {
