@@ -5351,7 +5351,12 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		buttons.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
 		panel.add(buttons);
 		
-		 CheckBox connectFirstCheck=new CheckBox("connect first");
+		HorizontalPanel buttons2=new HorizontalPanel();
+		buttons2.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+		panel.add(buttons2);
+		
+		
+		 CheckBox connectFirstCheck=new CheckBox("Connect to first frame");
 		 connectFirstCheck.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
 			@Override
 			public void onValueChange(ValueChangeEvent<Boolean> event) {
@@ -5361,7 +5366,21 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 			}
 			 
 		});
-		panel.add(connectFirstCheck);
+		 buttons2.add(connectFirstCheck);
+		
+		 CheckBox moveOnlyRootCheck=new CheckBox("Move only root");
+		 moveOnlyRootCheck.setValue(moveOnlyRoot);
+		 moveOnlyRootCheck.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
+			@Override
+			public void onValueChange(ValueChangeEvent<Boolean> event) {
+				moveOnlyRoot=event.getValue();
+				executeStop();
+				executePlayAnimation();
+			}
+			 
+		});
+		 buttons2.add(moveOnlyRootCheck);
+		
 		
 		Button play=new Button("Play Animation",new ClickHandler() {
 			@Override
@@ -5388,7 +5407,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		Button export=new Button("Export",new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				AnimationClip clip=makeFrameAnimation(playAnimationDuration,posDivided,connectFirst);
+				AnimationClip clip=makeFrameAnimation(playAnimationDuration,posDivided,connectFirst,moveOnlyRoot);
 				JavaScriptObject json=AnimationClip.toJSON(clip);
 				JSONObject obj=new JSONObject(json);
 				downloadPanel.clear();
@@ -5411,9 +5430,14 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	
 	private double playAnimationDuration=1;
 	private boolean connectFirst;
+	
+	/*
+	 * if translate other bone,it's animation only work same bone.
+	 */
+	private boolean moveOnlyRoot=true;
 	protected void executePlayAnimation() {
 		stopAnimation();
-		playFrameAnimation(playAnimationDuration,connectFirst);
+		playFrameAnimation(playAnimationDuration,connectFirst,moveOnlyRoot);
 	
 	}
 
@@ -5426,7 +5450,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		return list;
 	}
 	
-	private AnimationClip makeFrameAnimation(double duration,double divided,boolean connectFirst){
+	private AnimationClip makeFrameAnimation(double duration,double divided,boolean connectFirst,boolean moveOnlyRoot){
 		PoseEditorData editorData=getSelectedPoseEditorData();
 		List<JsArray<KeyframeTrack>> tracksList=Lists.newArrayList();
 		
@@ -5438,7 +5462,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		
 		for(int i=0;i<frames.size();i++){
 			List<AngleAndPosition> ap=poseFrameDataToAngleAndPosition(frames.get(i));
-			JsArray<KeyframeTrack> tracks=createAnimationTracks(ap,divided);
+			JsArray<KeyframeTrack> tracks=createAnimationTracks(ap,divided,moveOnlyRoot);
 			tracksList.add(tracks);
 		}
 		
@@ -5457,8 +5481,8 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		AnimationClip clip=THREE.AnimationClip("play", -1,tracks);
 		return clip;
 	}
-	protected void playFrameAnimation(double duration,boolean connectFirst) {
-		AnimationClip clip=makeFrameAnimation(duration,1,connectFirst);
+	protected void playFrameAnimation(double duration,boolean connectFirst,boolean moveOnlyRoot) {
+		AnimationClip clip=makeFrameAnimation(duration,1,connectFirst,moveOnlyRoot);
 		
 		mixer.stopAllAction();
 		mixer.uncacheClip(clip);//same name cache that.
@@ -7639,10 +7663,10 @@ private void concat(JsArrayNumber target,JsArrayNumber values){
 }
 
 public AnimationClip createAnimationClip(List<AngleAndPosition> angleAndPositions){
-	AnimationClip clip=THREE.AnimationClip("pose", -1, createAnimationTracks(angleAndPositions,1));
+	AnimationClip clip=THREE.AnimationClip("pose", -1, createAnimationTracks(angleAndPositions,1,moveOnlyRoot));
 	return clip;
 }
-	public JsArray<KeyframeTrack> createAnimationTracks(List<AngleAndPosition> angleAndPositions,double posdivided){
+	public JsArray<KeyframeTrack> createAnimationTracks(List<AngleAndPosition> angleAndPositions,double posdivided,boolean moveOnlyRoot){
 	JsArray<KeyframeTrack> tracks=JavaScriptObject.createArray().cast();
 	for(int i=0;i<angleAndPositions.size();i++){
 		int index=i;
@@ -7667,6 +7691,10 @@ public AnimationClip createAnimationClip(List<AngleAndPosition> angleAndPosition
 	//position animation
 	for(int i=0;i<angleAndPositions.size();i++){
 		int index=i;
+		
+		if(index!=0 && moveOnlyRoot){
+			continue;
+		}
 		
 		
 		AngleAndPosition ap=angleAndPositions.get(index);
