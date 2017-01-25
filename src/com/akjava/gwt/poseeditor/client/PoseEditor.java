@@ -22,6 +22,7 @@ import com.akjava.gwt.bvh.client.poseframe.PoseFrameData;
 import com.akjava.gwt.bvh.client.threejs.AnimationBoneConverter;
 import com.akjava.gwt.bvh.client.threejs.AnimationDataConverter;
 import com.akjava.gwt.bvh.client.threejs.BVHConverter;
+import com.akjava.gwt.html5.client.InputRangeListener;
 import com.akjava.gwt.html5.client.InputRangeWidget;
 import com.akjava.gwt.html5.client.download.HTML5Download;
 import com.akjava.gwt.html5.client.extra.HTML5Builder;
@@ -155,6 +156,7 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
+import com.google.gwt.user.client.ui.DoubleBox;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
@@ -162,6 +164,7 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.MenuBar;
 import com.google.gwt.user.client.ui.MenuItem;
+import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.ScrollPanel;
@@ -3629,6 +3632,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	private Label boneRotateLimitXLabel;
 	private Label boneRotateLimitYLabel;
 	private Label boneRotateLimitZLabel;
+	private InputRangeWidget meshRotationYRange;
 	@Override
 	public void createControl(DropVerticalPanelBase parent) {
 		Window.addCloseHandler(new CloseHandler<Window>() {
@@ -4042,7 +4046,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		
 		HorizontalPanel h1bpos=new HorizontalPanel();
 		positionXBoneRange = InputRangeWidget.createInputRange(-60000/posDivided,60000/posDivided,0);
-		bonePositionsPanel.add(HTML5Builder.createRangeLabel("X-Pos:", positionXBoneRange,10));
+		bonePositionsPanel.add(HTML5Builder.createRangeLabel("X-Pos:", positionXBoneRange,posDivided));
 		bonePositionsPanel.add(h1bpos);
 		h1bpos.add(positionXBoneRange);
 		createPosRangeControlers(positionXBoneRange,h1bpos);
@@ -4056,7 +4060,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		HorizontalPanel h2bpos=new HorizontalPanel();
 		
 		positionYBoneRange = InputRangeWidget.createInputRange(-60000/posDivided,60000/posDivided,0);
-		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Y-Pos:", positionYBoneRange,10));
+		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Y-Pos:", positionYBoneRange,posDivided));
 		bonePositionsPanel.add(h2bpos);
 		h2bpos.add(positionYBoneRange);
 		createPosRangeControlers(positionYBoneRange,h2bpos);
@@ -4070,7 +4074,7 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		
 		HorizontalPanel h3bpos=new HorizontalPanel();
 		positionZBoneRange = InputRangeWidget.createInputRange(-60000/posDivided,60000/posDivided,0);
-		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Z-Pos:", positionZBoneRange,10));
+		bonePositionsPanel.add(HTML5Builder.createRangeLabel("Z-Pos:", positionZBoneRange,posDivided));
 		bonePositionsPanel.add(h3bpos);
 		h3bpos.add(positionZBoneRange);
 		
@@ -4385,10 +4389,56 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		
 		positionYRange.setValue(defaultOffSetY);//for test
 		
+		
+		
+		//mesh-control
+		
+		parent.add(createMeshMatrixControlPanel());
+		
 		updateIkLabels();
 		createBottomPanel();
 		showControl();
 		
+	}
+	private Panel createMeshMatrixControlPanel(){
+		VerticalPanel meshControler=new VerticalPanel();
+		
+		meshControler.add(new Label("Mesh-Matrix"));
+		
+		
+		meshRotationYRange = InputRangeWidget.createInputRange(-180,180,0);
+		meshRotationYRange.addInputRangeListener(new InputRangeListener() {
+			
+			@Override
+			public void changed(int newValue) {
+				doPoseByMatrix(ab);
+			}
+		});
+		
+		meshRotationYRange.setWidth(240);
+		
+		Label meshRotateYLabel=HTML5Builder.createRangeLabel("Y-Rotate:", meshRotationYRange);
+		meshRotateYLabel.setWidth("120px");
+		meshControler.add(meshRotateYLabel);
+		
+		meshControler.add(meshRotationYRange);
+		
+		//positions
+		HorizontalPanel xposPanel=new HorizontalPanel();
+		meshControler.add(xposPanel);
+		Label xposLabel=new Label("X-Pos:");
+		xposPanel.add(xposLabel);
+		meshPositionXBox = new DoubleBox();
+		meshPositionXBox.setValue(0.0);
+		xposPanel.add(meshPositionXBox);
+		meshPositionXBox.addValueChangeHandler(new ValueChangeHandler<Double>() {
+			@Override
+			public void onValueChange(ValueChangeEvent<Double> event) {
+				doPoseByMatrix(ab);
+			}
+		});
+		
+		return meshControler;
 	}
 	/*
 	int upscale=1;
@@ -4989,18 +5039,25 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		}
 		return boneNamesBox.getValue(boneNamesBox.getSelectedIndex());
 	}
-	protected void positionToBone() {
-		String name=boneNamesBox.getItemText(boneNamesBox.getSelectedIndex());
+	
+	private void positionToBone(String name,double x,double y,double z){
+		
 		int index=ab.getBoneIndex(name);
 		if(index!=0){
 			//limit root only 
 			//TODO limit by bvh channel
 			return;
 		}
+		
+		
+		
+		//LogUtils.log("increment-x:x="+x+",increment="+incrementMeshX);
+		
+		
 
-		Vector3 pos=THREE.Vector3(positionXBoneRange.getValue(),
-				positionYBoneRange.getValue()
-				, positionZBoneRange.getValue()).multiplyScalar(0.01);//what is 100?
+		
+		Vector3 pos=THREE.Vector3(x,y,z
+				).multiplyScalar(0.01);//what is 100?
 		
 		/*
 		Vector3 angles=GWTThreeUtils.rotationToVector3(ab.getBoneAngleAndMatrix(index).getMatrix());
@@ -5022,6 +5079,11 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 		if( isSelectedBone()){
 			selectionMesh.setPosition(pos);
 		}
+	}
+	protected void positionToBone() {
+		positionToBone(boneNamesBox.getItemText(boneNamesBox.getSelectedIndex()),
+				positionXBoneRange.getValue(),
+				positionYBoneRange.getValue(),positionZBoneRange.getValue());
 	}
 
 	protected void switchRotateAndPosList() {
@@ -6252,6 +6314,12 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 			return ;
 		}
 		
+		//for mesh-rotation
+		if(index==0){
+			y+=meshRotationYRange.getValue();
+		}
+		
+		
 		//Matrix4 mx=ab.getBoneMatrix(name);
 		Vector3 degAngles=THREE.Vector3(x,y,z);
 		Vector3 angles=GWTThreeUtils.degreeToRagiant(degAngles);
@@ -6620,7 +6688,6 @@ private List<String> boneList=new ArrayList<String>();
 		}
 		private Matrix4 matrix;
 	}
-	private List<MatrixAndVector3> boneMatrix;
 	
 	
 	/*
@@ -6931,6 +6998,26 @@ private boolean ignorePerLimit=false;
 
 
 
+private List<AngleAndPosition> mergeMeshMatrix(AnimationBonesData animationBonesData){
+	List<AngleAndPosition> mergedMatrix=AnimationBonesData.cloneAngleAndMatrix(animationBonesData.getBonesAngleAndMatrixs());
+	mergedMatrix.set(0, mergedMatrix.get(0).clone());//temporaly merge
+	double incrementMeshX=meshPositionXBox.getValue()!=null?meshPositionXBox.getValue():0;
+	mergedMatrix.get(0).getPosition().gwtIncrementX(incrementMeshX);
+	mergedMatrix.get(0).getDegreeAngle().gwtIncrementY(meshRotationYRange.getValue());
+	mergedMatrix.get(0).updateMatrix();
+	
+	return mergedMatrix;
+}
+private List<AngleAndPosition> unmergeMeshMatrix(List<AngleAndPosition> mergedMatrix){
+	
+	double incrementMeshX=meshPositionXBox.getValue()!=null?meshPositionXBox.getValue():0;
+	mergedMatrix.get(0).getPosition().gwtDecrementX(incrementMeshX);
+	mergedMatrix.get(0).getDegreeAngle().gwtDecrementY(meshRotationYRange.getValue());
+	mergedMatrix.get(0).updateMatrix();
+	
+	return mergedMatrix;
+}
+
 private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 
 	//do CDDIK
@@ -6938,7 +7025,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	currentIkJointIndex=0;
 	
 	
-	List<AngleAndPosition> minMatrix=AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs());
+	List<AngleAndPosition> minMatrix=mergeMeshMatrix(ab);
 	double minLength=ab.getBonePosition(ikData.getLastBoneName(),isIkTargetEndSite).clone().sub(ikData.getTargetPos()).length();
 	for(int i=0;i<ikData.getIteration()*cddLoop;i++){
 	String targetBoneName=ikData.getBones().get(currentIkJointIndex);
@@ -7109,7 +7196,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	
 	
 	if(diffPos.length()<minLength){
-		minMatrix=AnimationBonesData.cloneAngleAndMatrix(ab.getBonesAngleAndMatrixs());
+		minMatrix=mergeMeshMatrix(ab);
 	}
 	
 	
@@ -7127,13 +7214,13 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	//tmp1=lastJointPos;
 	//tmp2=jointPos;
 	}
-	ab.setBonesAngleAndMatrixs(minMatrix);//use min
+	ab.setBonesAngleAndMatrixs(unmergeMeshMatrix(minMatrix));//use min
 }
 
 private void doPoseIkk(int index,boolean resetMatrix,int perLimit,IKData ikdata,int cddLoop){
 		
 	if(!existBone(ikdata.getLastBoneName())){
-		return;//some non exist bone.
+		return;//some time non exist bone selected.
 	}
 	//initializeBodyMesh();
 	initializeAnimationData(index,resetMatrix);
@@ -7219,7 +7306,18 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		selectionMesh.setPosition(ab.getBonePosition(selectedBone));
 	}
 		
-		List<AngleAndPosition> boneMatrix=animationBonesData.getBonesAngleAndMatrixs();
+		List<AngleAndPosition> originalBoneMatrix=animationBonesData.getBonesAngleAndMatrixs();
+		
+		//temporaly merged root & mesh-matrix
+		List<AngleAndPosition> boneMatrix=mergeMeshMatrix(animationBonesData);
+		
+		/*
+		 *  merge mesh-matrix here,bone seems follow,beside pos value
+		 * 
+		 */
+		
+		
+		
 		
 		bonePath=boneToPath(animationBones);
 		if(bone3D!=null){
@@ -7563,6 +7661,14 @@ private void doPoseByMatrix(AnimationBonesData animationBonesData){
 		}
 		
 		
+		/*//update-mesh-matrix
+		 * 
+		 */
+		
+		double meshRotationY=meshRotationYRange.getValue().doubleValue();
+		bodyMesh.getRotation().setY(Math.toRadians(meshRotationY));
+		bodyMesh.getPosition().setX(meshPositionXBox.getValue());
+		
 		
 		//make skinning animation
 		AnimationClip clip=createAnimationClip(animationBonesData.getBonesAngleAndMatrixs());
@@ -7881,6 +7987,7 @@ private Mesh planeMesh;
 private SkeletonHelper skeltonHelper;
 private Group group1;
 private Group group2;
+private DoubleBox meshPositionXBox;
 ;
 
 /**
