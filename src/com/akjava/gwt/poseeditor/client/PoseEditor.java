@@ -7018,6 +7018,11 @@ private List<AngleAndPosition> mergeMeshMatrix(AnimationBonesData animationBones
 	
 	return mergedMatrix;
 }
+/**
+ * modify mergedMatrix
+ * @param mergedMatrix
+ * @return
+ */
 private List<AngleAndPosition> unmergeMeshMatrix(List<AngleAndPosition> mergedMatrix){
 	
 	double incrementMeshX=meshPositionXBox.getValue()!=null?meshPositionXBox.getValue():0;
@@ -7234,7 +7239,7 @@ private void doPoseIkk(int index,boolean resetMatrix,int perLimit,IKData ikdata,
 	}
 	//initializeBodyMesh();
 	initializeAnimationData(index,resetMatrix);
-	stepCDDIk(perLimit,ikdata,cddLoop);	
+	stepCDDIk(perLimit,ikdata,cddLoop);	//not working?
 	doPoseByMatrix(ab);
 	
 	
@@ -7268,7 +7273,7 @@ private List<AngleAndPosition> findStartMatrix(String boneName,Vector3 targetPos
 	
 	
 	
-	return unmergeMeshMatrix(retMatrix);
+	return unmergeMeshMatrix(AnimationBonesData.cloneAngleAndMatrix(retMatrix));
 }
 
 /*
