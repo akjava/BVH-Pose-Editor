@@ -1448,6 +1448,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		return currentSelectionIkName!=null;
 	}
 	
+	//TODO fix
 	//here is so slow.
 	private void switchSelectionIk(String name){
 		
@@ -1487,7 +1488,7 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 		int index=0;
 		for(List<NameAndVector3> nv:result){
 			//log("candiate:"+index);
-			List<AngleAndPosition> bm=AnimationBonesData.cloneAngleAndMatrix(currentMatrixs);
+			List<AngleAndPosition> bm=mergeMeshMatrix(ab);
 			applyMatrix(bm, nv);
 			
 			//for debug;
@@ -2138,8 +2139,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			public void execute() {
 				
 				if(isSelectedIk()){
+					AnimationBonesData merged=new AnimationBonesData(animationBones,mergeMeshMatrix(ab));
 					//only do selected ik
-					Vector3 pos=ab.getBonePosition(getCurrentIkData().getLastBoneName());
+					Vector3 pos=merged.getBonePosition(getCurrentIkData().getLastBoneName());
 					getCurrentIkData().getTargetPos().set(pos.getX(), pos.getY(), pos.getZ());
 				}else{
 					fitIkOnBone();//do all
@@ -2156,8 +2158,9 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 			@Override
 			public void execute() {
 				if(isSelectedIk()){
+					AnimationBonesData merged=getMergedAnimationBonesData(ab);
 					if(existBone(getCurrentIkData().getLastBoneName())){
-						getCurrentIkData().getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(getCurrentIkData().getLastBoneName())));
+						getCurrentIkData().getTargetPos().copy(getDefaultIkPos(merged.getBoneIndex(getCurrentIkData().getLastBoneName())));
 						//doPoseByMatrix(ab);
 					}
 				}else{
@@ -2487,12 +2490,12 @@ public class PoseEditor extends SimpleTabDemoEntryPoint implements PreferenceLis
 	}
 
 	protected void followTarget() {
-
+		AnimationBonesData merged=getMergedAnimationBonesData(ab);
 		for(IKData ik:getAvaiableIkdatas()){
 			String name=ik.getLastBoneName();
 			
 			if(existBone(name)){
-				ik.getTargetPos().copy(getDefaultIkPos(ab.getBoneIndex(name)));
+				ik.getTargetPos().copy(getDefaultIkPos(merged.getBoneIndex(name)));
 				//doPoseByMatrix(ab);
 			}
 			
@@ -6300,11 +6303,16 @@ if(selectBoneFirst){//trying every click change ik and bone if both intersected
 	 * call doPoseByMatrix or syncIkPosition to sync 3d model position
 	 */
 	private void fitIkOnBone() {
+		AnimationBonesData merged=getMergedAnimationBonesData(ab);
 		for(IKData ik:getAvaiableIkdatas()){
 			String name=ik.getLastBoneName();
-			Vector3 pos=ab.getBonePosition(name,isIkTargetEndSite);//try get endsite
+			Vector3 pos=merged.getBonePosition(name,isIkTargetEndSite);//try get endsite
 			ik.getTargetPos().copy(pos);
 		}
+	}
+	
+	private AnimationBonesData getMergedAnimationBonesData(AnimationBonesData origin){
+		return new AnimationBonesData(animationBones,mergeMeshMatrix(origin));
 	}
 
 	private void rotToBone(String name,double x,double y,double z,boolean doPoseByMatrix){
@@ -6888,6 +6896,8 @@ private void initializeBodyMesh(){
 				}
 }
 */
+
+//initialize & loaded
 List<AngleAndPosition> currentMatrixs;
 private void initializeAnimationData(int index,boolean resetMatrix){
 
@@ -6941,13 +6951,13 @@ private BoneLockControler boneLock=new BoneLockControler();
 
 
 //this new position base ikk faild
-private Vector3 findNextStep(int boneIndex,int lastBoneIndex,Vector3 targetPos){
-	Vector3 lastTrans=ab.getMatrixPosition(lastBoneIndex);
-	List<Integer> path=ab.getBonePath(lastBoneIndex);
+private Vector3 findNextStep(AnimationBonesData merged,int boneIndex,int lastBoneIndex,Vector3 targetPos){
+	Vector3 lastTrans=merged.getMatrixPosition(lastBoneIndex);
+	List<Integer> path=merged.getBonePath(lastBoneIndex);
 	Matrix4 matrix=THREE.Matrix4();
 	for(int i=0;i<path.size()-1;i++){
 		int bindex=path.get(i);
-		AngleAndPosition am=ab.getBoneAngleAndMatrix(bindex);
+		AngleAndPosition am=merged.getBoneAngleAndMatrix(bindex);
 		matrix.multiply(am.getMatrix());
 	}
 	Vector3 base=THREE.Vector3(0,0,0);
@@ -6965,7 +6975,7 @@ private Vector3 findNextStep(int boneIndex,int lastBoneIndex,Vector3 targetPos){
 				matrix=THREE.Matrix4();
 				for(int i=0;i<path.size()-1;i++){
 					int bindex=path.get(i);
-					AngleAndPosition am=ab.getBoneAngleAndMatrix(bindex);
+					AngleAndPosition am=merged.getBoneAngleAndMatrix(bindex);
 					Matrix4 m=am.getMatrix();
 					if(bindex==boneIndex){
 						Vector3 newAngle=am.getDegreeAngle().clone().add(tmpVec);
@@ -6990,7 +7000,7 @@ private Vector3 findNextStep(int boneIndex,int lastBoneIndex,Vector3 targetPos){
 		}
 	}
 	//log("mutch:"+ThreeLog.get(base));
-	return base.add(ab.getBoneAngleAndMatrix(boneIndex).getDegreeAngle());
+	return base.add(merged.getBoneAngleAndMatrix(boneIndex).getDegreeAngle());
 }
 
 private boolean doLimit=true;
@@ -7023,10 +7033,10 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	//do CDDIK
 	//doCDDIk();
 	currentIkJointIndex=0;
-	
+	AnimationBonesData merged=getMergedAnimationBonesData(ab);
 	
 	List<AngleAndPosition> minMatrix=mergeMeshMatrix(ab);
-	double minLength=ab.getBonePosition(ikData.getLastBoneName(),isIkTargetEndSite).clone().sub(ikData.getTargetPos()).length();
+	double minLength=merged.getBonePosition(ikData.getLastBoneName(),isIkTargetEndSite).clone().sub(ikData.getTargetPos()).length();
 	for(int i=0;i<ikData.getIteration()*cddLoop;i++){
 	String targetBoneName=ikData.getBones().get(currentIkJointIndex);
 	
@@ -7046,18 +7056,18 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	
 	
 	Vector3 ikkedAngle=null;
-	Matrix4 jointRot=ab.getBoneAngleAndMatrix(targetBoneName).getMatrix();
+	Matrix4 jointRot=merged.getBoneAngleAndMatrix(targetBoneName).getMatrix();
 	Matrix4 translates=GWTThreeUtils.translateToMatrix4(GWTThreeUtils.toPositionVec(jointRot));
-	Vector3 currentAngle=ab.getBoneAngleAndMatrix(targetBoneName).getDegreeAngle().clone();
+	Vector3 currentAngle=merged.getBoneAngleAndMatrix(targetBoneName).getDegreeAngle().clone();
 	//log("current:"+ThreeLog.get(currentAngle));
 	String beforeAngleLog="";
 	if(perLimit>0){
-	Vector3 lastJointPos=ab.getBonePosition(ikData.getLastBoneName(),isIkTargetEndSite);
+	Vector3 lastJointPos=merged.getBonePosition(ikData.getLastBoneName(),isIkTargetEndSite);
 	
 	
 	
 	//Vector3 jointPos=ab.getParentPosition(targetName);
-	Vector3 jointPos=ab.getBonePosition(targetBoneName);
+	Vector3 jointPos=merged.getBonePosition(targetBoneName);
 	
 	
 	
@@ -7068,7 +7078,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	
 	//TODO add parent bone angles
 	//AngleAndPosition root=ab.getBoneAngleAndMatrix(0);
-	Vector3 parentAngle=ab.getParentAngles(boneIndex);
+	Vector3 parentAngle=merged.getParentAngles(boneIndex);
 	Matrix4 newMatrix=cddIk.getStepAngleMatrix(parentAngle,lastJointPos, jointPos, jointRot, ikData.getTargetPos());
 	beforeAngleLog=targetBoneName+","+"parent:"+ThreeLog.get(parentAngle)+",joint:"+ThreeLog.get(currentAngle);
 	if(newMatrix==null){//invalid value
@@ -7132,7 +7142,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	ikkedAngle=GWTThreeUtils.degreeToRagiant(currentAngle);
 	}else{
 		//faild TODO fix it
-		Vector3 angle=findNextStep(boneIndex, ab.getBoneIndex(ikData.getLastBoneName()), ikData.getTargetPos());
+		Vector3 angle=findNextStep(merged,boneIndex, ab.getBoneIndex(ikData.getLastBoneName()), ikData.getTargetPos());
 		//log(targetBoneName+" before:"+ThreeLog.get(ab.getBoneAngleAndMatrix(boneIndex).getAngle())+" after:"+ThreeLog.get(angle));
 		ikkedAngle=GWTThreeUtils.degreeToRagiant(angle);
 		
@@ -7176,14 +7186,14 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	
 	newMatrix.multiplyMatrices(translates,newMatrix);
 	
-	ab.getBoneAngleAndMatrix(boneIndex).setMatrix(newMatrix);
-	ab.getBoneAngleAndMatrix(boneIndex).setDegreeAngle(GWTThreeUtils.radiantToDegree(ikkedAngle));
+	merged.getBoneAngleAndMatrix(boneIndex).setMatrix(newMatrix);
+	merged.getBoneAngleAndMatrix(boneIndex).setDegreeAngle(GWTThreeUtils.radiantToDegree(ikkedAngle));
 	
 	
 	//log(targetName+":"+ThreeLog.getAngle(jointRot)+",new"+ThreeLog.getAngle(newMatrix));
 	//log("parentPos,"+ThreeLog.get(jointPos)+",lastPos,"+ThreeLog.get(lastJointPos));
 	
-	Vector3 diffPos=ab.getBonePosition(ikData.getLastBoneName()).clone().subSelf(ikData.getTargetPos());
+	Vector3 diffPos=merged.getBonePosition(ikData.getLastBoneName()).clone().subSelf(ikData.getTargetPos());
 	
 	/*
 	if(diffPos.length()>2){
@@ -7196,7 +7206,7 @@ private void stepCDDIk(int perLimit,IKData ikData,int cddLoop){
 	
 	
 	if(diffPos.length()<minLength){
-		minMatrix=mergeMeshMatrix(ab);
+		minMatrix=mergeMeshMatrix(ab);//initialize
 	}
 	
 	
@@ -7234,13 +7244,14 @@ private void doPoseIkk(int index,boolean resetMatrix,int perLimit,IKData ikdata,
 	}
 private List<AngleAndPosition> findStartMatrix(String boneName,Vector3 targetPos) {
 	List<AngleAndPosition> retMatrix=candiateAngleAndMatrixs.get(0);
-	ab.setBonesAngleAndMatrixs(retMatrix);//TODO without set
-	Vector3 tpos=ab.getBonePosition(boneName);
+	AnimationBonesData tmpData=new AnimationBonesData(animationBones, retMatrix);
+	//ab.setBonesAngleAndMatrixs(retMatrix);//TODO without set
+	Vector3 tpos=tmpData.getBonePosition(boneName);
 	double minlength=targetPos.clone().sub(tpos).length();
 	for(int i=1;i<candiateAngleAndMatrixs.size();i++){
 		List<AngleAndPosition> mxs=candiateAngleAndMatrixs.get(i);
-		ab.setBonesAngleAndMatrixs(mxs);//TODO change
-		Vector3 tmpPos=ab.getBonePosition(boneName);
+		tmpData.setBonesAngleAndMatrixs(mxs);//TODO change
+		Vector3 tmpPos=tmpData.getBonePosition(boneName);
 		double tmpLength=targetPos.clone().sub(tmpPos).length();
 		if(tmpLength<minlength){
 			minlength=tmpLength;
@@ -7254,7 +7265,10 @@ private List<AngleAndPosition> findStartMatrix(String boneName,Vector3 targetPos
 	//	log(name+":"+ThreeLog.get(GWTThreeUtils.toDegreeAngle(mx)));
 	}
 	
-	return retMatrix;
+	
+	
+	
+	return unmergeMeshMatrix(retMatrix);
 }
 
 /*
@@ -7951,8 +7965,9 @@ public static String get(Vector4 vec){
 }
 
 private Vector3 getDefaultIkPos(int index){
-	Vector3 pos=ab.getBonePosition(index);
-	Vector3 ppos=ab.getParentPosition(index);
+	AnimationBonesData merged=getMergedAnimationBonesData(ab);
+	Vector3 pos=merged.getBonePosition(index);
+	Vector3 ppos=merged.getParentPosition(index);
 	double ikLength=1.5;
 	if(!hasChild(bonePath,index)){
 		ikLength=2.5;
